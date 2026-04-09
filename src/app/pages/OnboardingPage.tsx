@@ -21,6 +21,7 @@ import {
 import { AnimatePresence, motion } from 'motion/react';
 import { useNavigate } from 'react-router';
 import { brandLogoWhite } from '@/assets';
+import { DateWheelPicker, NumberWheelPicker, TimeWheelPicker } from '../components/onboarding/WheelPickers';
 import { ACTIVITY_LEVEL_OPTIONS, TRAINING_LEVEL_OPTIONS } from '../data/constants';
 import { useAppData } from '../data/AppDataContext';
 import { GOAL_OPTIONS } from '../data/profileInsights';
@@ -1458,11 +1459,62 @@ export default function OnboardingPage() {
         </div>
       </div>
 
-      <PickerSheet
-        open={Boolean(pickerState)}
-        title={pickerTitle}
-        subtitle={pickerSubtitle}
-        columns={pickerColumns}
+      <DateWheelPicker
+        open={pickerState?.type === 'birthDate'}
+        title="Fecha de nacimiento"
+        subtitle="Deslizá cada columna hasta dejar tu fecha exacta en la franja central."
+        value={birthDraft}
+        onChange={setBirthDraft}
+        onClose={() => setPickerState(null)}
+        onConfirm={confirmPicker}
+      />
+
+      <NumberWheelPicker
+        open={pickerState?.type === 'height'}
+        title="Altura actual"
+        subtitle="Seleccioná tu altura real para mejorar métricas, progreso y cálculos energéticos."
+        value={{ whole: heightDraft.value }}
+        onChange={(nextValue) => setHeightDraft({ value: nextValue.whole })}
+        wholeOptions={buildNumberOptions(140, 220)}
+        unitLabel="cm"
+        onClose={() => setPickerState(null)}
+        onConfirm={confirmPicker}
+      />
+
+      <NumberWheelPicker
+        open={pickerState?.type === 'weight'}
+        title="Peso actual"
+        subtitle="Este valor se usa como punto de partida para estadísticas y recomendaciones."
+        value={weightDraft}
+        onChange={(nextValue) => setWeightDraft({ whole: nextValue.whole, decimal: nextValue.decimal ?? '0' })}
+        wholeOptions={buildNumberOptions(40, 180)}
+        decimalOptions={buildNumberOptions(0, 9)}
+        unitLabel="kg"
+        onClose={() => setPickerState(null)}
+        onConfirm={confirmPicker}
+      />
+
+      <NumberWheelPicker
+        open={pickerState?.type === 'targetWeight'}
+        title="Peso objetivo"
+        subtitle="Una referencia simple para orientar tu progreso dentro de GymUp."
+        value={targetWeightDraft}
+        onChange={(nextValue) =>
+          setTargetWeightDraft({ whole: nextValue.whole, decimal: nextValue.decimal ?? '0' })
+        }
+        wholeOptions={buildNumberOptions(40, 180)}
+        decimalOptions={buildNumberOptions(0, 9)}
+        unitLabel="kg"
+        onClose={() => setPickerState(null)}
+        onConfirm={confirmPicker}
+      />
+
+      <TimeWheelPicker
+        open={pickerState?.type === 'time'}
+        title={pickerState?.type === 'time' && pickerState.day ? `Horario para ${pickerState.day}` : 'Horario principal'}
+        subtitle="Dejá una hora cómoda y realista. Luego podés ajustarla cuando quieras."
+        value={timeDraft}
+        onChange={setTimeDraft}
         onClose={() => setPickerState(null)}
         onConfirm={confirmPicker}
       />
