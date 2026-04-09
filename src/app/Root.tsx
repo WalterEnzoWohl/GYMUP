@@ -3,7 +3,7 @@ import { Navigate, Outlet, useLocation, useNavigate } from 'react-router';
 import { ActiveWorkoutDock } from './components/ActiveWorkoutDock';
 import { BottomNav } from './components/BottomNav';
 import { useAppData } from './data/AppDataContext';
-import { isUserProfileComplete } from './data/userProfileUtils';
+import { hasCompletedOnboarding } from './data/userProfileUtils';
 
 const HIDE_NAV_PATHS = ['/session', '/post-session', '/onboarding'];
 
@@ -14,11 +14,11 @@ export default function Root() {
   const hideNav = HIDE_NAV_PATHS.some((p) => location.pathname === p || location.pathname.startsWith(p + '/'));
   const showActiveWorkoutDock = !hideNav && status === 'ready' && Boolean(activeWorkout);
   const isLightMode = appSettings.theme === 'light';
-  const profileComplete = isUserProfileComplete(userProfile);
+  const onboardingComplete = hasCompletedOnboarding(userProfile);
   const isOnboardingRoute = location.pathname === '/onboarding';
-  const needsOnboarding = status === 'ready' && !profileComplete;
+  const needsOnboarding = status === 'ready' && !onboardingComplete;
   const showEmptyAccountState =
-    status === 'ready' && profileComplete && location.pathname === '/' && routines.length === 0;
+    status === 'ready' && onboardingComplete && location.pathname === '/' && routines.length === 0;
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', appSettings.theme === 'dark');

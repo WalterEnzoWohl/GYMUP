@@ -94,15 +94,25 @@ export interface UserProfile {
   lastName: string;
   fullName: string;
   avatarUrl?: string;
+  gender?: string;
+  birthDate?: string;
   age: number;
   heightCm: number;
   weightKg: number;
+  targetWeightKg?: number;
   goal: string;
+  focusMuscle?: string;
+  workoutLocation?: string;
   activityLevel: string;
   activityFactor: number;
   activityDescription: string;
   trainingLevel: string;
+  preferredTrainingDays: string[];
+  preferredScheduleMode: 'same' | 'different';
+  preferredWorkoutTime?: string;
+  preferredWorkoutTimeByDay: Record<string, string>;
   memberSince: string;
+  onboardingCompletedAt?: string;
   activeRoutineId?: number | null;
 }
 

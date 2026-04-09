@@ -19,15 +19,29 @@ type DbProfileRow = {
   email: string | null;
   first_name: string;
   last_name: string;
+  gender: string | null;
+  birth_date: string | null;
   age: number;
   height_cm: number;
   weight_kg: number;
+  target_weight_kg: number | null;
   goal: string;
+  focus_muscle: string | null;
+  workout_location: string | null;
   activity_level: string;
   training_level: string;
+  preferred_training_days: string[] | null;
+  preferred_schedule_mode: 'same' | 'different' | null;
+  preferred_workout_time: string | null;
+  preferred_workout_time_by_day: Record<string, string> | null;
   member_since: string;
+  onboarding_completed_at: string | null;
   active_routine_id: number | null;
+  avatar_path: string | null;
+  avatar_updated_at: string | null;
 };
+
+const PROFILE_AVATAR_BUCKET = 'profile-avatars';
 
 type DbRoutineRow = {
   id: number;
@@ -115,6 +129,20 @@ function formatMemberSince(date = new Date()) {
   return label.charAt(0).toUpperCase() + label.slice(1);
 }
 
+function buildProfileAvatarUrl(avatarPath: string | null, avatarUpdatedAt: string | null) {
+  if (!avatarPath) {
+    return undefined;
+  }
+
+  const client = getSupabaseClient();
+  const { data } = client.storage.from(PROFILE_AVATAR_BUCKET).getPublicUrl(avatarPath);
+  if (!data.publicUrl) {
+    return undefined;
+  }
+
+  return avatarUpdatedAt ? `${data.publicUrl}?v=${encodeURIComponent(avatarUpdatedAt)}` : data.publicUrl;
+}
+
 function buildUserProfile(row: DbProfileRow): UserProfile {
   const activity = resolveActivityLevel(row.activity_level);
   const firstName = row.first_name.trim();
@@ -125,15 +153,26 @@ function buildUserProfile(row: DbProfileRow): UserProfile {
     firstName,
     lastName,
     fullName,
+    avatarUrl: buildProfileAvatarUrl(row.avatar_path, row.avatar_updated_at),
+    gender: row.gender ?? undefined,
+    birthDate: row.birth_date ?? undefined,
     age: row.age,
     heightCm: row.height_cm,
     weightKg: row.weight_kg,
+    targetWeightKg: row.target_weight_kg ?? undefined,
     goal: row.goal,
+    focusMuscle: row.focus_muscle ?? DEFAULT_USER_PROFILE.focusMuscle,
+    workoutLocation: row.workout_location ?? DEFAULT_USER_PROFILE.workoutLocation,
     activityLevel: activity.label,
     activityFactor: activity.factor,
     activityDescription: activity.description,
     trainingLevel: row.training_level,
+    preferredTrainingDays: row.preferred_training_days ?? [],
+    preferredScheduleMode: row.preferred_schedule_mode ?? DEFAULT_USER_PROFILE.preferredScheduleMode,
+    preferredWorkoutTime: row.preferred_workout_time ?? DEFAULT_USER_PROFILE.preferredWorkoutTime,
+    preferredWorkoutTimeByDay: row.preferred_workout_time_by_day ?? {},
     memberSince: row.member_since || formatMemberSince(),
+    onboardingCompletedAt: row.onboarding_completed_at ?? undefined,
     activeRoutineId: row.active_routine_id,
   };
 }
@@ -144,13 +183,25 @@ function buildProfileInsert(user: User) {
     email: user.email ?? null,
     first_name: '',
     last_name: '',
+    gender: null,
+    birth_date: null,
     age: DEFAULT_USER_PROFILE.age,
     height_cm: DEFAULT_USER_PROFILE.heightCm,
     weight_kg: DEFAULT_USER_PROFILE.weightKg,
+    target_weight_kg: null,
     goal: DEFAULT_USER_PROFILE.goal,
+    focus_muscle: DEFAULT_USER_PROFILE.focusMuscle ?? null,
+    workout_location: DEFAULT_USER_PROFILE.workoutLocation ?? null,
     activity_level: DEFAULT_USER_PROFILE.activityLevel,
     training_level: DEFAULT_USER_PROFILE.trainingLevel,
+    preferred_training_days: DEFAULT_USER_PROFILE.preferredTrainingDays,
+    preferred_schedule_mode: DEFAULT_USER_PROFILE.preferredScheduleMode,
+    preferred_workout_time: DEFAULT_USER_PROFILE.preferredWorkoutTime ?? null,
+    preferred_workout_time_by_day: DEFAULT_USER_PROFILE.preferredWorkoutTimeByDay,
     member_since: formatMemberSince(),
+    onboarding_completed_at: null,
+    avatar_path: null,
+    avatar_updated_at: null,
   };
 }
 
@@ -457,18 +508,60 @@ export async function updateProfile(userId: string, updates: Partial<UserProfile
 
   if (updates.firstName !== undefined) payload.first_name = updates.firstName;
   if (updates.lastName !== undefined) payload.last_name = updates.lastName;
+  if (updates.gender !== undefined) payload.gender = updates.gender ?? null;
+  if (updates.birthDate !== undefined) payload.birth_date = updates.birthDate ?? null;
   if (updates.age !== undefined) payload.age = updates.age;
   if (updates.heightCm !== undefined) payload.height_cm = updates.heightCm;
   if (updates.weightKg !== undefined) payload.weight_kg = updates.weightKg;
+  if (updates.targetWeightKg !== undefined) payload.target_weight_kg = updates.targetWeightKg ?? null;
   if (updates.goal !== undefined) payload.goal = updates.goal;
+  if (updates.focusMuscle !== undefined) payload.focus_muscle = updates.focusMuscle ?? null;
+  if (updates.workoutLocation !== undefined) payload.workout_location = updates.workoutLocation ?? null;
   if (updates.activityLevel !== undefined) payload.activity_level = updates.activityLevel;
   if (updates.trainingLevel !== undefined) payload.training_level = updates.trainingLevel;
+  if (updates.preferredTrainingDays !== undefined) payload.preferred_training_days = updates.preferredTrainingDays;
+  if (updates.preferredScheduleMode !== undefined) payload.preferred_schedule_mode = updates.preferredScheduleMode;
+  if (updates.preferredWorkoutTime !== undefined) payload.preferred_workout_time = updates.preferredWorkoutTime ?? null;
+  if (updates.preferredWorkoutTimeByDay !== undefined) payload.preferred_workout_time_by_day = updates.preferredWorkoutTimeByDay;
   if (updates.memberSince !== undefined) payload.member_since = updates.memberSince;
+  if (updates.onboardingCompletedAt !== undefined) payload.onboarding_completed_at = updates.onboardingCompletedAt ?? null;
   if (updates.activeRoutineId !== undefined) payload.active_routine_id = updates.activeRoutineId ?? null;
 
   const { data, error } = await client
     .from('profiles')
     .update(payload)
+    .eq('id', userId)
+    .select('*')
+    .single<DbProfileRow>();
+
+  if (error) {
+    throw error;
+  }
+
+  return buildUserProfile(data);
+}
+
+export async function uploadProfileAvatar(userId: string, avatarFile: Blob) {
+  const client = getSupabaseClient();
+  const avatarPath = `${userId}/avatar`;
+  const avatarUpdatedAt = new Date().toISOString();
+
+  const { error: uploadError } = await client.storage.from(PROFILE_AVATAR_BUCKET).upload(avatarPath, avatarFile, {
+    upsert: true,
+    contentType: avatarFile.type || 'image/webp',
+    cacheControl: '3600',
+  });
+
+  if (uploadError) {
+    throw uploadError;
+  }
+
+  const { data, error } = await client
+    .from('profiles')
+    .update({
+      avatar_path: avatarPath,
+      avatar_updated_at: avatarUpdatedAt,
+    })
     .eq('id', userId)
     .select('*')
     .single<DbProfileRow>();

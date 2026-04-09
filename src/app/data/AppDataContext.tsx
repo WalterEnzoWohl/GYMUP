@@ -24,6 +24,7 @@ import {
   saveRoutine as saveRoutineRecord,
   updateSession as updateSessionRecord,
   updateProfile,
+  uploadProfileAvatar as uploadProfileAvatarRecord,
 } from './supabaseRepository';
 import { DEFAULT_ROUTINES, DEFAULT_USER_PROFILE } from './seedData';
 
@@ -39,7 +40,7 @@ type AppDataContextValue = {
   appSettings: AppSettings;
   refreshAppData: () => Promise<void>;
   updateUserProfile: (updates: Partial<UserProfile>) => Promise<void>;
-  updateProfileAvatar: (avatarUrl: string | null) => void;
+  updateProfileAvatar: (avatarFile: Blob) => Promise<void>;
   updateAppSettings: (updates: Partial<AppSettings>) => void;
   setActiveRoutine: (routineId: number | null) => Promise<void>;
   saveRoutine: (routine: Routine) => Promise<Routine | undefined>;
@@ -73,10 +74,6 @@ function getAppSettingsStorageKey(userId: string) {
   return `gymup.appSettings.${userId}`;
 }
 
-function getProfileAvatarStorageKey(userId: string) {
-  return `gymup.profileAvatar.${userId}`;
-}
-
 function readActiveWorkout(userId: string): ActiveWorkoutDraft | null {
   if (typeof window === 'undefined') {
     return null;
@@ -108,28 +105,6 @@ function writeActiveWorkout(userId: string, draft: ActiveWorkoutDraft | null) {
   }
 
   window.localStorage.setItem(storageKey, JSON.stringify(draft));
-}
-
-function readProfileAvatar(userId: string): string | null {
-  if (typeof window === 'undefined') {
-    return null;
-  }
-
-  return window.localStorage.getItem(getProfileAvatarStorageKey(userId));
-}
-
-function writeProfileAvatar(userId: string, avatarUrl: string | null) {
-  if (typeof window === 'undefined') {
-    return;
-  }
-
-  const storageKey = getProfileAvatarStorageKey(userId);
-  if (!avatarUrl) {
-    window.localStorage.removeItem(storageKey);
-    return;
-  }
-
-  window.localStorage.setItem(storageKey, avatarUrl);
 }
 
 function readAppSettings(userId: string): AppSettings {
@@ -199,11 +174,7 @@ export function AppDataProvider({
 
     try {
       const nextData = await loadAppData(session);
-      const storedAvatarUrl = readProfileAvatar(session.user.id);
-      setUserProfile({
-        ...nextData.userProfile,
-        avatarUrl: storedAvatarUrl ?? undefined,
-      });
+      setUserProfile(nextData.userProfile);
       setRoutines(nextData.routines);
       setSessionHistory(nextData.sessionHistory);
       setStatus('ready');
@@ -253,32 +224,23 @@ export function AppDataProvider({
   );
 
   const updateProfileAvatar = useCallback(
-    (avatarUrl: string | null) => {
-      setUserProfile((previous) => ({
-        ...previous,
-        avatarUrl: avatarUrl ?? undefined,
-      }));
-      writeProfileAvatar(session.user.id, avatarUrl);
+    async (avatarFile: Blob) => {
+      const nextProfile = await uploadProfileAvatarRecord(session.user.id, avatarFile);
+      setUserProfile(nextProfile);
     },
     [session.user.id]
   );
 
   const updateUserProfile = async (updates: Partial<UserProfile>) => {
     const nextProfile = await updateProfile(session.user.id, updates);
-    setUserProfile({
-      ...nextProfile,
-      avatarUrl: readProfileAvatar(session.user.id) ?? undefined,
-    });
+    setUserProfile(nextProfile);
   };
 
   const setActiveRoutine = async (routineId: number | null) => {
     const nextProfile = await updateProfile(session.user.id, {
       activeRoutineId: routineId,
     });
-    setUserProfile({
-      ...nextProfile,
-      avatarUrl: readProfileAvatar(session.user.id) ?? undefined,
-    });
+    setUserProfile(nextProfile);
   };
 
   const saveRoutine = async (routine: Routine) => {

@@ -53,6 +53,34 @@ function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max);
 }
 
+function canvasToAvatarBlob(canvas: HTMLCanvasElement) {
+  return new Promise<Blob>((resolve, reject) => {
+    canvas.toBlob(
+      (webpBlob) => {
+        if (webpBlob) {
+          resolve(webpBlob);
+          return;
+        }
+
+        canvas.toBlob(
+          (jpegBlob) => {
+            if (jpegBlob) {
+              resolve(jpegBlob);
+              return;
+            }
+
+            reject(new Error('No se pudo exportar el avatar.'));
+          },
+          'image/jpeg',
+          0.9
+        );
+      },
+      'image/webp',
+      0.86
+    );
+  });
+}
+
 export default function ProfilePage() {
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -375,64 +403,51 @@ export default function ProfilePage() {
 
     try {
       const image = new Image();
-      image.onload = () => {
-        const canvas = document.createElement('canvas');
-        canvas.width = AVATAR_OUTPUT_SIZE;
-        canvas.height = AVATAR_OUTPUT_SIZE;
 
-        const context = canvas.getContext('2d');
-        if (!context) {
-          setAvatarError('No pudimos preparar la imagen para guardarla.');
-          setIsSavingAvatar(false);
-          return;
-        }
+      await new Promise<void>((resolve, reject) => {
+        image.onload = () => resolve();
+        image.onerror = () => reject(new Error('No pudimos guardar la imagen. Probá otra vez.'));
+        image.src = pendingAvatar.src;
+      });
 
-        const sourceWidth = AVATAR_EDITOR_SIZE / avatarScale;
-        const sourceHeight = AVATAR_EDITOR_SIZE / avatarScale;
-        const sourceX = clamp(
-          (avatarDisplayWidth / 2 - AVATAR_EDITOR_SIZE / 2 - avatarOffsetX) / avatarScale,
-          0,
-          Math.max(0, pendingAvatar.width - sourceWidth)
-        );
-        const sourceY = clamp(
-          (avatarDisplayHeight / 2 - AVATAR_EDITOR_SIZE / 2 - avatarOffsetY) / avatarScale,
-          0,
-          Math.max(0, pendingAvatar.height - sourceHeight)
-        );
+      const canvas = document.createElement('canvas');
+      canvas.width = AVATAR_OUTPUT_SIZE;
+      canvas.height = AVATAR_OUTPUT_SIZE;
 
-        context.clearRect(0, 0, AVATAR_OUTPUT_SIZE, AVATAR_OUTPUT_SIZE);
-        context.save();
-        context.beginPath();
-        context.arc(
-          AVATAR_OUTPUT_SIZE / 2,
-          AVATAR_OUTPUT_SIZE / 2,
-          AVATAR_OUTPUT_SIZE / 2,
-          0,
-          Math.PI * 2
-        );
-        context.closePath();
-        context.clip();
-        context.drawImage(
-          image,
-          sourceX,
-          sourceY,
-          sourceWidth,
-          sourceHeight,
-          0,
-          0,
-          AVATAR_OUTPUT_SIZE,
-          AVATAR_OUTPUT_SIZE
-        );
-        context.restore();
+      const context = canvas.getContext('2d');
+      if (!context) {
+        throw new Error('No pudimos preparar la imagen para guardarla.');
+      }
 
-        updateProfileAvatar(canvas.toDataURL('image/png'));
-        closeAvatarEditor();
-      };
-      image.onerror = () => {
-        setAvatarError('No pudimos guardar la imagen. Probá otra vez.');
-        setIsSavingAvatar(false);
-      };
-      image.src = pendingAvatar.src;
+      const sourceWidth = AVATAR_EDITOR_SIZE / avatarScale;
+      const sourceHeight = AVATAR_EDITOR_SIZE / avatarScale;
+      const sourceX = clamp(
+        (avatarDisplayWidth / 2 - AVATAR_EDITOR_SIZE / 2 - avatarOffsetX) / avatarScale,
+        0,
+        Math.max(0, pendingAvatar.width - sourceWidth)
+      );
+      const sourceY = clamp(
+        (avatarDisplayHeight / 2 - AVATAR_EDITOR_SIZE / 2 - avatarOffsetY) / avatarScale,
+        0,
+        Math.max(0, pendingAvatar.height - sourceHeight)
+      );
+
+      context.clearRect(0, 0, AVATAR_OUTPUT_SIZE, AVATAR_OUTPUT_SIZE);
+      context.drawImage(
+        image,
+        sourceX,
+        sourceY,
+        sourceWidth,
+        sourceHeight,
+        0,
+        0,
+        AVATAR_OUTPUT_SIZE,
+        AVATAR_OUTPUT_SIZE
+      );
+
+      const avatarBlob = await canvasToAvatarBlob(canvas);
+      await updateProfileAvatar(avatarBlob);
+      closeAvatarEditor();
     } catch {
       setAvatarError('No pudimos guardar la imagen. Probá otra vez.');
       setIsSavingAvatar(false);
