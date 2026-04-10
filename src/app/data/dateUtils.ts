@@ -172,8 +172,10 @@ export function buildWeekDayStatus(
 }
 
 export function buildHistoryCalendar(referenceIso: string): HistoryCalendarDay[] {
+  const mondayIso = startOfWeek(referenceIso);
+
   return Array.from({ length: 7 }, (_, index) => {
-    const isoDate = addDays(referenceIso, index - 6);
+    const isoDate = addDays(mondayIso, index);
     const date = parseIsoDate(isoDate);
     return {
       day: WEEKDAY_LABELS[date.getDay()],

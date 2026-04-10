@@ -338,12 +338,8 @@ export default function RoutineEditorPage() {
 
             <div className="flex flex-col gap-3">
               {days.map((day, dayIndex) => (
-                <div key={`${day.name}-${dayIndex}`} className="overflow-hidden rounded-2xl border border-[#203347] bg-[#13263A]">
-                  <button
-                    onClick={() => setExpandedDay(expandedDay === dayIndex ? -1 : dayIndex)}
-                    className="flex w-full items-center justify-between px-4 py-4"
-                    type="button"
-                  >
+                <div key={dayIndex} className="overflow-hidden rounded-2xl border border-[#203347] bg-[#13263A]">
+                  <div className="flex w-full items-center justify-between px-4 py-4">
                     <div className="min-w-0 flex-1 text-left">
                       <input
                         type="text"
@@ -375,17 +371,19 @@ export default function RoutineEditorPage() {
                             ? 'border-[#203347] text-[#4F6378] opacity-45'
                             : 'border-[rgba(255,125,125,0.18)] bg-[rgba(255,125,125,0.08)] text-[#FF8E8E] active:bg-[rgba(255,125,125,0.14)]'
                         }`}
-                      >
-                        <Trash2 size={14} />
+                        >
+                          <Trash2 size={14} />
                       </button>
-
-                      {expandedDay === dayIndex ? (
-                        <ChevronUp size={16} className="text-[#9BAEC1]" />
-                      ) : (
-                        <ChevronDown size={16} className="text-[#9BAEC1]" />
-                      )}
+                      <button
+                        onClick={() => setExpandedDay(expandedDay === dayIndex ? -1 : dayIndex)}
+                        className="flex h-9 w-9 items-center justify-center rounded-xl border border-[#203347] bg-[#1A2D42] text-[#9BAEC1] transition-colors active:bg-[#203347]"
+                        type="button"
+                        aria-label={expandedDay === dayIndex ? 'Contraer día' : 'Expandir día'}
+                      >
+                        {expandedDay === dayIndex ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                      </button>
                     </div>
-                  </button>
+                  </div>
 
                   {expandedDay === dayIndex ? (
                     <div className="border-t border-[#203347] px-4 pb-4">

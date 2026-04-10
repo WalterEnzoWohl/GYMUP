@@ -136,7 +136,7 @@ function WheelColumn({ active, value, options, onChange, align = 'center' }: Whe
                     illuminated
                       ? 'text-[2rem] font-black text-[#00C9A7]'
                       : selected
-                        ? 'text-[1.85rem] font-extrabold text-white'
+                        ? 'text-[1.2rem] font-semibold text-white opacity-95'
                         : 'text-[1.2rem] font-semibold opacity-70'
                   }`}
                 >
@@ -354,19 +354,21 @@ export function NumberWheelPicker({
   separator = '.',
 }: NumberWheelPickerProps) {
   const hasDecimal = Boolean(decimalOptions?.length);
+  const wholeColumnWidth = hasDecimal ? 'w-[112px] sm:w-[122px]' : 'w-[140px] sm:w-[152px]';
+  const decimalColumnWidth = 'w-[68px] sm:w-[74px]';
 
   return (
     <BaseWheelPicker open={open} title={title} subtitle={subtitle} onClose={onClose} onConfirm={onConfirm}>
-      <div
-        className={`items-center gap-3 ${hasDecimal ? 'grid grid-cols-[1fr_auto_0.72fr_auto]' : 'grid grid-cols-[1fr_auto]'}`}
-      >
-        <WheelColumn
-          active={open}
-          value={value.whole}
-          options={wholeOptions}
-          onChange={(whole) => onChange({ ...value, whole })}
-          align="right"
-        />
+      <div className="flex items-center justify-center gap-1.5 sm:gap-2">
+        <div className={wholeColumnWidth}>
+          <WheelColumn
+            active={open}
+            value={value.whole}
+            options={wholeOptions}
+            onChange={(whole) => onChange({ ...value, whole })}
+            align={hasDecimal ? 'right' : 'center'}
+          />
+        </div>
 
         {hasDecimal ? (
           <div className="flex h-full items-center justify-center pt-[2px] text-[2rem] font-semibold text-[#6E7890]">
@@ -375,17 +377,19 @@ export function NumberWheelPicker({
         ) : null}
 
         {hasDecimal && decimalOptions ? (
-          <WheelColumn
-            active={open}
-            value={value.decimal ?? decimalOptions[0]?.value ?? '0'}
-            options={decimalOptions}
-            onChange={(decimal) => onChange({ ...value, decimal })}
-            align="left"
-          />
+          <div className={decimalColumnWidth}>
+            <WheelColumn
+              active={open}
+              value={value.decimal ?? decimalOptions[0]?.value ?? '0'}
+              options={decimalOptions}
+              onChange={(decimal) => onChange({ ...value, decimal })}
+              align="left"
+            />
+          </div>
         ) : null}
 
         {unitLabel ? (
-          <div className="flex h-full items-center justify-center pt-[3px] text-xl font-bold uppercase tracking-[0.16em] text-[#00C9A7]">
+          <div className="flex h-full items-center justify-center pt-[3px] text-lg font-bold uppercase tracking-[0.12em] text-[#00C9A7]">
             {unitLabel}
           </div>
         ) : null}

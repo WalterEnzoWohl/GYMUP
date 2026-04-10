@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ChevronRight, Clock, Flame, Play, Settings, Target, TrendingUp } from 'lucide-react';
+import { ChevronRight, Clock, Dumbbell, Flame, Play, Settings, Target, TrendingUp } from 'lucide-react';
 import { useNavigate } from 'react-router';
 import { Header } from '../components/Header';
 import { normalizeGoal } from '../data/profileInsights';
@@ -215,23 +215,7 @@ export default function HomePage() {
                 </p>
               </div>
               <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-[rgba(0,201,167,0.2)] bg-[rgba(0,201,167,0.1)]">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                  <path
-                    d="M20.5 6.5a4.5 4.5 0 0 1-6.36 0L12 4.36l2.14 2.14A4.5 4.5 0 0 1 20.5 6.5zM3.5 6.5a4.5 4.5 0 0 0 6.36 0L12 4.36 9.86 6.5A4.5 4.5 0 0 0 3.5 6.5z"
-                    stroke="#00C9A7"
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                  <path
-                    d="M3.5 17.5a4.5 4.5 0 0 0 6.36 0L12 19.64l-2.14-2.14A4.5 4.5 0 0 0 3.5 17.5zM20.5 17.5a4.5 4.5 0 0 1-6.36 0L12 19.64l2.14-2.14A4.5 4.5 0 0 1 20.5 17.5z"
-                    stroke="#00C9A7"
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                  <line x1="12" y1="4.36" x2="12" y2="19.64" stroke="#00C9A7" strokeWidth="1.5" strokeLinecap="round" />
-                </svg>
+                <Dumbbell size={18} strokeWidth={1.9} className="text-[#00C9A7]" />
               </div>
             </div>
 

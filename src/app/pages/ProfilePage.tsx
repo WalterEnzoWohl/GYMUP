@@ -132,6 +132,23 @@ export default function ProfilePage() {
     avatarOffsetRef.current = { x: avatarOffsetX, y: avatarOffsetY };
   }, [avatarOffsetX, avatarOffsetY, avatarZoom]);
 
+  useEffect(() => {
+    if (historyDays.length === 0) {
+      return;
+    }
+
+    const weekContainsSelected = historyDays.some((day) => day.isoDate === selectedDate);
+    if (weekContainsSelected) {
+      return;
+    }
+
+    const latestSessionThisWeek = sessionHistory.find((session) =>
+      historyDays.some((day) => day.isoDate === session.isoDate)
+    );
+
+    setSelectedDate(latestSessionThisWeek?.isoDate ?? appContext.todayIso);
+  }, [appContext.todayIso, historyDays, selectedDate, sessionHistory]);
+
   const signOut = async () => {
     await getSupabaseClient().auth.signOut();
   };
@@ -644,7 +661,7 @@ export default function ProfilePage() {
             </button>
           </div>
 
-          <div className="flex items-center gap-2 overflow-x-auto pb-1">
+          <div className="grid grid-cols-7 gap-2">
             {historyDays.map(({ day, num, isoDate }) => {
               const hasSession = sessionHistory.some((session) => session.isoDate === isoDate);
               const isSelected = selectedDate === isoDate;
@@ -653,7 +670,7 @@ export default function ProfilePage() {
                 <button
                   key={isoDate}
                   onClick={() => setSelectedDate(isoDate)}
-                  className={`flex min-w-[3.5rem] flex-1 flex-col items-center gap-1 rounded-xl py-2 transition-all ${
+                  className={`flex min-w-0 flex-col items-center gap-1 rounded-xl py-2 transition-all ${
                     isSelected
                       ? 'bg-[#00C9A7]'
                       : hasSession
