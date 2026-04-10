@@ -60,7 +60,7 @@ export default function PostSessionPage() {
   const estimatedKcal = Math.max(380, Math.round(duration / 60 / 5 + setsCompleted * 18));
   const delta =
     previousVolume > 0 ? ((volume - previousVolume) / previousVolume) * 100 : null;
-  const deltaText = delta !== null ? `${delta > 0 ? '+' : ''}${delta.toFixed(1)}% vs anterior` : 'Sin comparaciÃ³n previa';
+  const deltaText = delta !== null ? `${delta > 0 ? '+' : ''}${delta.toFixed(1)}% vs anterior` : 'Sin comparación previa';
 
   useEffect(() => {
     const canvas = document.getElementById('confetti-canvas') as HTMLCanvasElement | null;
@@ -134,7 +134,7 @@ export default function PostSessionPage() {
           <div className="flex h-20 w-20 items-center justify-center rounded-full border-2 border-[#00C9A7] bg-[rgba(0,201,167,0.15)] shadow-[0_0_30px_rgba(0,201,167,0.3)]">
             <Check size={36} className="text-[#00C9A7]" strokeWidth={3} />
           </div>
-          <h1 className="text-3xl font-extrabold tracking-tight text-white">SesiÃ³n completada</h1>
+          <h1 className="text-3xl font-extrabold tracking-tight text-white">Sesión completada</h1>
           <p className="text-sm text-[#9BAEC1]" style={{ fontFamily: "'Inter', sans-serif" }}>
             {sessionName} - {sessionFocus}
           </p>
@@ -142,7 +142,7 @@ export default function PostSessionPage() {
 
         <div className="flex w-full items-center justify-between rounded-2xl border border-[#203347] bg-[#141720] p-5">
           <div>
-            <p className="mb-1 text-[10px] uppercase tracking-widest text-[#9BAEC1]">DuraciÃ³n total</p>
+            <p className="mb-1 text-[10px] uppercase tracking-widest text-[#9BAEC1]">Duración total</p>
             <span className="text-4xl font-bold tracking-tight text-white">{formatTime(duration)}</span>
           </div>
           <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-[rgba(0,201,167,0.2)] bg-[rgba(0,201,167,0.1)]">
@@ -215,7 +215,7 @@ export default function PostSessionPage() {
                       <span className="text-sm font-bold text-[#00C9A7]">
                         {maxKg > 0 ? formatWeightWithUnit(maxKg, appSettings.weightUnit) : 'Peso corporal'}
                       </span>
-                      <p className="text-xs text-[#9BAEC1]">mÃ¡x.</p>
+                      <p className="text-xs text-[#9BAEC1]">máx.</p>
                     </div>
                   </div>
                 );

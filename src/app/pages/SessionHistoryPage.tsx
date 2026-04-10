@@ -18,7 +18,7 @@ export default function SessionHistoryPage() {
     return (
       <div className="flex flex-col" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
         <Header showBack title="Sesion" />
-        <div className="px-5 py-5 text-sm text-[#9BAEC1]">No se encontrÃ³ la sesiÃ³n.</div>
+        <div className="px-5 py-5 text-sm text-[#9BAEC1]">No se encontró la sesión.</div>
       </div>
     );
   }
@@ -51,7 +51,7 @@ export default function SessionHistoryPage() {
             onClick={handleEditSession}
             className="flex h-10 w-10 items-center justify-center rounded-full border border-[rgba(127,152,255,0.2)] bg-[rgba(127,152,255,0.08)] text-[#D8E4FF]"
             type="button"
-            aria-label="Editar sesiÃ³n"
+            aria-label="Editar sesión"
           >
             <Pencil size={16} />
           </button>
@@ -124,7 +124,7 @@ export default function SessionHistoryPage() {
         </div>
 
         <div className="rounded-2xl border border-[#203347] bg-[#13263A] p-4">
-            <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-[#9BAEC1]">Vs. sesiÃ³n anterior</p>
+            <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-[#9BAEC1]">Vs. sesión anterior</p>
           <div className="flex items-center gap-3">
             <div className="flex-1">
               <div className="mb-1 h-2 overflow-hidden rounded-full bg-[#203347]">
@@ -211,7 +211,7 @@ export default function SessionHistoryPage() {
           </div>
         ) : (
           <div className="rounded-2xl border border-[#203347] bg-[#13263A] p-6 text-center">
-            <p className="text-sm text-[#9BAEC1]">No hay detalles de ejercicios para esta sesiÃ³n.</p>
+            <p className="text-sm text-[#9BAEC1]">No hay detalles de ejercicios para esta sesión.</p>
           </div>
         )}
       </div>
@@ -219,9 +219,9 @@ export default function SessionHistoryPage() {
       {showEditLockModal && activeWorkout && (
         <ActiveWorkoutEditLockModal
           activeWorkoutName={activeWorkout.sessionName}
-          eyebrow="EdiciÃ³n bloqueada"
-          title="No podÃ©s editar este entrenamiento ahora"
-          description="Ya tenÃ©s un entrenamiento en curso. Para evitar inconsistencias entre esa sesiÃ³n activa y tu historial, primero volvÃ© a entrenar o cerrÃ¡ esa sesiÃ³n."
+          eyebrow="Edición bloqueada"
+          title="No podés editar este entrenamiento ahora"
+          description="Ya tenés un entrenamiento en curso. Para evitar inconsistencias entre esa sesión activa y tu historial, primero volvé a entrenar o cerrá esa sesión."
           subjectLabel="Entrenamiento activo"
           onResume={() => navigate('/session')}
           onFinish={() => navigate('/session', { state: { action: 'finish' } })}

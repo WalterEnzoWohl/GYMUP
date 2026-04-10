@@ -42,6 +42,17 @@ type DbProfileRow = {
 };
 
 const PROFILE_AVATAR_BUCKET = 'profile-avatars';
+const SESSION_META_PREFIX = '__WOHL_SESSION_META__::';
+
+type SessionExerciseMeta = {
+  notes?: string;
+  setKinds?: Array<'normal' | 'warmup'>;
+};
+
+type DecodedSessionNotes = {
+  sessionNote?: string;
+  exerciseMeta: SessionExerciseMeta[];
+};
 
 type DbRoutineRow = {
   id: number;
@@ -73,7 +84,7 @@ type DbRoutineDayExerciseRow = {
   implement: string | null;
   secondary_muscles: string[] | null;
   notes: string | null;
-  sets_json: Array<{ kg: number; reps: number; rpe: number }> | null;
+  sets_json: Array<{ kg: number; reps: number; rpe: number; kind?: 'normal' | 'warmup' }> | null;
 };
 
 type DbSessionRow = {
@@ -110,6 +121,76 @@ type DbSessionSetRow = {
   reps: number;
   rpe: number | null;
 };
+
+function encodeMetadataPayload(payload: object) {
+  const raw = new TextEncoder().encode(JSON.stringify(payload));
+  let binary = '';
+
+  raw.forEach((byte) => {
+    binary += String.fromCharCode(byte);
+  });
+
+  return btoa(binary);
+}
+
+function decodeMetadataPayload(value: string) {
+  const binary = atob(value);
+  const bytes = Uint8Array.from(binary, (character) => character.charCodeAt(0));
+  return JSON.parse(new TextDecoder().decode(bytes)) as {
+    exerciseMeta?: SessionExerciseMeta[];
+  };
+}
+
+function decodeSessionNotes(rawNotes: string | null): DecodedSessionNotes {
+  if (!rawNotes) {
+    return { sessionNote: undefined, exerciseMeta: [] };
+  }
+
+  const metaIndex = rawNotes.indexOf(SESSION_META_PREFIX);
+  if (metaIndex === -1) {
+    return {
+      sessionNote: rawNotes.trim() || undefined,
+      exerciseMeta: [],
+    };
+  }
+
+  const visibleNotes = rawNotes.slice(0, metaIndex).trim() || undefined;
+  const encodedMeta = rawNotes.slice(metaIndex + SESSION_META_PREFIX.length).trim();
+
+  try {
+    const decoded = decodeMetadataPayload(encodedMeta);
+    return {
+      sessionNote: visibleNotes,
+      exerciseMeta: decoded.exerciseMeta ?? [],
+    };
+  } catch {
+    return {
+      sessionNote: rawNotes.trim() || undefined,
+      exerciseMeta: [],
+    };
+  }
+}
+
+function encodeSessionNotes(sessionNote: string | undefined, exercises: CompletedSessionInput['exercises']) {
+  const sanitizedSessionNote = sessionNote?.trim() ?? '';
+  const exerciseMeta = exercises.map((exercise) => ({
+    notes: exercise.notes?.trim() || undefined,
+    setKinds: exercise.sets.map((set) => set.kind ?? 'normal'),
+  }));
+
+  const hasMeta = exerciseMeta.some(
+    (exercise) =>
+      (exercise.notes && exercise.notes.length > 0) ||
+      exercise.setKinds?.some((kind) => kind === 'warmup')
+  );
+
+  if (!hasMeta) {
+    return sanitizedSessionNote || null;
+  }
+
+  const encodedMeta = encodeMetadataPayload({ exerciseMeta });
+  return `${sanitizedSessionNote}${sanitizedSessionNote ? '\n\n' : ''}${SESSION_META_PREFIX}${encodedMeta}`;
+}
 
 function resolveActivityLevel(label: string) {
   return (
@@ -210,6 +291,7 @@ function buildSetTemplate(sets: SetData[]) {
     kg: set.kg,
     reps: set.reps,
     rpe: set.rpe,
+    kind: set.kind ?? 'normal',
   }));
 }
 
@@ -247,6 +329,7 @@ function composeRoutine(days: DbRoutineDayRow[], exercises: DbRoutineDayExercise
               reps: set.reps,
               rpe: set.rpe,
               completed: false,
+              kind: set.kind ?? 'normal',
             })),
           })),
       })),
@@ -278,10 +361,12 @@ function composeSessions(
       return b.session_date.localeCompare(a.session_date);
     })
     .map((sessionRow) => {
+      const decodedNotes = decodeSessionNotes(sessionRow.notes);
       const exercises: SessionHistoryExercise[] = exerciseRows
         .filter((exercise) => exercise.workout_session_id === sessionRow.id)
         .sort((a, b) => a.position - b.position)
         .map((exercise) => {
+          const exerciseMeta = decodedNotes.exerciseMeta[exercise.position] ?? {};
           const sets: SessionHistoryExerciseSet[] = setRows
             .filter((set) => set.workout_session_exercise_id === exercise.id)
             .sort((a, b) => a.position - b.position)
@@ -289,6 +374,7 @@ function composeSessions(
               kg: set.kg,
               reps: set.reps,
               rpe: set.rpe ?? undefined,
+              kind: exerciseMeta.setKinds?.[set.position] ?? 'normal',
             }));
 
           return {
@@ -296,6 +382,7 @@ function composeSessions(
             muscle: exercise.muscle,
             implement: exercise.implement ?? undefined,
             secondaryMuscles: exercise.secondary_muscles ?? undefined,
+            notes: exerciseMeta.notes,
             sets,
             maxKg: exercise.max_kg,
           };
@@ -314,7 +401,7 @@ function composeSessions(
         volume: sessionRow.volume,
         avgRpe: sessionRow.avg_rpe,
         exercises,
-        notes: sessionRow.notes ?? undefined,
+        notes: decodedNotes.sessionNote,
         sessionFocus: sessionRow.session_focus ?? undefined,
       } satisfies SessionHistory;
     });
@@ -344,7 +431,7 @@ function buildSessionSummary(exercises: CompletedSessionInput['exercises']) {
   );
   const avgRpe =
     allSets.length > 0
-      ? Number((allSets.reduce((total, set) => total + set.rpe, 0) / allSets.length).toFixed(1))
+      ? Number((allSets.reduce((total, set) => total + (set.rpe ?? 0), 0) / allSets.length).toFixed(1))
       : 0;
   const kcal = Math.max(380, Math.round(allSets.length * 18 + (allSets.length > 0 ? 120 : 0)));
   const muscleSummary = Array.from(new Set(completedExercises.map((exercise) => exercise.muscle)))
@@ -691,7 +778,7 @@ export async function completeSession(userId: string, input: CompletedSessionInp
       kcal: Math.max(summary.kcal, Math.round(durationSeconds / 300)),
       volume: summary.volume,
       avg_rpe: summary.avgRpe,
-      notes: input.notes?.trim() ? input.notes.trim() : null,
+      notes: encodeSessionNotes(input.notes, input.exercises),
     })
     .select('*');
 
@@ -726,7 +813,7 @@ export async function completeSession(userId: string, input: CompletedSessionInp
         position: setIndex,
         kg: set.kg,
         reps: set.reps,
-        rpe: set.rpe,
+        rpe: set.rpe ?? null,
       }));
 
       const { error: setError } = await client.from('workout_session_sets').insert(setPayload);
@@ -756,7 +843,7 @@ export async function updateSession(userId: string, input: UpdateSessionInput) {
       kcal: Math.max(summary.kcal, Math.round(durationSeconds / 300)),
       volume: summary.volume,
       avg_rpe: summary.avgRpe,
-      notes: input.notes?.trim() ? input.notes.trim() : null,
+      notes: encodeSessionNotes(input.notes, input.exercises),
     })
     .eq('owner_id', userId)
     .eq('id', input.sessionId);
@@ -800,7 +887,7 @@ export async function updateSession(userId: string, input: UpdateSessionInput) {
         position: setIndex,
         kg: set.kg,
         reps: set.reps,
-        rpe: set.rpe,
+        rpe: set.rpe ?? null,
       }));
 
       const { error: setError } = await client.from('workout_session_sets').insert(setPayload);

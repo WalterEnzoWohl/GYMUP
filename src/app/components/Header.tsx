@@ -28,8 +28,8 @@ export function Header({ showBack, backLabel, title, rightContent, onBack }: Hea
 
   return (
     <div
-      className="shrink-0 h-16 flex items-center px-4 border-b border-[#203347] z-20"
-      style={{ background: '#0B1F33' }}
+      className="sticky top-0 shrink-0 z-30 flex h-14 items-center border-b border-[#203347] px-4 backdrop-blur-xl"
+      style={{ background: 'rgba(11, 31, 51, 0.94)' }}
     >
       <div className="flex flex-1 items-center">
         {showBack ? (
@@ -48,8 +48,8 @@ export function Header({ showBack, backLabel, title, rightContent, onBack }: Hea
             )}
           </button>
         ) : (
-          <div className="-ml-1 flex h-16 w-16 items-center justify-center overflow-visible">
-            <img src={brandLogo} alt="WOHL" className="theme-preserve h-20 w-20 object-contain" />
+          <div className="-ml-1 flex h-14 w-14 items-center justify-center overflow-visible">
+            <img src={brandLogo} alt="WOHL" className="theme-preserve h-[47px] w-[47px] object-contain" />
           </div>
         )}
       </div>
@@ -64,7 +64,7 @@ export function Header({ showBack, backLabel, title, rightContent, onBack }: Hea
           </span>
         ) : (
           <span
-            className="text-white font-black text-[1.9rem] uppercase tracking-[0.18em] leading-none"
+            className="text-white font-black text-[1.7rem] uppercase tracking-[0.16em] leading-none"
             style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
           >
             WOHL

@@ -60,7 +60,7 @@ const DEFAULT_APP_CONTEXT: AppContext = {
   activeRoutineId: DEFAULT_ROUTINES[0]?.id ?? null,
   currentDayName: DEFAULT_ROUTINES[0]?.days[0]?.name ?? '',
   nextDayName: DEFAULT_ROUTINES[0]?.days[1]?.name ?? '',
-  nextDayLabel: 'PrÃ³ximo',
+  nextDayLabel: 'Próximo',
   streakDays: 0,
 };
 

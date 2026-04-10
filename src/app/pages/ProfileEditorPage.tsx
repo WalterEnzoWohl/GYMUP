@@ -109,14 +109,14 @@ export default function ProfileEditorPage() {
         <div>
           <h1 className="text-3xl font-extrabold tracking-tight text-white">Datos personales</h1>
           <p className="mt-1 text-sm text-[#9BAEC1]" style={{ fontFamily: "'Inter', sans-serif" }}>
-            ActualizÃ¡ tu perfil para que WOHL use tus datos reales en cÃ¡lculos y progreso.
+            Actualizá tu perfil para que WOHL use tus datos reales en cálculos y progreso.
           </p>
         </div>
 
         <div className="grid grid-cols-2 gap-3">
           <Field label="Nombre" value={formData.firstName} onChange={(value) => setField('firstName', value)} />
           <Field label="Apellido" value={formData.lastName} onChange={(value) => setField('lastName', value)} />
-          <Field label="Edad" type="number" value={formData.age} onChange={(value) => setField('age', Number(value) || 0)} suffix="aÃ±os" />
+          <Field label="Edad" type="number" value={formData.age} onChange={(value) => setField('age', Number(value) || 0)} suffix="años" />
           <Field label="Miembro desde" value={formData.memberSince} onChange={(value) => setField('memberSince', value)} />
           <Field label="Altura" type="number" value={formData.heightCm} onChange={(value) => setField('heightCm', Number(value) || 0)} suffix="cm" />
           <Field label="Peso" type="number" value={formData.weightKg} onChange={(value) => setField('weightKg', Number(value) || 0)} suffix="kg" />

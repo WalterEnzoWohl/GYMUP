@@ -19,13 +19,13 @@ export function ActiveWorkoutEditLockModal({
   onResume,
   onFinish,
   onCancel,
-  eyebrow = 'EdiciÃ³n bloqueada',
-  title = 'No podÃ©s editar esta rutina ahora',
-  description = 'TenÃ©s un entrenamiento activo en curso. Para cuidar la coherencia de esa sesiÃ³n y del historial, primero necesitÃ¡s volver al entrenamiento o cerrarlo.',
+  eyebrow = 'Edición bloqueada',
+  title = 'No podés editar esta rutina ahora',
+  description = 'Tenés un entrenamiento activo en curso. Para cuidar la coherencia de esa sesión y del historial, primero necesitás volver al entrenamiento o cerrarlo.',
   subjectLabel = 'Entrenamiento activo',
   resumeLabel = 'Volver al entrenamiento activo',
   finishLabel = 'Finalizar entrenamiento',
-  cancelLabel = 'Cancelar acciÃ³n',
+  cancelLabel = 'Cancelar acción',
 }: ActiveWorkoutEditLockModalProps) {
   return (
     <div className="fixed inset-0 z-[70] flex items-center justify-center px-6">

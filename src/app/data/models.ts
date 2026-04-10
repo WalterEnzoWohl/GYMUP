@@ -4,6 +4,7 @@ export interface SetData {
   reps: number;
   rpe: number;
   completed: boolean;
+  kind?: 'normal' | 'warmup';
 }
 
 export interface ActiveWorkoutSet extends SetData {
@@ -27,6 +28,7 @@ export interface ActiveWorkoutExercise {
   name: string;
   muscle: string;
   implement?: string;
+  notes?: string;
   sets: ActiveWorkoutSet[];
 }
 
@@ -60,6 +62,7 @@ export interface SessionHistoryExerciseSet {
   kg: number;
   reps: number;
   rpe?: number;
+  kind?: 'normal' | 'warmup';
 }
 
 export interface SessionHistoryExercise {
@@ -67,6 +70,7 @@ export interface SessionHistoryExercise {
   muscle: string;
   implement?: string;
   secondaryMuscles?: string[];
+  notes?: string;
   sets: SessionHistoryExerciseSet[];
   maxKg: number;
 }

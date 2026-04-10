@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ChevronRight, Clock, Flame, Play, Target, TrendingUp } from 'lucide-react';
+import { ChevronRight, Clock, Flame, Play, Settings, Target, TrendingUp } from 'lucide-react';
 import { useNavigate } from 'react-router';
 import { Header } from '../components/Header';
 import { normalizeGoal } from '../data/profileInsights';
@@ -32,12 +32,22 @@ export default function HomePage() {
   const currentRoutine = routines.find((routine) => routine.id === appContext.activeRoutineId) ?? null;
   const weightUnitLabel = getWeightUnitLabel(appSettings.weightUnit);
   const greetingName = getUserFirstName(userProfile);
+  const headerSettingsAction = (
+    <button
+      onClick={() => navigate('/config')}
+      className="flex h-10 w-10 items-center justify-center rounded-full border border-[rgba(0,201,167,0.22)] bg-[rgba(0,201,167,0.08)] transition-colors hover:bg-[rgba(0,201,167,0.14)]"
+      type="button"
+      aria-label="Abrir configuración"
+    >
+      <Settings size={17} className="text-[#00C9A7]" />
+    </button>
+  );
 
   if (routines.length === 0) {
     return (
       <div className="flex flex-col" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-        <Header />
-        <div className="px-5 py-6 text-sm text-[#9BAEC1]">TodavÃ­a no hay rutinas cargadas.</div>
+        <Header rightContent={headerSettingsAction} />
+        <div className="px-5 py-6 text-sm text-[#9BAEC1]">Todavía no hay rutinas cargadas.</div>
       </div>
     );
   }
@@ -45,7 +55,7 @@ export default function HomePage() {
   if (!currentRoutine) {
     return (
       <div className="flex flex-col" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-        <Header />
+        <Header rightContent={headerSettingsAction} />
         <div className="flex flex-col gap-6 px-5 py-6">
           <div>
             <span className="text-[10px] font-bold uppercase tracking-[0.24em] text-[#00C9A7]">
@@ -53,7 +63,7 @@ export default function HomePage() {
             </span>
             <h1 className="mt-2 text-3xl font-extrabold tracking-tight text-white">Hola, {greetingName}</h1>
             <p className="mt-2 text-sm text-[#90A4B8]" style={{ fontFamily: "'Inter', sans-serif" }}>
-              NecesitÃ¡s elegir una rutina activa para ver tus entrenamientos, el resumen del dÃ­a y las opciones de inicio.
+              Necesitás elegir una rutina activa para ver tus entrenamientos, el resumen del día y las opciones de inicio.
             </p>
           </div>
 
@@ -66,9 +76,9 @@ export default function HomePage() {
                 <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#FF8A80]">
                   Sin rutina seleccionada
                 </p>
-                <h2 className="mt-2 text-xl font-bold tracking-tight text-white">ElegÃ­ una rutina para continuar</h2>
+                <h2 className="mt-2 text-xl font-bold tracking-tight text-white">Elegí una rutina para continuar</h2>
                 <p className="mt-2 text-sm text-[#D6B9B9]" style={{ fontFamily: "'Inter', sans-serif" }}>
-                  AndÃ¡ a la secciÃ³n Entrenamientos y marcÃ¡ cuÃ¡l querÃ©s usar como rutina actual.
+                  Andá a la sección Entrenamientos y marcá cuál querés usar como rutina actual.
                 </p>
               </div>
             </div>
@@ -87,7 +97,7 @@ export default function HomePage() {
             className="flex w-full items-center justify-center gap-2 rounded-2xl border border-[rgba(245,185,66,0.24)] bg-[rgba(245,185,66,0.08)] py-4 font-bold text-[#F5B942] transition-colors active:bg-[rgba(245,185,66,0.14)]"
             type="button"
           >
-            Empezar entrenamiento vacÃ­o
+            Empezar entrenamiento vacío
           </button>
         </div>
       </div>
@@ -109,14 +119,14 @@ export default function HomePage() {
     null;
   const featuredDay = todaySession ? nextDay : currentDay;
   const featuredDayPreview = buildFocusPreview(featuredDay);
-  const featuredDayLabel = todaySession ? 'PrÃ³ximo' : 'Hoy';
+  const featuredDayLabel = todaySession ? 'Próximo' : 'Hoy';
   const comparisonLabel =
     latestSession?.comparisonDelta !== undefined
       ? `${latestSession.comparisonDelta > 0 ? '+' : ''}${latestSession.comparisonDelta.toFixed(1)}%`
       : null;
   const statusMessage = todaySession
-    ? `Hoy realizaste ${todaySession.name}. VenÃ­s con ${appContext.streakDays} dÃ­as seguidos de entrenamiento.`
-    : `Hoy toca ${currentDay.name}. VenÃ­s con ${appContext.streakDays} dÃ­as seguidos de entrenamiento.`;
+    ? `Hoy realizaste ${todaySession.name}. Venís con ${appContext.streakDays} días seguidos de entrenamiento.`
+    : `Hoy toca ${currentDay.name}. Venís con ${appContext.streakDays} días seguidos de entrenamiento.`;
 
   const startWorkout = (dayName: string) => {
     setShowTrainingPicker(false);
@@ -127,7 +137,7 @@ export default function HomePage() {
 
   return (
     <div className="flex flex-col" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-      <Header />
+      <Header rightContent={headerSettingsAction} />
 
       <div className="flex flex-col gap-8 px-5 py-6 pb-4">
         <div className="flex flex-col gap-1">
@@ -173,12 +183,12 @@ export default function HomePage() {
           className="flex items-center justify-center gap-2 rounded-2xl border border-[rgba(245,185,66,0.24)] bg-[rgba(245,185,66,0.08)] py-4 font-bold text-[#F5B942] transition-colors active:bg-[rgba(245,185,66,0.14)]"
           type="button"
         >
-          Empezar entrenamiento vacÃ­o
+          Empezar entrenamiento vacío
         </button>
 
         <div className="flex flex-col gap-4">
           <div className="flex items-baseline justify-between">
-            <span className="text-xl font-bold tracking-tight text-white">PrÃ³ximo entrenamiento</span>
+            <span className="text-xl font-bold tracking-tight text-white">Próximo entrenamiento</span>
             <span className="text-xs font-semibold uppercase tracking-widest text-[#00C9A7]">
               {featuredDayLabel}
             </span>
@@ -304,14 +314,14 @@ export default function HomePage() {
           <div className="flex items-center gap-2 px-1">
             <Flame size={16} className="text-orange-400" />
             <span className="text-sm text-[#90A4B8]" style={{ fontFamily: "'Inter', sans-serif" }}>
-              <span className="font-semibold text-white">{appContext.streakDays} dÃ­as seguidos</span> - ritmo ideal para sostener tu objetivo de {activeGoal}.
+              <span className="font-semibold text-white">{appContext.streakDays} días seguidos</span> - ritmo ideal para sostener tu objetivo de {activeGoal}.
             </span>
           </div>
         </div>
 
         <div className="flex flex-col gap-4">
           <div className="flex items-baseline justify-between">
-            <span className="text-xl font-bold tracking-tight text-white">Ãšltima sesiÃ³n</span>
+            <span className="text-xl font-bold tracking-tight text-white">Última sesión</span>
             <span className="text-xs font-semibold uppercase tracking-widest text-[#90A4B8]">
               {latestSession?.dayLabel ?? 'Sin historial'}
             </span>
@@ -364,7 +374,7 @@ export default function HomePage() {
             </button>
           ) : (
             <div className="rounded-2xl border border-[#203347] bg-[#13263A] p-5 text-sm text-[#9BAEC1]">
-              Tu historial va a empezar a llenarse cuando completes tu primera sesiÃ³n real.
+              Tu historial va a empezar a llenarse cuando completes tu primera sesión real.
             </div>
           )}
         </div>
@@ -385,7 +395,7 @@ export default function HomePage() {
               </span>
               <h2 className="mt-2 text-2xl font-bold tracking-tight text-white">{currentRoutine.name}</h2>
               <p className="mt-2 text-sm text-[#90A4B8]" style={{ fontFamily: "'Inter', sans-serif" }}>
-                ElegÃ­ cualquiera de los entrenamientos disponibles dentro de tu rutina actual.
+                Elegí cualquiera de los entrenamientos disponibles dentro de tu rutina actual.
               </p>
             </div>
 
@@ -426,7 +436,7 @@ export default function HomePage() {
                           )}
                           {!isSuggested && isNext && (
                             <span className="rounded-full bg-[rgba(127,152,255,0.12)] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-widest text-[#7F98FF]">
-                              PrÃ³ximo
+                              Próximo
                             </span>
                           )}
                         </div>

@@ -201,3 +201,26 @@
 .wohl-shell.wohl-light-mode .theme-preserve {
   filter: invert(1) hue-rotate(180deg);
 }
+
+.wohl-auth-input {
+  appearance: none;
+  background: transparent !important;
+  color: #ffffff;
+  caret-color: #ffffff;
+  box-shadow: none;
+}
+
+.wohl-auth-input::placeholder {
+  color: #65758a;
+}
+
+.wohl-auth-input:-webkit-autofill,
+.wohl-auth-input:-webkit-autofill:hover,
+.wohl-auth-input:-webkit-autofill:focus,
+.wohl-auth-input:-webkit-autofill:active {
+  -webkit-text-fill-color: #ffffff !important;
+  caret-color: #ffffff;
+  -webkit-box-shadow: 0 0 0 1000px #10233a inset !important;
+  box-shadow: 0 0 0 1000px #10233a inset !important;
+  transition: background-color 9999s ease-out 0s;
+}

@@ -152,7 +152,7 @@ export default function HistoryPage() {
           <div className="mb-2 flex items-center gap-2">
             <Filter size={12} className="text-[#9BAEC1]" />
             <span className="text-xs font-semibold uppercase tracking-widest text-[#9BAEC1]">
-              Filtrar por mÃºsculo
+              Filtrar por músculo
             </span>
           </div>
           <div className="flex gap-2 overflow-x-auto pb-1">
@@ -228,9 +228,9 @@ export default function HistoryPage() {
       {blockedSessionId !== null && activeWorkout && (
         <ActiveWorkoutEditLockModal
           activeWorkoutName={activeWorkout.sessionName}
-          eyebrow="EdiciÃ³n bloqueada"
-          title="No podÃ©s editar este entrenamiento ahora"
-          description="Ya tenÃ©s un entrenamiento en curso. Para evitar inconsistencias entre esa sesiÃ³n activa y tu historial, primero volvÃ© a entrenar o cerrÃ¡ esa sesiÃ³n."
+          eyebrow="Edición bloqueada"
+          title="No podés editar este entrenamiento ahora"
+          description="Ya tenés un entrenamiento en curso. Para evitar inconsistencias entre esa sesión activa y tu historial, primero volvé a entrenar o cerrá esa sesión."
           subjectLabel="Entrenamiento activo"
           onResume={() => navigate('/session')}
           onFinish={() => navigate('/session', { state: { action: 'finish' } })}

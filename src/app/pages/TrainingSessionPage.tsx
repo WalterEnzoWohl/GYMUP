@@ -1,32 +1,31 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  BarChart2,
   BookOpen,
   Check,
-  ChevronRight,
   History,
   Menu,
-  MoreVertical,
-  Plus,
   RefreshCw,
   Search,
   Sparkles,
+  TimerReset,
   Trash2,
 } from 'lucide-react';
+import { DndProvider } from 'react-dnd';
+import { TouchBackend } from 'react-dnd-touch-backend';
 import { useLocation, useNavigate } from 'react-router';
 import { brandLogoWhite } from '@/assets';
 import { ActiveWorkoutEditLockModal } from '../components/ActiveWorkoutEditLockModal';
+import { TrainingExerciseCard } from '../components/session/TrainingExerciseCard';
 import { UserAvatar } from '../components/UserAvatar';
 import { useAppData } from '../data/AppDataContext';
-import type { ActiveWorkoutDraft, ExerciseData, SessionHistory } from '../data/models';
-import {
-  formatWeightInputValue,
-  formatWeightNumber,
-  formatWeightWithUnit,
-  getAutoWeightIncrementKg,
-  getWeightUnitLabel,
-  parseWeightInputValue,
-} from '../data/unitUtils';
+import type {
+  ActiveWorkoutDraft,
+  ActiveWorkoutExercise,
+  ActiveWorkoutSet,
+  ExerciseData,
+  SessionHistory,
+} from '../data/models';
+import { formatWeightNumber, getAutoWeightIncrementKg, getWeightUnitLabel, parseWeightInputValue } from '../data/unitUtils';
 
 type SessionLocationState = {
   routineId?: number;
@@ -36,24 +35,8 @@ type SessionLocationState = {
   sessionId?: number;
 };
 
-type SetState = {
-  id: number;
-  kg: number;
-  reps: number;
-  rpe: number;
-  completed: boolean;
-  prevKg: number;
-  prevReps: number;
-  kind: 'normal' | 'warmup';
-};
-
-type ExerciseState = {
-  id: number;
-  name: string;
-  muscle: string;
-  implement?: string;
-  sets: SetState[];
-};
+type SetState = ActiveWorkoutSet;
+type ExerciseState = ActiveWorkoutExercise;
 
 type ExerciseHistoryEntry = {
   sessionId: number;
@@ -61,11 +44,12 @@ type ExerciseHistoryEntry = {
   sessionDate: string;
   sets: SessionHistory['exercises'][number]['sets'];
   maxKg: number;
+  notes?: string;
 };
 
 const DEFAULT_REST = 90;
 const FREE_SESSION_NAME = 'Entrenamiento libre';
-const FREE_SESSION_FOCUS = 'SesiÃ³n vacÃ­a y personalizada';
+const FREE_SESSION_FOCUS = 'Sesión vacía y personalizada';
 
 function formatTime(seconds: number) {
   const minutes = Math.floor(seconds / 60)
@@ -90,6 +74,7 @@ function buildExerciseState(
       name: exercise.name,
       muscle: exercise.muscle,
       implement: exercise.implement,
+      notes: exercise.notes,
       sets: exercise.sets.map((set, index) => {
         const previousKg = previousExercise?.sets[index]?.kg ?? 0;
         const previousReps = previousExercise?.sets[index]?.reps ?? 0;
@@ -121,6 +106,7 @@ function buildExerciseStateFromHistorySession(
       name: exercise.name,
       muscle: exercise.muscle,
       implement: exercise.implement,
+      notes: exercise.notes,
       sets: exercise.sets.map((set, setIndex) => ({
         id: setIndex + 1,
         kg: set.kg,
@@ -129,7 +115,7 @@ function buildExerciseStateFromHistorySession(
         completed: true,
         prevKg: previousExercise?.sets[setIndex]?.kg ?? set.kg,
         prevReps: previousExercise?.sets[setIndex]?.reps ?? set.reps,
-        kind: 'normal',
+        kind: set.kind ?? 'normal',
       })),
     };
   });
@@ -149,6 +135,7 @@ function buildExerciseStateFromTemplate(
     name: exercise.name,
     muscle: exercise.muscle,
     implement: exercise.implement,
+    notes: exercise.notes,
     sets: exercise.sets.map((set, index) => {
       const previousKg = previousExercise?.sets[index]?.kg ?? 0;
       const previousReps = previousExercise?.sets[index]?.reps ?? 0;
@@ -181,6 +168,7 @@ function buildManualExerciseState(
     name,
     muscle,
     implement: implement || undefined,
+    notes: '',
     sets: [
       {
         id: 1,
@@ -201,11 +189,6 @@ function markExerciseSetsCompleted(exercise: ExerciseState) {
     ...exercise,
     sets: exercise.sets.map((set) => ({ ...set, completed: true })),
   };
-}
-
-function getActiveSetIndex(exercise: ExerciseState) {
-  const firstPendingSet = exercise.sets.findIndex((set) => !set.completed);
-  return firstPendingSet === -1 ? Math.max(0, exercise.sets.length - 1) : firstPendingSet;
 }
 
 function isBodyweightExercise(exercise: Pick<ExerciseState, 'implement'>) {
@@ -240,9 +223,9 @@ export default function TrainingSessionPage() {
       <div className="min-h-screen bg-[#102235]">
         <ActiveWorkoutEditLockModal
           activeWorkoutName={activeWorkout.sessionName}
-          eyebrow="EdiciÃ³n bloqueada"
-          title="No podÃ©s editar este entrenamiento ahora"
-          description="Ya tenÃ©s un entrenamiento en curso. Para evitar mezclar datos del historial con la sesiÃ³n activa, primero volvÃ© a ese entrenamiento o finalizalo."
+          eyebrow="Edición bloqueada"
+          title="No podés editar este entrenamiento ahora"
+          description="Ya tenés un entrenamiento en curso. Para evitar mezclar datos del historial con la sesión activa, primero volvé a ese entrenamiento o finalizalo."
           subjectLabel="Entrenamiento activo"
           onResume={() => navigate('/session')}
           onFinish={() => navigate('/session', { state: { action: 'finish' } })}
@@ -263,7 +246,7 @@ export default function TrainingSessionPage() {
             <Menu size={18} className="text-[#00C9A7]" />
           </button>
         </div>
-        <div className="px-5 py-6 text-sm text-[#9BAEC1]">No se encontrÃ³ la sesiÃ³n que querÃ­as editar.</div>
+        <div className="px-5 py-6 text-sm text-[#9BAEC1]">No se encontró la sesión que querías editar.</div>
       </div>
     );
   }
@@ -312,7 +295,7 @@ export default function TrainingSessionPage() {
   const sessionName =
     resumedWorkout?.sessionName ??
     historicalSession?.name ??
-    (isFreeSession ? FREE_SESSION_NAME : currentDay?.name ?? 'SesiÃ³n');
+    (isFreeSession ? FREE_SESSION_NAME : currentDay?.name ?? 'Sesión');
   const sessionFocus =
     resumedWorkout?.sessionFocus ??
     historicalSession?.sessionFocus ??
@@ -339,7 +322,6 @@ export default function TrainingSessionPage() {
         ? []
         : buildExerciseState(currentDay?.exercises ?? [], previousSession, appSettings.showPreviousWeight))
   );
-  const [activeSetIdx, setActiveSetIdx] = useState(0);
   const [elapsed, setElapsed] = useState(() =>
     isHistoryEditSession
       ? (historicalSession?.duration ?? 0) * 60
@@ -348,11 +330,8 @@ export default function TrainingSessionPage() {
   const [restActive, setRestActive] = useState(false);
   const [restTime, setRestTime] = useState(appSettings.restTimerSeconds || DEFAULT_REST);
   const [restConfig, setRestConfig] = useState(appSettings.restTimerSeconds || DEFAULT_REST);
-  const [showMenu, setShowMenu] = useState(false);
   const [notes, setNotes] = useState(resumedWorkout?.notes ?? historicalSession?.notes ?? '');
   const [showFinishModal, setShowFinishModal] = useState(false);
-  const [showRestConfig, setShowRestConfig] = useState(false);
-  const [selectedSetIdx, setSelectedSetIdx] = useState<number | null>(null);
   const [showExerciseHistory, setShowExerciseHistory] = useState(false);
   const [showReplaceExercise, setShowReplaceExercise] = useState(false);
   const [showAddExercise, setShowAddExercise] = useState(false);
@@ -363,6 +342,15 @@ export default function TrainingSessionPage() {
   const [newExerciseMuscle, setNewExerciseMuscle] = useState('');
   const [newExerciseImplement, setNewExerciseImplement] = useState('');
   const [showDeleteSessionModal, setShowDeleteSessionModal] = useState(false);
+  const [isSubmittingSession, setIsSubmittingSession] = useState(false);
+  const [inlineFeedback, setInlineFeedback] = useState<string | null>(null);
+  const [exerciseMenuAnchor, setExerciseMenuAnchor] = useState<{ exerciseIdx: number; rect: DOMRect } | null>(null);
+  const [setMenuAnchor, setSetMenuAnchor] = useState<{
+    exerciseIdx: number;
+    setIdx: number;
+    rect: DOMRect;
+  } | null>(null);
+  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (isHistoryEditSession) {
@@ -395,9 +383,8 @@ export default function TrainingSessionPage() {
   useEffect(() => {
     if (exerciseList.length === 0) {
       setCurrentExIdx(0);
-      setActiveSetIdx(0);
-      setSelectedSetIdx(null);
-      setShowMenu(false);
+      setExerciseMenuAnchor(null);
+      setSetMenuAnchor(null);
       setShowExerciseHistory(false);
       return;
     }
@@ -457,6 +444,26 @@ export default function TrainingSessionPage() {
     }
   }, [isHistoryEditSession, state?.action]);
 
+  useEffect(() => {
+    if (!inlineFeedback) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => setInlineFeedback(null), 2200);
+    return () => window.clearTimeout(timeoutId);
+  }, [inlineFeedback]);
+
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (!container) {
+      return;
+    }
+
+    const handleScroll = () => closeContextMenus();
+    container.addEventListener('scroll', handleScroll);
+    return () => container.removeEventListener('scroll', handleScroll);
+  }, []);
+
   const currentExercise = exerciseList[currentExIdx] ?? null;
   const hasExercises = exerciseList.length > 0;
   const totalSetsCompleted = exerciseList.reduce(
@@ -473,7 +480,11 @@ export default function TrainingSessionPage() {
     0
   );
   const weightUnitLabel = getWeightUnitLabel(appSettings.weightUnit);
-
+  const missingSets = exerciseList.flatMap((exercise, exerciseIdx) =>
+    exercise.sets
+      .map((set, setIdx) => ({ exercise, exerciseIdx, set, setIdx }))
+      .filter(({ set }) => !set.completed)
+  );
   const exerciseHistoryEntries: ExerciseHistoryEntry[] = currentExercise
     ? sessionHistory
         .flatMap((session) =>
@@ -487,6 +498,7 @@ export default function TrainingSessionPage() {
                   sessionDate: session.date,
                   sets: exercise.sets,
                   maxKg: exercise.maxKg,
+                  notes: exercise.notes,
                 }))
         )
         .slice(0, 6)
@@ -546,35 +558,37 @@ export default function TrainingSessionPage() {
     return haystack.includes(normalizedDatabaseQuery);
   });
 
-  const completeSet = (exerciseIdx: number, setIdx: number) => {
-    const targetExercise = exerciseList[exerciseIdx];
+  const closeContextMenus = () => {
+    setExerciseMenuAnchor(null);
+    setSetMenuAnchor(null);
+  };
 
-    if (!targetExercise) {
+  const updateInlineFeedback = (message: string | null) => {
+    setInlineFeedback(message);
+  };
+
+  const moveExercise = (fromIndex: number, toIndex: number) => {
+    if (fromIndex === toIndex) {
       return;
     }
 
-    const targetSet = targetExercise.sets[setIdx];
+    setExerciseList((previous) => {
+      const next = [...previous];
+      const [movedExercise] = next.splice(fromIndex, 1);
+      next.splice(toIndex, 0, movedExercise);
+      return next;
+    });
 
+    setCurrentExIdx(toIndex);
+  };
+
+  const updateExerciseNotes = (exerciseIdx: number, value: string) => {
+    setCurrentExIdx(exerciseIdx);
     setExerciseList((previous) =>
-      previous.map((exercise, candidateExerciseIdx) => {
-        if (candidateExerciseIdx !== exerciseIdx) {
-          return exercise;
-        }
-
-        return {
-          ...exercise,
-          sets: exercise.sets.map((set, index) =>
-            index === setIdx ? { ...set, completed: !set.completed } : set
-          ),
-        };
-      })
+      previous.map((exercise, candidateExerciseIdx) =>
+        candidateExerciseIdx === exerciseIdx ? { ...exercise, notes: value } : exercise
+      )
     );
-
-    if (!targetSet.completed && !isHistoryEditSession) {
-      setCurrentExIdx(exerciseIdx);
-      setRestTime(restConfig);
-      setRestActive(true);
-    }
   };
 
   const updateSetValue = (
@@ -583,9 +597,13 @@ export default function TrainingSessionPage() {
     field: 'kg' | 'reps',
     value: string
   ) => {
-    if (!exerciseList[exerciseIdx]) {
+    const targetExercise = exerciseList[exerciseIdx];
+    if (!targetExercise) {
       return;
     }
+
+    setCurrentExIdx(exerciseIdx);
+    updateInlineFeedback(null);
 
     const numericValue =
       field === 'kg' ? parseWeightInputValue(value, appSettings.weightUnit) : Number.parseFloat(value) || 0;
@@ -596,48 +614,71 @@ export default function TrainingSessionPage() {
           return exercise;
         }
 
+        const previousValue = exercise.sets[setIdx]?.[field] ?? 0;
+        const nextSets = exercise.sets.map((set, index) => {
+          if (index === setIdx) {
+            return { ...set, [field]: numericValue };
+          }
+
+          if (index <= setIdx) {
+            return set;
+          }
+
+          const shouldPropagate =
+            !set.completed && (set[field] === 0 || set[field] === previousValue);
+
+          return shouldPropagate ? { ...set, [field]: numericValue } : set;
+        });
+
         return {
           ...exercise,
-          sets: exercise.sets.map((set, index) =>
-            index === setIdx ? { ...set, [field]: numericValue } : set
-          ),
+          sets: nextSets,
         };
       })
     );
   };
 
-  const addSet = (exerciseIdx: number) => {
-    const targetExercise = exerciseList[exerciseIdx];
+  const buildNewSet = (targetExercise: ExerciseState, kind: SetState['kind'] = 'normal'): SetState => {
+    const lastSet = targetExercise.sets[targetExercise.sets.length - 1];
+    const referenceKg = lastSet?.kg ?? 0;
+    const referenceReps = lastSet?.reps ?? 0;
 
+    return {
+      id: targetExercise.sets.length + 1,
+      kg:
+        kind === 'warmup'
+          ? referenceKg
+          : appSettings.autoWeightIncrement && referenceKg > 0
+          ? Number((referenceKg + getAutoWeightIncrementKg(appSettings.weightUnit)).toFixed(2))
+          : referenceKg,
+      reps: referenceReps,
+      rpe: 0,
+      completed: isHistoryEditSession,
+      prevKg: lastSet?.prevKg ?? referenceKg,
+      prevReps: lastSet?.prevReps ?? referenceReps,
+      kind,
+    };
+  };
+
+  const addSetOfKind = (exerciseIdx: number, kind: SetState['kind']) => {
+    const targetExercise = exerciseList[exerciseIdx];
     if (!targetExercise) {
       return;
     }
 
-    const lastSet = targetExercise.sets[targetExercise.sets.length - 1];
-    const newSet: SetState = {
-      id: targetExercise.sets.length + 1,
-      kg:
-        appSettings.autoWeightIncrement && (lastSet?.kg ?? 0) > 0
-          ? Number(((lastSet?.kg ?? 0) + getAutoWeightIncrementKg(appSettings.weightUnit)).toFixed(2))
-          : (lastSet?.kg ?? 0),
-      reps: lastSet?.reps ?? 0,
-      rpe: lastSet?.rpe ?? 8,
-      completed: isHistoryEditSession,
-      prevKg: lastSet?.prevKg ?? lastSet?.kg ?? 0,
-      prevReps: lastSet?.prevReps ?? lastSet?.reps ?? 0,
-      kind: 'normal',
-    };
-
+    setCurrentExIdx(exerciseIdx);
     setExerciseList((previous) =>
       previous.map((exercise, candidateExerciseIdx) => {
         if (candidateExerciseIdx !== exerciseIdx) {
           return exercise;
         }
 
-        return { ...exercise, sets: [...exercise.sets, newSet] };
+        return { ...exercise, sets: [...exercise.sets, buildNewSet(exercise, kind)] };
       })
     );
   };
+
+  const addSet = (exerciseIdx: number) => addSetOfKind(exerciseIdx, 'normal');
 
   const updateSetKind = (exerciseIdx: number, setIdx: number, kind: SetState['kind']) => {
     if (!exerciseList[exerciseIdx]) {
@@ -657,7 +698,7 @@ export default function TrainingSessionPage() {
       })
     );
 
-    setSelectedSetIdx(null);
+    setSetMenuAnchor(null);
   };
 
   const removeSet = (exerciseIdx: number, setIdx: number) => {
@@ -682,7 +723,62 @@ export default function TrainingSessionPage() {
       })
     );
 
-    setSelectedSetIdx(null);
+    setSetMenuAnchor(null);
+  };
+
+  const isSetReadyToComplete = (exercise: ExerciseState, set: SetState) => {
+    if (isBodyweightExercise(exercise)) {
+      return set.reps > 0;
+    }
+
+    return set.kg > 0 && set.reps > 0;
+  };
+
+  const completeSet = (exerciseIdx: number, setIdx: number) => {
+    const targetExercise = exerciseList[exerciseIdx];
+
+    if (!targetExercise) {
+      return;
+    }
+
+    const targetSet = targetExercise.sets[setIdx];
+    if (!targetSet) {
+      return;
+    }
+
+    setCurrentExIdx(exerciseIdx);
+
+    if (!targetSet.completed && !isSetReadyToComplete(targetExercise, targetSet)) {
+      updateInlineFeedback(
+        isBodyweightExercise(targetExercise)
+          ? 'Completá al menos las repeticiones antes de marcar la serie.'
+          : 'Cargá peso y repeticiones antes de marcar la serie.'
+      );
+      return;
+    }
+
+    updateInlineFeedback(null);
+    const nextCompleted = !targetSet.completed;
+
+    setExerciseList((previous) =>
+      previous.map((exercise, candidateExerciseIdx) => {
+        if (candidateExerciseIdx !== exerciseIdx) {
+          return exercise;
+        }
+
+        return {
+          ...exercise,
+          sets: exercise.sets.map((set, index) =>
+            index === setIdx ? { ...set, completed: nextCompleted } : set
+          ),
+        };
+      })
+    );
+
+    if (nextCompleted && !isHistoryEditSession) {
+      setRestTime(restConfig);
+      setRestActive(true);
+    }
   };
 
   const addManualExercise = () => {
@@ -706,7 +802,6 @@ export default function TrainingSessionPage() {
 
     setExerciseList((previous) => [...previous, normalizedManualExercise]);
     setCurrentExIdx(exerciseList.length);
-    setActiveSetIdx(0);
     setShowAddExercise(false);
     setNewExerciseName('');
     setNewExerciseMuscle('');
@@ -719,19 +814,54 @@ export default function TrainingSessionPage() {
 
     setExerciseList((previous) => [...previous, normalizedExercise]);
     setCurrentExIdx(exerciseList.length);
-    setActiveSetIdx(0);
-    setSelectedSetIdx(null);
     setRestActive(false);
     setDatabaseQuery('');
     setShowDatabaseExercisePicker(false);
   };
 
-  const nextExercise = () => {};
+  const scrollToExercise = (exerciseIdx: number) => {
+    setCurrentExIdx(exerciseIdx);
+    const container = scrollContainerRef.current;
+    const target = document.getElementById(`session-exercise-${exerciseIdx}`);
+
+    if (container && target) {
+      const containerRect = container.getBoundingClientRect();
+      const targetRect = target.getBoundingClientRect();
+      const nextTop = container.scrollTop + (targetRect.top - containerRect.top) - 24;
+      container.scrollTo({ top: Math.max(0, nextTop), behavior: 'smooth' });
+    }
+  };
+
+  const jumpToMissingSet = (exerciseIdx: number) => {
+    setShowFinishModal(false);
+    scrollToExercise(exerciseIdx);
+  };
 
   const finishSession = async () => {
-    if (isHistoryEditSession && historicalSession) {
-      await updateSessionRecord({
-        sessionId: historicalSession.id,
+    if (isSubmittingSession) {
+      return;
+    }
+
+    setIsSubmittingSession(true);
+
+    try {
+      if (isHistoryEditSession && historicalSession) {
+        await updateSessionRecord({
+          sessionId: historicalSession.id,
+          routineId,
+          routineName: routine?.name,
+          dayName: sessionName,
+          sessionFocus,
+          durationSeconds: elapsed,
+          notes,
+          exercises: exerciseList,
+        });
+
+        navigate(`/session-history/${historicalSession.id}`);
+        return;
+      }
+
+      await completeSessionRecord({
         routineId,
         routineName: routine?.name,
         dayName: sessionName,
@@ -741,34 +871,23 @@ export default function TrainingSessionPage() {
         exercises: exerciseList,
       });
 
-      navigate(`/session-history/${historicalSession.id}`);
-      return;
+      clearActiveWorkout();
+      navigate('/post-session', {
+        state: {
+          duration: elapsed,
+          volume: totalVolume,
+          setsCompleted: totalSetsCompleted,
+          totalSets,
+          exercises: exerciseList,
+          notes,
+          sessionName,
+          sessionFocus,
+          previousVolume: previousSession?.volume ?? 0,
+        },
+      });
+    } finally {
+      setIsSubmittingSession(false);
     }
-
-    await completeSessionRecord({
-      routineId,
-      routineName: routine?.name,
-      dayName: sessionName,
-      sessionFocus,
-      durationSeconds: elapsed,
-      notes,
-      exercises: exerciseList,
-    });
-
-    clearActiveWorkout();
-    navigate('/post-session', {
-      state: {
-        duration: elapsed,
-        volume: totalVolume,
-        setsCompleted: totalSetsCompleted,
-        totalSets,
-        exercises: exerciseList,
-        notes,
-        sessionName,
-        sessionFocus,
-        previousVolume: previousSession?.volume ?? 0,
-      },
-    });
   };
 
   const discardSession = () => {
@@ -795,23 +914,24 @@ export default function TrainingSessionPage() {
   };
 
   const deleteCurrentExercise = () => {
-    if (!currentExercise) {
-      setShowMenu(false);
+    const targetIndex = exerciseMenuAnchor?.exerciseIdx ?? currentExIdx;
+    const targetExercise = exerciseList[targetIndex];
+
+    if (!targetExercise) {
+      closeContextMenus();
       return;
     }
 
     if (exerciseList.length <= 1) {
       setExerciseList([]);
       setCurrentExIdx(0);
-      setActiveSetIdx(0);
-      setShowMenu(false);
+      closeContextMenus();
       return;
     }
 
-    setExerciseList((previous) => previous.filter((_, index) => index !== currentExIdx));
+    setExerciseList((previous) => previous.filter((_, index) => index !== targetIndex));
     setCurrentExIdx((current) => Math.max(0, Math.min(current, exerciseList.length - 2)));
-    setActiveSetIdx(0);
-    setShowMenu(false);
+    closeContextMenus();
   };
 
   const replaceCurrentExercise = (exercise: ExerciseData) => {
@@ -825,11 +945,17 @@ export default function TrainingSessionPage() {
     setExerciseList((previous) =>
       previous.map((item, index) => (index === currentExIdx ? normalizedReplacement : item))
     );
-    setActiveSetIdx(0);
-    setSelectedSetIdx(null);
     setReplaceQuery('');
     setShowReplaceExercise(false);
-    setShowMenu(false);
+    closeContextMenus();
+  };
+
+  const adjustRestBy = (seconds: number) => {
+    setRestConfig((value) => Math.max(15, Math.min(600, value + seconds)));
+    setRestTime((value) => {
+      const targetValue = restActive ? value + seconds : restConfig + seconds;
+      return Math.max(0, Math.min(600, targetValue));
+    });
   };
 
   const closeAddExercise = () => {
@@ -849,7 +975,7 @@ export default function TrainingSessionPage() {
       label: 'Ver historial de este ejercicio',
       icon: History,
       onClick: () => {
-        setShowMenu(false);
+        setExerciseMenuAnchor(null);
         setShowExerciseHistory(true);
       },
     },
@@ -857,7 +983,7 @@ export default function TrainingSessionPage() {
       label: 'Reemplazar ejercicio',
       icon: RefreshCw,
       onClick: () => {
-        setShowMenu(false);
+        setExerciseMenuAnchor(null);
         setShowReplaceExercise(true);
       },
     },
@@ -876,10 +1002,10 @@ export default function TrainingSessionPage() {
   ];
 
   const sessionHeaderLabel = isHistoryEditSession
-    ? 'EdiciÃ³n del historial'
+    ? 'Edición del historial'
     : isFreeSession
-    ? 'SesiÃ³n libre'
-    : 'SesiÃ³n activa';
+    ? 'Sesión libre'
+    : 'Sesión activa';
   const sessionDateLabel =
     isHistoryEditSession && historicalSession
       ? `${historicalSession.dayLabel} - ${historicalSession.date}`
@@ -921,8 +1047,8 @@ export default function TrainingSessionPage() {
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto">
-        <div className="flex flex-col gap-5 px-4 py-5">
+      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto">
+        <div className="flex flex-col gap-5 px-4 py-5 pb-52">
           <div className="flex items-end justify-between">
             <div>
               <p
@@ -985,23 +1111,56 @@ export default function TrainingSessionPage() {
             </div>
           </div>
 
+          <div className="flex flex-col gap-3">
+            <button
+              onClick={() => setShowFinishModal(true)}
+              disabled={isSubmittingSession}
+              className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#00C9A7] py-4 transition-colors active:bg-[#00b092] disabled:opacity-45"
+              type="button"
+            >
+              <div className="flex h-4 w-4 items-center justify-center rounded-full border-2 border-[#003830]/50">
+                <div className="h-1.5 w-1.5 rounded-full bg-[#003830]/50" />
+              </div>
+              <span className="text-sm font-bold uppercase tracking-widest text-[#05231f]">
+                {isHistoryEditSession ? 'Guardar cambios' : 'Finalizar entrenamiento'}
+              </span>
+            </button>
+
+            {isHistoryEditSession && (
+              <button
+                onClick={() => setShowDeleteSessionModal(true)}
+                className="flex w-full items-center justify-center gap-2 rounded-2xl border border-[rgba(229,57,53,0.22)] bg-[rgba(229,57,53,0.08)] py-4 text-[#FF7D7D] transition-colors active:bg-[rgba(229,57,53,0.14)]"
+                type="button"
+              >
+                <Trash2 size={18} />
+                <span className="text-sm font-bold uppercase tracking-widest">Eliminar entrenamiento</span>
+              </button>
+            )}
+          </div>
+
           <div className="rounded-2xl border border-[#203347] bg-[#13263A] p-4">
             <label
               htmlFor="session-notes"
               className="mb-2 block text-[10px] font-semibold uppercase tracking-widest text-[#00C9A7]"
               style={{ fontFamily: "'Inter', sans-serif" }}
             >
-              Notas de la sesiÃ³n
+              Notas de la sesión
             </label>
             <textarea
               id="session-notes"
               value={notes}
               onChange={(event) => setNotes(event.target.value)}
-              placeholder="AÃ±adÃ­ notas sobre tu sesiÃ³n, sensaciones o ajustes para la prÃ³xima..."
+              placeholder="Añadí notas sobre tu sesión, sensaciones o ajustes para la próxima..."
               className="h-24 w-full resize-none rounded-xl border border-[rgba(0,201,167,0.15)] bg-[#1A2D42] p-4 text-sm text-white outline-none transition-colors focus:border-[rgba(0,201,167,0.45)]"
               style={{ fontFamily: "'Inter', sans-serif" }}
             />
           </div>
+
+          {inlineFeedback && (
+            <div className="rounded-2xl border border-[rgba(245,185,66,0.22)] bg-[rgba(245,185,66,0.08)] px-4 py-3 text-sm text-[#F5D38A]">
+              {inlineFeedback}
+            </div>
+          )}
 
           {(isFreeSession || isHistoryEditSession) && (
             <div className="grid grid-cols-2 gap-3">
@@ -1025,235 +1184,42 @@ export default function TrainingSessionPage() {
           )}
 
           {hasExercises ? (
-            <div className="flex flex-col gap-4">
-              {exerciseList.map((exercise, exerciseIdx) => {
-                const activeSetIdxForExercise = getActiveSetIndex(exercise);
-                const bodyweightExercise = isBodyweightExercise(exercise);
-
-                return (
-                  <div
+            <DndProvider backend={TouchBackend} options={{ enableMouseEvents: true, delayTouchStart: 140 }}>
+              <div className="flex flex-col gap-4">
+                {exerciseList.map((exercise, exerciseIdx) => (
+                  <TrainingExerciseCard
                     key={`${exercise.id}-${exerciseIdx}`}
-                    className="overflow-hidden rounded-2xl border border-[#203347] bg-[#141720]"
-                  >
-                    <div className="flex items-center justify-between px-4 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[rgba(0,81,71,0.2)]">
-                          <svg width="20" height="20" viewBox="0 0 20 20" fill="#00C9A7">
-                            <path d="M7 4.5a2.5 2.5 0 0 1 5 0v1h1.5A1.5 1.5 0 0 1 15 7v1.5a1.5 1.5 0 0 1-1.5 1.5H6.5A1.5 1.5 0 0 1 5 8.5V7a1.5 1.5 0 0 1 1.5-1.5H8v-1zM9 4.5a1 1 0 0 0-2 0v1h2v-1zM11 5.5V4.5a1 1 0 0 1 2 0v1h-2zM5 12a1 1 0 0 0 0 2h10a1 1 0 0 0 0-2H5zM4 15a1 1 0 0 1 1-1h10a1 1 0 0 1 0 2H5a1 1 0 0 1-1-1z" />
-                          </svg>
-                        </div>
-                        <div>
-                          <h2 className="text-xl font-bold italic uppercase leading-tight tracking-tight text-white">
-                            {exercise.name}
-                          </h2>
-                          <p className="mt-0.5 text-xs text-[#9BAEC1]" style={{ fontFamily: "'Inter', sans-serif" }}>
-                            Ejercicio {exerciseIdx + 1} de {exerciseList.length} - {exercise.muscle}
-                            {exercise.implement ? ` - ${exercise.implement}` : ''}
-                          </p>
-                        </div>
-                      </div>
-                      <button
-                        onClick={() => {
-                          setCurrentExIdx(exerciseIdx);
-                          setShowMenu(true);
-                        }}
-                        className="rounded-lg bg-[#203347] p-2"
-                        type="button"
-                      >
-                        <MoreVertical size={16} className="text-white" />
-                      </button>
-                    </div>
-
-                    <div className="border-b border-[rgba(73,72,71,0.1)] bg-[rgba(32,31,31,0.5)] px-4 py-3">
-                      <div className="grid grid-cols-5 gap-2 text-center">
-                        {['SET', weightUnitLabel.toUpperCase(), 'REPS', 'RPE', ''].map((column) => (
-                          <span
-                            key={`${exercise.id}-${column}`}
-                            className={`text-[10px] font-semibold tracking-widest ${
-                              column === weightUnitLabel.toUpperCase() || column === 'REPS'
-                                ? 'text-[#00C9A7]'
-                                : 'text-[#9BAEC1]'
-                            }`}
-                            style={{ fontFamily: "'Inter', sans-serif" }}
-                          >
-                            {column}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div>
-                      {exercise.sets.map((set, setIdx) => {
-                        const isCompleted = set.completed;
-                        const isActive = setIdx === activeSetIdxForExercise && !isCompleted;
-                        const isPending = !isCompleted && !isActive;
-
-                        return (
-                          <div
-                            key={set.id}
-                            className={`border-b border-[rgba(73,72,71,0.1)] px-4 py-4 last:border-b-0 ${
-                              isActive ? 'border-l-4 border-l-[rgba(0,201,167,0.3)] bg-[rgba(0,201,167,0.05)]' : ''
-                            }`}
-                          >
-                            <div className="grid grid-cols-5 items-center gap-2">
-                              <div className="text-center">
-                                <button
-                                  onClick={() => {
-                                    setCurrentExIdx(exerciseIdx);
-                                    setSelectedSetIdx(setIdx);
-                                  }}
-                                  className={`flex w-full flex-col items-center rounded-lg px-1 py-1 transition-colors ${
-                                    currentExIdx === exerciseIdx && selectedSetIdx === setIdx
-                                      ? 'bg-[rgba(0,201,167,0.08)]'
-                                      : 'hover:bg-white/5'
-                                  }`}
-                                  type="button"
-                                >
-                                  <span
-                                    className={`font-bold italic ${
-                                      isActive
-                                        ? 'text-xl text-[#00C9A7]'
-                                        : set.kind === 'warmup'
-                                        ? 'text-base text-[#F5B942]'
-                                        : 'text-base text-[#9BAEC1]'
-                                    }`}
-                                  >
-                                    {setIdx === 0 && set.kind === 'warmup' ? 'W' : setIdx + 1}
-                                  </span>
-                                  <span
-                                    className={`text-[9px] font-semibold uppercase tracking-widest ${
-                                      set.kind === 'warmup' ? 'text-[#F5B942]' : 'text-[#5D6474]'
-                                    }`}
-                                    style={{ fontFamily: "'Inter', sans-serif" }}
-                                  >
-                                    {set.kind === 'warmup' ? 'Warm' : 'Set'}
-                                  </span>
-                                </button>
-                              </div>
-
-                              <div>
-                                {bodyweightExercise ? (
-                                  <div className="rounded-lg bg-[rgba(245,185,66,0.12)] px-1 py-2 text-center">
-                                    <span
-                                      className={`block font-semibold uppercase tracking-widest ${
-                                        isActive ? 'text-sm text-[#F5B942]' : isCompleted ? 'text-sm text-[#F5B942]' : 'text-xs text-[#C6A866]'
-                                      }`}
-                                      style={{ fontFamily: "'Inter', sans-serif" }}
-                                    >
-                                      PC
-                                    </span>
-                                  </div>
-                                ) : isActive ? (
-                                  <div className="rounded-lg border border-[rgba(0,201,167,0.3)] bg-[#203347] px-1 py-2 shadow-[0_0_10px_rgba(0,201,167,0.1)]">
-                                    <input
-                                      type="number"
-                                      step={appSettings.weightUnit === 'kg' ? '0.5' : '0.1'}
-                                      value={formatWeightInputValue(set.kg, appSettings.weightUnit)}
-                                      onChange={(event) =>
-                                        updateSetValue(exerciseIdx, setIdx, 'kg', event.target.value)
-                                      }
-                                      className={`w-full bg-transparent text-center font-normal text-[#00C9A7] outline-none ${
-                                        appSettings.weightUnit === 'lb' ? 'text-sm' : 'text-base'
-                                      }`}
-                                      style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
-                                    />
-                                  </div>
-                                ) : (
-                                  <div className="rounded-lg bg-[rgba(38,38,38,0.5)] px-1 py-2 text-center">
-                                    <span
-                                      className={`block font-normal ${isCompleted ? 'text-base text-white' : 'text-sm text-white/40'}`}
-                                    >
-                                      {bodyweightExercise
-                                        ? 'PC'
-                                        : set.kg > 0
-                                        ? formatWeightNumber(set.kg, appSettings.weightUnit)
-                                        : '-'}
-                                    </span>
-                                  </div>
-                                )}
-                              </div>
-
-                              <div>
-                                {isActive ? (
-                                  <div className="rounded-lg border border-[rgba(0,201,167,0.3)] bg-[#203347] py-2 shadow-[0_0_10px_rgba(0,201,167,0.1)]">
-                                    <input
-                                      type="number"
-                                      value={set.reps || ''}
-                                      onChange={(event) =>
-                                        updateSetValue(exerciseIdx, setIdx, 'reps', event.target.value)
-                                      }
-                                      className="w-full bg-transparent text-center text-base font-normal text-[#00C9A7] outline-none"
-                                      style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
-                                    />
-                                  </div>
-                                ) : (
-                                  <div className="rounded-lg bg-[rgba(38,38,38,0.5)] py-2 text-center">
-                                    <span className={`block text-lg font-normal ${isCompleted ? 'text-white' : 'text-white/40'}`}>
-                                      {set.reps || '-'}
-                                    </span>
-                                  </div>
-                                )}
-                              </div>
-
-                              <div className="text-center">
-                                <div className="rounded-lg bg-[#203347] py-1 text-center">
-                                  <span className="text-xs text-[#9BAEC1]" style={{ fontFamily: "'Inter', sans-serif" }}>
-                                    {set.rpe || '-'}
-                                  </span>
-                                </div>
-                              </div>
-
-                              <div className="flex justify-center">
-                                <button
-                                  onClick={() => completeSet(exerciseIdx, setIdx)}
-                                  disabled={isPending}
-                                  className={`flex h-9 w-9 items-center justify-center rounded-xl transition-all ${
-                                    isCompleted
-                                      ? 'bg-[#00C9A7]'
-                                      : isActive
-                                      ? 'border border-[rgba(0,201,167,0.4)] bg-[rgba(0,201,167,0.2)]'
-                                      : 'bg-[#203347] opacity-40'
-                                  }`}
-                                  type="button"
-                                >
-                                  <Check
-                                    size={14}
-                                    className={isCompleted ? 'text-[#003830]' : 'text-[#00C9A7]'}
-                                    strokeWidth={3}
-                                  />
-                                </button>
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-3 border-t border-[rgba(73,72,71,0.1)] px-4 py-4">
-                      <button
-                        onClick={() => addSet(exerciseIdx)}
-                        className="flex items-center justify-center gap-2 rounded-2xl border border-[#203347] bg-[#1A2D42] py-3 transition-colors active:bg-[#203347]"
-                        type="button"
-                      >
-                        <div className="flex h-6 w-6 items-center justify-center rounded-full border-2 border-[#00C9A7]">
-                          <Plus size={12} className="text-[#00C9A7]" />
-                        </div>
-                        <span className="text-sm font-semibold text-white">AÃ±adir serie</span>
-                      </button>
-                      <button
-                        onClick={() => removeSet(exerciseIdx, exercise.sets.length - 1)}
-                        disabled={exercise.sets.length <= 1}
-                        className="flex items-center justify-center gap-2 rounded-2xl border border-[rgba(229,57,53,0.18)] bg-[rgba(229,57,53,0.08)] py-3 text-[#FF7D7D] transition-colors active:bg-[rgba(229,57,53,0.14)] disabled:opacity-45"
-                        type="button"
-                      >
-                        <Trash2 size={16} />
-                        <span className="text-sm font-semibold">Eliminar serie</span>
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+                    htmlId={`session-exercise-${exerciseIdx}`}
+                    exercise={exercise}
+                    exerciseIdx={exerciseIdx}
+                    totalExercises={exerciseList.length}
+                    currentExerciseIndex={currentExIdx}
+                    weightUnit={appSettings.weightUnit}
+                    weightUnitLabel={weightUnitLabel}
+                    showPreviousWeight={appSettings.showPreviousWeight}
+                    onMoveExercise={moveExercise}
+                    onExerciseFocus={setCurrentExIdx}
+                    onExerciseMenu={(targetExerciseIdx, rect) => {
+                      setCurrentExIdx(targetExerciseIdx);
+                      setSetMenuAnchor(null);
+                      setExerciseMenuAnchor({ exerciseIdx: targetExerciseIdx, rect });
+                    }}
+                    onSetMenu={(targetExerciseIdx, setIdx, rect) => {
+                      setCurrentExIdx(targetExerciseIdx);
+                      setExerciseMenuAnchor(null);
+                      setSetMenuAnchor({ exerciseIdx: targetExerciseIdx, setIdx, rect });
+                    }}
+                    onSetValueChange={updateSetValue}
+                    onSetToggleComplete={completeSet}
+                    onExerciseNotesChange={updateExerciseNotes}
+                    onAddSet={addSet}
+                    onRemoveLastSet={(targetExerciseIdx) =>
+                      removeSet(targetExerciseIdx, exerciseList[targetExerciseIdx].sets.length - 1)
+                    }
+                  />
+                ))}
+              </div>
+            </DndProvider>
           ) : (
             <div className="rounded-2xl border border-[rgba(245,185,66,0.18)] bg-[rgba(245,185,66,0.06)] p-6">
               <div className="flex items-start gap-3">
@@ -1262,161 +1228,100 @@ export default function TrainingSessionPage() {
                 </div>
                 <div>
                   <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#F5B942]">
-                    {isHistoryEditSession ? 'SesiÃ³n sin ejercicios' : 'Entrenamiento vacÃ­o'}
+                    {isHistoryEditSession ? 'Sesión sin ejercicios' : 'Entrenamiento vacío'}
                   </p>
                   <h2 className="mt-2 text-xl font-bold tracking-tight text-white">
-                    {isHistoryEditSession ? 'SumÃ¡ ejercicios para completar esta sesiÃ³n' : 'EmpezÃ¡ agregando tu primer ejercicio'}
+                    {isHistoryEditSession ? 'Sumá ejercicios para completar esta sesión' : 'Empezá agregando tu primer ejercicio'}
                   </h2>
                   <p className="mt-2 text-sm text-[#D8C9A1]" style={{ fontFamily: "'Inter', sans-serif" }}>
                     {isHistoryEditSession
-                      ? 'PodÃ©s reconstruir esta sesiÃ³n del historial agregando ejercicios manualmente o desde tu base actual.'
-                      : 'Esta sesiÃ³n no depende de ninguna rutina. PodÃ©s cargar ejercicios manualmente o elegirlos desde tu base actual y guardar el entrenamiento en tu historial.'}
+                      ? 'Podés reconstruir esta sesión del historial agregando ejercicios manualmente o desde tu base actual.'
+                      : 'Esta sesión no depende de ninguna rutina. Podés cargar ejercicios manualmente o elegirlos desde tu base actual y guardar el entrenamiento en tu historial.'}
                   </p>
                 </div>
               </div>
             </div>
-          )}
-
-          {false && (
-            <div className="grid grid-cols-2 gap-3">
-              <button
-                onClick={() => undefined}
-                className="flex items-center justify-center gap-2 rounded-2xl border border-[#203347] bg-[#1A2D42] py-4 transition-colors active:bg-[#203347]"
-                type="button"
-              >
-                <div className="flex h-6 w-6 items-center justify-center rounded-full border-2 border-[#00C9A7]">
-                  <Plus size={12} className="text-[#00C9A7]" />
-                </div>
-                <span className="text-sm font-semibold text-white">AÃ±adir serie</span>
-              </button>
-              <button
-                onClick={nextExercise}
-                disabled={currentExIdx >= exerciseList.length - 1}
-                className="flex items-center justify-center gap-2 rounded-2xl bg-[#00C9A7] py-4 transition-colors active:bg-[#009F86] disabled:opacity-40"
-                type="button"
-              >
-                <span className="text-sm font-bold text-black">Siguiente ejercicio</span>
-                <ChevronRight size={16} className="text-black" />
-              </button>
-            </div>
-          )}
-
-          {restActive && currentExercise && (
-            <div className="flex items-center gap-3 rounded-2xl border border-[rgba(0,201,167,0.15)] bg-[#1A2D42] px-4 py-3">
-              <button
-                onClick={() => setShowRestConfig(true)}
-                className="relative h-14 w-14 flex-shrink-0"
-                type="button"
-              >
-                <svg className="h-full w-full -rotate-90" viewBox="0 0 56 56">
-                  <circle cx="28" cy="28" r="24" fill="none" stroke="#203347" strokeWidth="4" />
-                  <circle
-                    cx="28"
-                    cy="28"
-                    r="24"
-                    fill="none"
-                    stroke="#00C9A7"
-                    strokeWidth="4"
-                    strokeDasharray={`${2 * Math.PI * 24}`}
-                    strokeDashoffset={`${2 * Math.PI * 24 * (1 - restTime / restConfig)}`}
-                    strokeLinecap="round"
-                    className="transition-all duration-1000"
-                  />
-                </svg>
-                <span
-                  className="absolute inset-0 flex items-center justify-center text-xs font-bold text-[#00C9A7]"
-                  style={{ fontFamily: "'Inter', sans-serif" }}
-                >
-                  {restTime}s
-                </span>
-              </button>
-              <div className="flex-1">
-                <p className="text-[10px] font-semibold uppercase tracking-widest text-[#9BAEC1]">Descanso activo</p>
-                <p className="mt-0.5 text-sm font-semibold text-white">PrÃ³xima serie: {currentExercise.name}</p>
-              </div>
-              <button
-                onClick={() => setRestActive(false)}
-                className="text-sm font-bold uppercase tracking-wider text-[#00C9A7]"
-                type="button"
-              >
-                Omitir
-              </button>
-            </div>
-          )}
-
-          <div className="flex gap-3 pb-2">
-            <button
-              onClick={() => setShowFinishModal(true)}
-              className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-[#E53935] py-4 transition-colors active:bg-[#C62828]"
-              type="button"
-            >
-              <div className="flex h-4 w-4 items-center justify-center rounded-full border-2 border-white/60">
-                <div className="h-1.5 w-1.5 rounded-full bg-white/60" />
-              </div>
-              <span className="text-sm font-bold uppercase tracking-widest text-white">
-                {isHistoryEditSession ? 'Guardar cambios' : 'Finalizar entrenamiento'}
-              </span>
-            </button>
-            <button
-              onClick={() =>
-                isFreeSession || isHistoryEditSession
-                  ? setShowDatabaseExercisePicker(true)
-                  : setShowReplaceExercise(true)
-              }
-              disabled={!isFreeSession && !isHistoryEditSession && !currentExercise}
-              className="flex h-14 w-14 items-center justify-center rounded-2xl border border-[#203347] bg-[#1A2D42] disabled:opacity-40"
-              type="button"
-            >
-              {isFreeSession || isHistoryEditSession ? (
-                <Search size={20} className="text-[#F5B942]" />
-              ) : (
-                <BarChart2 size={20} className="text-[#9BAEC1]" />
-              )}
-            </button>
-          </div>
-
-          {isHistoryEditSession && (
-            <button
-              onClick={() => setShowDeleteSessionModal(true)}
-              className="flex w-full items-center justify-center gap-2 rounded-2xl border border-[rgba(229,57,53,0.22)] bg-[rgba(229,57,53,0.08)] py-4 text-[#FF7D7D] transition-colors active:bg-[rgba(229,57,53,0.14)]"
-              type="button"
-            >
-              <Trash2 size={18} />
-              <span className="text-sm font-bold uppercase tracking-widest">Eliminar entrenamiento</span>
-            </button>
           )}
         </div>
       </div>
 
-      {showMenu && currentExercise && (
-        <div className="absolute inset-0 z-40 flex items-end">
-          <button
-            aria-label="Cerrar menÃº"
-            className="absolute inset-0 bg-black/70"
-            onClick={() => setShowMenu(false)}
-            type="button"
-          />
-          <div className="relative z-10 w-full rounded-t-[2rem] bg-[#1A2D42] px-5 pb-6 pt-5">
-            <div className="mx-auto mb-5 h-1.5 w-12 rounded-full bg-[#3A3F50]" />
-            <h3 className="text-2xl font-bold tracking-tight text-white">{currentExercise.name}</h3>
-            <p className="mt-1 text-sm text-[#90A4B8]" style={{ fontFamily: "'Inter', sans-serif" }}>
-              {currentExercise.muscle}
-              {currentExercise.implement ? ` - ${currentExercise.implement}` : ''}
-            </p>
+      {restActive && (
+        <div className="pointer-events-none fixed inset-x-0 bottom-[calc(env(safe-area-inset-bottom)+0.75rem)] z-30 flex justify-center px-4">
+        <div className="pointer-events-auto w-full max-w-[25.5rem] rounded-2xl border border-[rgba(0,201,167,0.15)] bg-[rgba(19,38,58,0.96)] px-4 py-3 shadow-[0_-12px_32px_rgba(0,0,0,0.28)] backdrop-blur-xl">
+          <div className="flex items-center gap-3">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[rgba(0,201,167,0.12)]">
+              <TimerReset size={20} className="text-[#00C9A7]" />
+            </div>
 
-            <div className="mt-6 flex flex-col">
+            <div className="flex min-w-0 flex-1 items-center gap-2">
+              <button
+                onClick={() => adjustRestBy(-15)}
+                className="rounded-xl border border-[#203347] bg-[#1A2D42] px-3 py-2 text-sm font-bold text-white"
+                type="button"
+              >
+                -15
+              </button>
+
+              <div className="min-w-[4.75rem] flex-1 text-center">
+                <p className="text-xl font-bold text-white">
+                  {restActive ? formatTime(restTime) : `${restConfig}s`}
+                </p>
+              </div>
+
+              <button
+                onClick={() => adjustRestBy(15)}
+                className="rounded-xl border border-[#203347] bg-[#1A2D42] px-3 py-2 text-sm font-bold text-white"
+                type="button"
+              >
+                +15
+              </button>
+            </div>
+
+            <button
+              onClick={() => {
+                setRestActive(false);
+              }}
+              className="shrink-0 rounded-xl bg-[#00C9A7] px-4 py-2 text-sm font-bold text-black"
+              type="button"
+            >
+              Omitir
+            </button>
+          </div>
+        </div>
+        </div>
+      )}
+
+      {exerciseMenuAnchor && currentExercise && (
+        <div className="absolute inset-0 z-40">
+          <button aria-label="Cerrar menú" className="absolute inset-0 bg-black/20" onClick={closeContextMenus} type="button" />
+          <div
+            className="fixed z-50 w-[18rem] rounded-3xl border border-[rgba(32,51,71,0.92)] bg-[#13263A] p-3 shadow-[0_24px_60px_rgba(0,0,0,0.42)]"
+            style={{
+              top: Math.min(exerciseMenuAnchor.rect.bottom + 10, window.innerHeight - 260),
+              left: Math.max(12, Math.min(exerciseMenuAnchor.rect.right - 288, window.innerWidth - 300)),
+            }}
+          >
+            <div className="border-b border-white/6 px-2 pb-3">
+              <h3 className="text-lg font-bold tracking-tight text-white">{currentExercise.name}</h3>
+              <p className="mt-1 text-xs text-[#90A4B8]" style={{ fontFamily: "'Inter', sans-serif" }}>
+                {currentExercise.muscle}
+                {currentExercise.implement ? ` - ${currentExercise.implement}` : ''}
+              </p>
+            </div>
+
+            <div className="mt-2 flex flex-col">
               {exerciseMenuItems.map(({ label, icon: Icon, onClick, danger, disabled }) => (
                 <button
                   key={label}
                   onClick={onClick}
                   disabled={disabled}
-                  className={`flex items-center gap-4 border-b border-white/5 py-4 text-left last:border-b-0 disabled:opacity-45 ${
-                    danger ? 'text-[#FF5D5D]' : 'text-white'
+                  className={`flex items-center gap-3 rounded-2xl px-3 py-3 text-left text-sm font-medium transition-colors disabled:opacity-45 ${
+                    danger ? 'text-[#FF5D5D] hover:bg-[rgba(229,57,53,0.08)]' : 'text-white hover:bg-white/5'
                   }`}
                   type="button"
                 >
-                  <Icon size={18} className={danger ? 'text-[#FF5D5D]' : 'text-white/85'} />
-                  <span className="text-lg font-medium">{label}</span>
+                  <Icon size={17} className={danger ? 'text-[#FF5D5D]' : 'text-white/85'} />
+                  <span>{label}</span>
                 </button>
               ))}
             </div>
@@ -1424,39 +1329,46 @@ export default function TrainingSessionPage() {
         </div>
       )}
 
-      {selectedSetIdx !== null && currentExercise && (
-        <div className="absolute inset-0 z-40 flex items-end">
+      {setMenuAnchor && currentExercise && (
+        <div className="absolute inset-0 z-40">
           <button
             aria-label="Cerrar selector de serie"
-            className="absolute inset-0 bg-black/70"
-            onClick={() => setSelectedSetIdx(null)}
+            className="absolute inset-0 bg-black/20"
+            onClick={closeContextMenus}
             type="button"
           />
-          <div className="relative z-10 w-full rounded-t-[2rem] bg-[#1A2D42] px-5 pb-6 pt-5">
-            <div className="mx-auto mb-5 h-1.5 w-12 rounded-full bg-[#3A3F50]" />
-            <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#00C9A7]">
-              Set {selectedSetIdx + 1}
-            </p>
-            <h3 className="mt-2 text-2xl font-bold tracking-tight text-white">{currentExercise.name}</h3>
+          <div
+            className="fixed z-50 w-[18rem] rounded-3xl border border-[rgba(32,51,71,0.92)] bg-[#13263A] p-3 shadow-[0_24px_60px_rgba(0,0,0,0.42)]"
+            style={{
+              top: Math.min(setMenuAnchor.rect.bottom + 10, window.innerHeight - 245),
+              left: Math.max(12, Math.min(setMenuAnchor.rect.left, window.innerWidth - 300)),
+            }}
+          >
+            <div className="border-b border-white/6 px-2 pb-3">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#00C9A7]">
+                Set {setMenuAnchor.setIdx + 1}
+              </p>
+              <h3 className="mt-2 text-lg font-bold tracking-tight text-white">{currentExercise.name}</h3>
+            </div>
 
-            <div className="mt-6 flex flex-col gap-3">
+            <div className="mt-2 flex flex-col gap-1">
               <button
-                onClick={() => updateSetKind(currentExIdx, selectedSetIdx, 'warmup')}
-                className="flex items-center justify-between rounded-2xl border border-[rgba(245,185,66,0.2)] bg-[rgba(245,185,66,0.08)] px-4 py-4 text-left"
+                onClick={() => updateSetKind(currentExIdx, setMenuAnchor.setIdx, 'warmup')}
+                className="flex items-center justify-between rounded-2xl border border-[rgba(245,185,66,0.2)] bg-[rgba(245,185,66,0.08)] px-4 py-3 text-left"
                 type="button"
               >
                 <div>
                   <p className="font-semibold text-white">Serie de calentamiento</p>
                   <p className="mt-1 text-xs text-[#D8C9A1]" style={{ fontFamily: "'Inter', sans-serif" }}>
-                    Ideal para aproximaciones y activaciÃ³n.
+                    Ideal para aproximaciones y activación.
                   </p>
                 </div>
-                <Sparkles size={18} className="text-[#F5B942]" />
+                <Check size={17} className="text-[#F5B942]" />
               </button>
 
               <button
-                onClick={() => updateSetKind(currentExIdx, selectedSetIdx, 'normal')}
-                className="flex items-center justify-between rounded-2xl border border-[rgba(0,201,167,0.18)] bg-[rgba(0,201,167,0.08)] px-4 py-4 text-left"
+                onClick={() => updateSetKind(currentExIdx, setMenuAnchor.setIdx, 'normal')}
+                className="flex items-center justify-between rounded-2xl border border-[rgba(0,201,167,0.18)] bg-[rgba(0,201,167,0.08)] px-4 py-3 text-left"
                 type="button"
               >
                 <div>
@@ -1465,22 +1377,22 @@ export default function TrainingSessionPage() {
                     Cuenta como serie principal dentro del ejercicio.
                   </p>
                 </div>
-                <Check size={18} className="text-[#00C9A7]" />
+                <Check size={17} className="text-[#00C9A7]" />
               </button>
 
               <button
-                onClick={() => removeSet(currentExIdx, selectedSetIdx)}
+                onClick={() => removeSet(currentExIdx, setMenuAnchor.setIdx)}
                 disabled={currentExercise.sets.length <= 1}
-                className="flex items-center justify-between rounded-2xl border border-[rgba(229,57,53,0.18)] bg-[rgba(229,57,53,0.08)] px-4 py-4 text-left text-[#FF7D7D] disabled:opacity-45"
+                className="flex items-center justify-between rounded-2xl border border-[rgba(229,57,53,0.18)] bg-[rgba(229,57,53,0.08)] px-4 py-3 text-left text-[#FF7D7D] disabled:opacity-45"
                 type="button"
               >
                 <div>
                   <p className="font-semibold">Eliminar serie</p>
                   <p className="mt-1 text-xs text-[#D6B9B9]" style={{ fontFamily: "'Inter', sans-serif" }}>
-                    QuitÃ¡ esta serie de la sesiÃ³n actual.
+                    Quitá esta serie de la sesión actual.
                   </p>
                 </div>
-                <Trash2 size={18} />
+                <Trash2 size={17} />
               </button>
             </div>
           </div>
@@ -1522,7 +1434,7 @@ export default function TrainingSessionPage() {
                         </p>
                       </div>
                       <span className="rounded-full bg-[rgba(0,201,167,0.1)] px-3 py-1 text-[10px] font-semibold uppercase tracking-widest text-[#00C9A7]">
-                        PR {entry.maxKg > 0 ? formatWeightWithUnit(entry.maxKg, appSettings.weightUnit) : 'Peso corporal'}
+                        PR {entry.maxKg > 0 ? `${formatWeightNumber(entry.maxKg, appSettings.weightUnit)}${weightUnitLabel}` : 'Peso corporal'}
                       </span>
                     </div>
 
@@ -1536,11 +1448,16 @@ export default function TrainingSessionPage() {
                         </span>
                       ))}
                     </div>
+                    {entry.notes && (
+                      <p className="mt-3 text-xs text-[#90A4B8]" style={{ fontFamily: "'Inter', sans-serif" }}>
+                        {entry.notes}
+                      </p>
+                    )}
                   </button>
                 ))
               ) : (
                 <div className="rounded-2xl border border-[#2A2F3D] bg-[#13263A] p-5 text-sm text-[#90A4B8]">
-                  TodavÃ­a no hay registros guardados para este ejercicio.
+                  Todavía no hay registros guardados para este ejercicio.
                 </div>
               )}
             </div>
@@ -1563,7 +1480,7 @@ export default function TrainingSessionPage() {
             <div className="mx-auto mb-5 h-1.5 w-12 rounded-full bg-[#3A3F50]" />
             <h3 className="text-2xl font-bold tracking-tight text-white">Reemplazar ejercicio</h3>
             <p className="mt-2 text-sm text-[#90A4B8]" style={{ fontFamily: "'Inter', sans-serif" }}>
-              ElegÃ­ otra variante disponible en tus rutinas.
+              Elegí otra variante disponible en tus rutinas.
             </p>
 
             <div className="mt-5 rounded-2xl border border-[#2A2F3D] bg-[#13263A] px-4 py-3">
@@ -1572,7 +1489,7 @@ export default function TrainingSessionPage() {
                 <input
                   value={replaceQuery}
                   onChange={(event) => setReplaceQuery(event.target.value)}
-                  placeholder="Buscar por ejercicio, mÃºsculo o implemento"
+                  placeholder="Buscar por ejercicio, músculo o implemento"
                   className="w-full bg-transparent text-sm text-white outline-none placeholder:text-[#7E8799]"
                   style={{ fontFamily: "'Inter', sans-serif" }}
                 />
@@ -1607,7 +1524,7 @@ export default function TrainingSessionPage() {
                 ))
               ) : (
                 <div className="rounded-2xl border border-[#2A2F3D] bg-[#13263A] p-5 text-sm text-[#90A4B8]">
-                  No encontramos ejercicios que coincidan con tu bÃºsqueda.
+                  No encontramos ejercicios que coincidan con tu búsqueda.
                 </div>
               )}
             </div>
@@ -1631,8 +1548,8 @@ export default function TrainingSessionPage() {
             <h3 className="mt-2 text-2xl font-bold tracking-tight text-white">Agregar Ejercicio</h3>
             <p className="mt-2 text-sm text-[#90A4B8]" style={{ fontFamily: "'Inter', sans-serif" }}>
               {isHistoryEditSession
-                ? 'ElegÃ­ ejercicios ya existentes en tus rutinas para sumarlos a esta sesiÃ³n del historial.'
-                : 'ElegÃ­ ejercicios ya existentes en tus rutinas para sumarlos a este entrenamiento libre.'}
+                ? 'Elegí ejercicios ya existentes en tus rutinas para sumarlos a esta sesión del historial.'
+                : 'Elegí ejercicios ya existentes en tus rutinas para sumarlos a este entrenamiento libre.'}
             </p>
 
             <div className="mt-5 rounded-2xl border border-[#2A2F3D] bg-[#13263A] px-4 py-3">
@@ -1641,7 +1558,7 @@ export default function TrainingSessionPage() {
                 <input
                   value={databaseQuery}
                   onChange={(event) => setDatabaseQuery(event.target.value)}
-                  placeholder="Buscar por ejercicio, mÃºsculo o implemento"
+                  placeholder="Buscar por ejercicio, músculo o implemento"
                   className="w-full bg-transparent text-sm text-white outline-none placeholder:text-[#7E8799]"
                   style={{ fontFamily: "'Inter', sans-serif" }}
                 />
@@ -1684,7 +1601,7 @@ export default function TrainingSessionPage() {
                 ))
               ) : (
                 <div className="rounded-2xl border border-[#2A2F3D] bg-[#13263A] p-5 text-sm text-[#90A4B8]">
-                  No hay ejercicios disponibles para agregar con esa bÃºsqueda.
+                  No hay ejercicios disponibles para agregar con esa búsqueda.
                 </div>
               )}
             </div>
@@ -1703,13 +1620,13 @@ export default function TrainingSessionPage() {
           <div className="relative z-10 w-full rounded-t-[2rem] bg-[#1A2D42] px-5 pb-6 pt-5">
             <div className="mx-auto mb-5 h-1.5 w-12 rounded-full bg-[#3A3F50]" />
             <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#F5B942]">
-              {isHistoryEditSession ? 'EdiciÃ³n del historial' : 'SesiÃ³n libre'}
+              {isHistoryEditSession ? 'Edición del historial' : 'Sesión libre'}
             </p>
             <h3 className="mt-2 text-2xl font-bold tracking-tight text-white">Agregar Nuevo Ejercicio</h3>
             <p className="mt-2 text-sm text-[#D8C9A1]" style={{ fontFamily: "'Inter', sans-serif" }}>
               {isHistoryEditSession
-                ? 'CargÃ¡ el ejercicio para completar o corregir esta sesiÃ³n guardada.'
-                : 'CargÃ¡ el ejercicio para empezar o seguir tu entrenamiento libre.'}
+                ? 'Cargá el ejercicio para completar o corregir esta sesión guardada.'
+                : 'Cargá el ejercicio para empezar o seguir tu entrenamiento libre.'}
             </p>
 
             <div className="mt-6 flex flex-col gap-4">
@@ -1735,7 +1652,7 @@ export default function TrainingSessionPage() {
                   htmlFor="manual-exercise-muscle"
                   className="mb-2 block text-[10px] font-semibold uppercase tracking-widest text-[#F5B942]"
                 >
-                  MÃºsculo principal
+                  Músculo principal
                 </label>
                 <input
                   id="manual-exercise-muscle"
@@ -1786,104 +1703,73 @@ export default function TrainingSessionPage() {
         </div>
       )}
 
-      {showRestConfig && (
-        <div className="absolute inset-0 z-40 flex items-center justify-center px-5">
-          <button
-            aria-label="Cerrar descanso"
-            className="absolute inset-0 bg-black/70"
-            onClick={() => setShowRestConfig(false)}
-            type="button"
-          />
-          <div className="relative z-10 w-full max-w-sm rounded-3xl bg-[#1A2D42] p-6">
-            <h3 className="text-center text-2xl font-bold text-white">Configurar descanso</h3>
-            <p className="mt-2 text-center text-sm text-[#90A4B8]" style={{ fontFamily: "'Inter', sans-serif" }}>
-              AjustÃ¡ cuÃ¡ntos segundos querÃ©s entre series.
-            </p>
-
-            <div className="mt-6 flex items-center justify-center gap-4">
-              <button
-                onClick={() => setRestConfig((value) => Math.max(15, value - 15))}
-                className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#13263A] text-2xl text-white"
-                type="button"
-              >
-                -
-              </button>
-              <div className="min-w-[8rem] rounded-2xl border border-[rgba(0,201,167,0.16)] bg-[#13263A] px-4 py-4 text-center">
-                <span className="text-3xl font-bold text-white">{restConfig}</span>
-                <span className="ml-1 text-sm font-semibold uppercase tracking-widest text-[#00C9A7]">seg</span>
-              </div>
-              <button
-                onClick={() => setRestConfig((value) => Math.min(600, value + 15))}
-                className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#13263A] text-2xl text-white"
-                type="button"
-              >
-                +
-              </button>
-            </div>
-
-            <div className="mt-6 flex flex-col gap-3">
-              <button
-                onClick={() => {
-                  setRestTime(restConfig);
-                  setShowRestConfig(false);
-                }}
-                className="w-full rounded-2xl bg-[#00C9A7] py-4 font-bold text-black"
-                type="button"
-              >
-                Guardar descanso
-              </button>
-              <button
-                onClick={() => setShowRestConfig(false)}
-                className="w-full rounded-2xl bg-[#13263A] py-4 font-semibold text-white"
-                type="button"
-              >
-                Cancelar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {showFinishModal && (
         <div className="absolute inset-0 z-40 flex items-center justify-center px-5">
           <button
-            aria-label="Cerrar finalizaciÃ³n"
+            aria-label="Cerrar finalización"
             className="absolute inset-0 bg-black/70"
             onClick={() => setShowFinishModal(false)}
             type="button"
           />
           <div className="relative z-10 w-full max-w-sm rounded-3xl bg-[#1A2D42] p-6">
             <h3 className="text-center text-3xl font-bold tracking-tight text-white">
-              {isHistoryEditSession ? 'Â¿Guardar cambios de la sesiÃ³n?' : 'Â¿Finalizar entrenamiento?'}
+              {isHistoryEditSession ? '¿Guardar cambios de la sesión?' : '¿Finalizar entrenamiento?'}
             </h3>
             <p className="mt-3 text-center text-base text-[#D4D4D4]" style={{ fontFamily: "'Inter', sans-serif" }}>
               {isHistoryEditSession
-                ? `Vas a actualizar esta sesiÃ³n con ${totalSetsCompleted}/${totalSets} series completas en ${formatTime(elapsed)} totales.`
+                ? `Vas a actualizar esta sesión con ${totalSetsCompleted}/${totalSets} series completas en ${formatTime(elapsed)} totales.`
                 : `Llevas ${formatTime(elapsed)} entrenando y completaste ${totalSetsCompleted}/${totalSets} series.`}
             </p>
             {!hasExercises && (
               <p className="mt-3 text-center text-sm text-[#F5B942]" style={{ fontFamily: "'Inter', sans-serif" }}>
                 {isHistoryEditSession
-                  ? 'AgregÃ¡ al menos un ejercicio para guardar los cambios, o descartalos.'
-                  : 'AgregÃ¡ al menos un ejercicio para guardar esta sesiÃ³n, o descartala.'}
+                  ? 'Agregá al menos un ejercicio para guardar los cambios, o descartalos.'
+                  : 'Agregá al menos un ejercicio para guardar esta sesión, o descartala.'}
               </p>
+            )}
+
+            {missingSets.length > 0 && (
+              <div className="mt-5 rounded-2xl border border-[rgba(245,185,66,0.18)] bg-[rgba(245,185,66,0.06)] p-4">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#F5B942]">
+                  Series faltantes
+                </p>
+                <div className="mt-3 flex max-h-44 flex-col gap-2 overflow-y-auto">
+                  {missingSets.map(({ exercise, exerciseIdx, set, setIdx }) => (
+                    <button
+                      key={`${exercise.id}-${set.id}-${setIdx}`}
+                      onClick={() => jumpToMissingSet(exerciseIdx)}
+                      className="rounded-2xl border border-[rgba(245,185,66,0.14)] bg-[rgba(19,38,58,0.72)] px-4 py-3 text-left transition-colors active:bg-[rgba(245,185,66,0.1)]"
+                      type="button"
+                    >
+                      <p className="text-sm font-semibold text-white">{exercise.name}</p>
+                      <p className="mt-1 text-xs text-[#D8C9A1]" style={{ fontFamily: "'Inter', sans-serif" }}>
+                        {set.kind === 'warmup' ? 'Calentamiento' : `Set ${setIdx + 1}`} pendiente
+                      </p>
+                    </button>
+                  ))}
+                </div>
+              </div>
             )}
 
             <div className="mt-6 flex flex-col gap-3">
               <button
                 onClick={() => void finishSession()}
-                disabled={!hasExercises}
+                disabled={!hasExercises || isSubmittingSession}
                 className="w-full rounded-2xl bg-[#F43A33] py-4 font-bold text-white disabled:opacity-45"
                 type="button"
               >
-                {isHistoryEditSession ? 'Guardar cambios' : 'Finalizar entrenamiento'}
+                {isSubmittingSession
+                  ? 'Guardando...'
+                  : isHistoryEditSession
+                  ? 'Guardar cambios'
+                  : 'Finalizar entrenamiento'}
               </button>
               <button
                 onClick={() => setShowFinishModal(false)}
                 className="w-full rounded-2xl bg-[#2A2A2A] py-4 font-semibold text-white"
                 type="button"
               >
-                {isHistoryEditSession ? 'Seguir editando' : 'Continuar'}
+                {missingSets.length > 0 ? 'Volver a completar' : isHistoryEditSession ? 'Seguir editando' : 'Continuar'}
               </button>
               <button
                 onClick={discardSession}
@@ -1900,17 +1786,17 @@ export default function TrainingSessionPage() {
       {showDeleteSessionModal && historicalSession && (
         <div className="absolute inset-0 z-40 flex items-center justify-center px-5">
           <button
-            aria-label="Cerrar confirmaciÃ³n de borrado"
+            aria-label="Cerrar confirmación de borrado"
             className="absolute inset-0 bg-black/70"
             onClick={() => setShowDeleteSessionModal(false)}
             type="button"
           />
           <div className="relative z-10 w-full max-w-sm rounded-3xl bg-[#1A2D42] p-6">
             <h3 className="text-center text-3xl font-bold tracking-tight text-white">
-              Â¿EstÃ¡s seguro de eliminar este entrenamiento?
+              ¿Estás seguro de eliminar este entrenamiento?
             </h3>
             <p className="mt-3 text-center text-base text-[#D4D4D4]" style={{ fontFamily: "'Inter', sans-serif" }}>
-              Vas a borrar esta sesiÃ³n del historial y no se va a poder recuperar.
+              Vas a borrar esta sesión del historial y no se va a poder recuperar.
             </p>
 
             <div className="mt-6 flex flex-col gap-3">
@@ -1919,7 +1805,7 @@ export default function TrainingSessionPage() {
                 className="w-full rounded-2xl bg-[#F43A33] py-4 font-bold text-white"
                 type="button"
               >
-                SÃ­, eliminar entrenamiento
+                Sí, eliminar entrenamiento
               </button>
               <button
                 onClick={() => setShowDeleteSessionModal(false)}

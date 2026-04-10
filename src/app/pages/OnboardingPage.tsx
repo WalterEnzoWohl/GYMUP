@@ -43,59 +43,59 @@ const STEP_FLOW = [
 const WEEK_DAYS = [
   { value: 'Lunes', short: 'LU' },
   { value: 'Martes', short: 'MA' },
-  { value: 'MiÃ©rcoles', short: 'MI' },
+  { value: 'Miércoles', short: 'MI' },
   { value: 'Jueves', short: 'JU' },
   { value: 'Viernes', short: 'VI' },
-  { value: 'SÃ¡bado', short: 'SA' },
+  { value: 'Sábado', short: 'SA' },
   { value: 'Domingo', short: 'DO' },
 ] as const;
 
 const GOAL_CONTENT: Record<string, string> = {
   [GOAL_OPTIONS[0]]:
-    'Ajustamos calorÃ­as, mÃ©tricas y propuesta de entrenamiento para mantener mÃºsculo y verte mÃ¡s definido.',
+    'Ajustamos calorías, métricas y propuesta de entrenamiento para mantener músculo y verte más definido.',
   [GOAL_OPTIONS[1]]:
-    'Priorizamos progresiÃ³n, recuperaciÃ³n y estÃ­mulos con mÃ¡s margen para construir masa muscular.',
+    'Priorizamos progresión, recuperación y estímulos con más margen para construir masa muscular.',
   [GOAL_OPTIONS[2]]:
-    'Buscamos constancia, rendimiento y un plan sÃ³lido para sostener resultados sin ir a extremos.',
+    'Buscamos constancia, rendimiento y un plan sólido para sostener resultados sin ir a extremos.',
   [GOAL_OPTIONS[3]]:
-    'Balanceamos composiciÃ³n corporal, adherencia y progreso para mejorar mÃºsculo y porcentaje graso.',
+    'Balanceamos composición corporal, adherencia y progreso para mejorar músculo y porcentaje graso.',
 };
 
 const EXPERIENCE_CONTENT: Record<string, string> = {
   Principiante:
-    'Ideal si reciÃ©n arrancas o si todavÃ­a estÃ¡s ordenando tÃ©cnica, rutina y consistencia semanal.',
+    'Ideal si recién arrancas o si todavía estás ordenando técnica, rutina y consistencia semanal.',
   Intermedio:
-    'Ya entrenas con regularidad, conoces los bÃ¡sicos y puedes sostener progresiones reales.',
+    'Ya entrenas con regularidad, conoces los básicos y puedes sostener progresiones reales.',
   Avanzado:
-    'Buscas mÃ¡s control sobre volumen, selecciÃ³n de ejercicios, fatiga y seguimiento fino.',
+    'Buscas más control sobre volumen, selección de ejercicios, fatiga y seguimiento fino.',
 };
 
 const GENDER_OPTIONS = [
-  { value: 'Masculino', description: 'Usamos esta referencia para cÃ¡lculos fisiolÃ³gicos y reportes.' },
-  { value: 'Femenino', description: 'Ajustamos recomendaciones y mÃ©tricas a partir de este dato.' },
-  { value: 'Prefiero no decirlo', description: 'Puedes continuar igual y cambiarlo mÃ¡s adelante cuando quieras.' },
+  { value: 'Masculino', description: 'Usamos esta referencia para cálculos fisiológicos y reportes.' },
+  { value: 'Femenino', description: 'Ajustamos recomendaciones y métricas a partir de este dato.' },
+  { value: 'Prefiero no decirlo', description: 'Puedes continuar igual y cambiarlo más adelante cuando quieras.' },
 ] as const;
 
 const FOCUS_OPTIONS = [
-  { value: 'Balanceado', description: 'DistribuciÃ³n pareja para crecer de forma armÃ³nica.', badge: 'Recomendado' },
-  { value: 'Pecho', description: 'MÃ¡s prioridad a presses y trabajo del torso anterior.' },
-  { value: 'Espalda', description: 'MÃ¡s protagonismo para remos, jalones y densidad dorsal.' },
-  { value: 'Piernas', description: 'MÃ¡s foco en cuÃ¡driceps, glÃºteos, isquios y gemelos.' },
-  { value: 'Hombros', description: 'MÃ¡s atenciÃ³n a deltoides, estabilidad y detalle visual.' },
-  { value: 'Brazos', description: 'Mayor volumen para bÃ­ceps y trÃ­ceps.' },
+  { value: 'Balanceado', description: 'Distribución pareja para crecer de forma armónica.', badge: 'Recomendado' },
+  { value: 'Pecho', description: 'Más prioridad a presses y trabajo del torso anterior.' },
+  { value: 'Espalda', description: 'Más protagonismo para remos, jalones y densidad dorsal.' },
+  { value: 'Piernas', description: 'Más foco en cuádriceps, glúteos, isquios y gemelos.' },
+  { value: 'Hombros', description: 'Más atención a deltoides, estabilidad y detalle visual.' },
+  { value: 'Brazos', description: 'Mayor volumen para bíceps y tríceps.' },
 ] as const;
 
 const LOCATION_OPTIONS = [
   {
     value: 'Gimnasio completo',
-    description: 'Acceso a mÃ¡quinas, poleas, barras, mancuernas y mÃ¡s variantes para progresar fuerte.',
+    description: 'Acceso a máquinas, poleas, barras, mancuernas y más variantes para progresar fuerte.',
   },
   {
     value: 'Home gym',
-    description: 'Entrenas en casa con equipamiento Ãºtil y buena variedad para organizar tus sesiones.',
+    description: 'Entrenas en casa con equipamiento útil y buena variedad para organizar tus sesiones.',
   },
   {
-    value: 'Casa bÃ¡sica',
+    value: 'Casa básica',
     description: 'Prioriza practicidad con poco material o peso corporal, sin perder constancia.',
   },
 ] as const;
@@ -509,77 +509,77 @@ const STEP_COPY: Record<
     eyebrow: 'Tu base',
     title: 'Empecemos por vos.',
     description:
-      'WOHL va a personalizar mÃ©tricas, recomendaciones y ritmo de la experiencia segÃºn tu perfil real.',
+      'WOHL va a personalizar métricas, recomendaciones y ritmo de la experiencia según tu perfil real.',
     cta: 'Continuar',
   },
   goal: {
     eyebrow: 'Objetivo',
-    title: 'Â¿QuÃ© querÃ©s lograr con tu entrenamiento?',
+    title: '¿Qué querés lograr con tu entrenamiento?',
     description:
-      'ElegÃ­ el resultado que mÃ¡s te representa hoy. DespuÃ©s lo vas a poder cambiar desde configuraciÃ³n.',
+      'Elegí el resultado que más te representa hoy. Después lo vas a poder cambiar desde configuración.',
     cta: 'Continuar',
   },
   experience: {
     eyebrow: 'Experiencia',
-    title: 'Â¿QuÃ© nivel sentÃ­s que tenÃ©s hoy?',
+    title: '¿Qué nivel sentís que tenés hoy?',
     description:
       'Esto nos ayuda a ajustar complejidad, lectura de progreso y recomendaciones de trabajo.',
     cta: 'Continuar',
   },
   activity: {
     eyebrow: 'Contexto',
-    title: 'Â¿CÃ³mo es tu nivel de actividad general?',
+    title: '¿Cómo es tu nivel de actividad general?',
     description:
-      'No solo cuenta el gym. TambiÃ©n importa cuÃ¡nto te mueves durante el dÃ­a y tu carga semanal.',
+      'No solo cuenta el gym. También importa cuánto te mueves durante el día y tu carga semanal.',
     cta: 'Continuar',
   },
   personal: {
     eyebrow: 'Perfil',
-    title: 'Un poco mÃ¡s de contexto personal.',
+    title: 'Un poco más de contexto personal.',
     description:
-      'Con esto afinamos cÃ¡lculos energÃ©ticos, edad deportiva y futuras estadÃ­sticas dentro de la app.',
+      'Con esto afinamos cálculos energéticos, edad deportiva y futuras estadísticas dentro de la app.',
     cta: 'Continuar',
   },
   metrics: {
     eyebrow: 'Medidas',
-    title: 'Tus mÃ©tricas actuales.',
+    title: 'Tus métricas actuales.',
     description:
-      'Peso, altura y referencia objetivo para que WOHL te devuelva datos Ãºtiles y comparables.',
+      'Peso, altura y referencia objetivo para que WOHL te devuelva datos útiles y comparables.',
     cta: 'Continuar',
   },
   focus: {
     eyebrow: 'Enfoque',
-    title: 'Â¿QuerÃ©s priorizar algÃºn grupo muscular?',
+    title: '¿Querés priorizar algún grupo muscular?',
     description:
-      'Podemos dejarlo balanceado o darle un poco mÃ¡s de protagonismo a una zona puntual.',
+      'Podemos dejarlo balanceado o darle un poco más de protagonismo a una zona puntual.',
     cta: 'Continuar',
   },
   location: {
     eyebrow: 'Entorno',
-    title: 'Â¿DÃ³nde solÃ©s entrenar?',
+    title: '¿Dónde solés entrenar?',
     description:
-      'El nivel de equipamiento cambia bastante lo que conviene sugerir despuÃ©s para tus rutinas.',
+      'El nivel de equipamiento cambia bastante lo que conviene sugerir después para tus rutinas.',
     cta: 'Continuar',
   },
   days: {
     eyebrow: 'Frecuencia',
-    title: 'Â¿CuÃ¡ntos dÃ­as querÃ©s entrenar?',
+    title: '¿Cuántos días querés entrenar?',
     description:
-      'SeleccionÃ¡ entre 2 y 6 dÃ­as por semana. Lo usamos para ordenar tu estructura inicial.',
+      'Seleccioná entre 2 y 6 días por semana. Lo usamos para ordenar tu estructura inicial.',
     cta: 'Continuar',
   },
   schedule: {
     eyebrow: 'Horarios',
-    title: 'Definamos cuÃ¡ndo te viene mejor entrenar.',
+    title: 'Definamos cuándo te viene mejor entrenar.',
     description:
-      'PodÃ©s usar un horario fijo o asignar uno distinto por cada dÃ­a para que la experiencia sea mÃ¡s real.',
+      'Podés usar un horario fijo o asignar uno distinto por cada día para que la experiencia sea más real.',
     cta: 'Continuar',
   },
   summary: {
     eyebrow: 'Listo',
-    title: 'Tu perfil ya estÃ¡ tomando forma.',
+    title: 'Tu perfil ya está tomando forma.',
     description:
-      'Con esta base podemos personalizar estadÃ­sticas, cÃ¡lculos y la forma en que empezÃ¡s a entrenar dentro de WOHL.',
+      'Con esta base podemos personalizar estadísticas, cálculos y la forma en que empezás a entrenar dentro de WOHL.',
     cta: 'Crear mi primera rutina',
   },
 };
@@ -969,18 +969,18 @@ export default function OnboardingPage() {
     }
 
     if (pickerState.type === 'height') {
-      return 'Selecciona tu altura actual para mejorar cÃ¡lculos y mÃ©tricas.';
+      return 'Selecciona tu altura actual para mejorar cálculos y métricas.';
     }
 
     if (pickerState.type === 'weight') {
-      return 'Usamos este valor para estadÃ­sticas, progreso y objetivos.';
+      return 'Usamos este valor para estadísticas, progreso y objetivos.';
     }
 
     if (pickerState.type === 'targetWeight') {
-      return 'Una referencia simple para entender hacia dÃ³nde quieres ir.';
+      return 'Una referencia simple para entender hacia dónde quieres ir.';
     }
 
-    return 'ElegÃ­ una hora cÃ³moda y realista para que WOHL te acompaÃ±e mejor.';
+    return 'Elegí una hora cómoda y realista para que WOHL te acompañe mejor.';
   }, [pickerState]);
 
   const renderStepContent = () => {
@@ -1088,8 +1088,8 @@ export default function OnboardingPage() {
               value={formatBirthDateLabel(formData.birthDate)}
               description={
                 formData.birthDate
-                  ? `Edad calculada: ${calculateAgeFromBirthDate(formData.birthDate)} aÃ±os`
-                  : 'La usamos para tus mÃ©tricas y referencias generales.'
+                  ? `Edad calculada: ${calculateAgeFromBirthDate(formData.birthDate)} años`
+                  : 'La usamos para tus métricas y referencias generales.'
               }
               icon={<CalendarDays size={20} />}
               onClick={openBirthPicker}
@@ -1106,8 +1106,8 @@ export default function OnboardingPage() {
                   <Scale size={20} />
                 </div>
                 <div>
-                  <p className="text-sm font-semibold text-white">Base fÃ­sica inicial</p>
-                  <p className="text-sm text-[#98A2B3]">Estos valores te van a acompaÃ±ar en progreso, nutriciÃ³n y reportes.</p>
+                  <p className="text-sm font-semibold text-white">Base física inicial</p>
+                  <p className="text-sm text-[#98A2B3]">Estos valores te van a acompañar en progreso, nutrición y reportes.</p>
                 </div>
               </div>
             </div>
@@ -1115,7 +1115,7 @@ export default function OnboardingPage() {
             <PickerTriggerCard
               label="Altura"
               value={formatMetricLabel(formData.heightCm, 'cm')}
-              description="Una referencia estable para mÃ©tricas y cÃ¡lculos energÃ©ticos."
+              description="Una referencia estable para métricas y cálculos energéticos."
               icon={<Ruler size={20} />}
               onClick={openHeightPicker}
             />
@@ -1129,7 +1129,7 @@ export default function OnboardingPage() {
             <PickerTriggerCard
               label="Peso objetivo"
               value={formatMetricLabel(formData.targetWeightKg, 'kg')}
-              description="Una referencia Ãºtil para orientar la experiencia."
+              description="Una referencia útil para orientar la experiencia."
               icon={<Target size={20} />}
               onClick={openTargetWeightPicker}
             />
@@ -1174,7 +1174,7 @@ export default function OnboardingPage() {
             <div className="rounded-[30px] border border-[rgba(0,201,167,0.12)] bg-[rgba(0,201,167,0.05)] p-5">
               <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-[#00C9A7]">Rango recomendado</p>
               <p className="mt-2 text-lg font-bold tracking-tight text-white">
-                {formData.preferredTrainingDays.length}/6 dÃ­as seleccionados
+                {formData.preferredTrainingDays.length}/6 días seleccionados
               </p>
               <p className="mt-1 text-sm leading-6 text-[#98A2B3]">
                 Necesitamos al menos 2 para construir una estructura consistente y hasta 6 para no sobredimensionar tu semana.
@@ -1208,7 +1208,7 @@ export default function OnboardingPage() {
                           selected ? 'bg-[#00C9A7] text-black' : 'bg-[#1A2130] text-[#6F7B91]'
                         }`}
                       >
-                        {selected ? selectedOrder : 'â€”'}
+                        {selected ? selectedOrder : '—'}
                       </div>
                     </div>
                     <div>
@@ -1257,7 +1257,7 @@ export default function OnboardingPage() {
                 <PickerTriggerCard
                   label="Horario principal"
                   value={formatTimeLabel(formData.preferredWorkoutTime)}
-                  description="Se aplicarÃ¡ como referencia para todos los dÃ­as seleccionados."
+                  description="Se aplicará como referencia para todos los días seleccionados."
                   icon={<Clock3 size={20} />}
                   onClick={() => openTimePicker()}
                 />
@@ -1280,7 +1280,7 @@ export default function OnboardingPage() {
                     key={day.value}
                     label={day.value}
                     value={formatTimeLabel(formData.preferredWorkoutTimeByDay[day.value] || DEFAULT_TIME)}
-                    description="Tap para definir una hora dedicada para ese dÃ­a."
+                    description="Tap para definir una hora dedicada para ese día."
                     icon={<Clock3 size={20} />}
                     onClick={() => openTimePicker(day.value)}
                   />
@@ -1316,7 +1316,7 @@ export default function OnboardingPage() {
             <div className="grid grid-cols-2 gap-3">
               <CompactSelectionCard title={formData.goal} subtitle="Objetivo actual" selected onClick={() => undefined} />
               <CompactSelectionCard title={formData.trainingLevel} subtitle="Nivel declarado" selected onClick={() => undefined} />
-              <CompactSelectionCard title={`${formData.preferredTrainingDays.length} dÃ­as`} subtitle="Frecuencia semanal" selected onClick={() => undefined} />
+              <CompactSelectionCard title={`${formData.preferredTrainingDays.length} días`} subtitle="Frecuencia semanal" selected onClick={() => undefined} />
               <CompactSelectionCard title={formData.workoutLocation} subtitle="Lugar de entrenamiento" selected onClick={() => undefined} />
             </div>
 
@@ -1330,7 +1330,7 @@ export default function OnboardingPage() {
                     {formData.firstName.trim()} {formData.lastName.trim()}
                   </p>
                   <p className="text-sm text-[#98A2B3]">
-                    {calculateAgeFromBirthDate(formData.birthDate)} aÃ±os Â· {formData.heightCm} cm Â· {formData.weightKg.toFixed(1).replace('.0', '')} kg
+                    {calculateAgeFromBirthDate(formData.birthDate)} años · {formData.heightCm} cm · {formData.weightKg.toFixed(1).replace('.0', '')} kg
                   </p>
                 </div>
               </div>
@@ -1462,7 +1462,7 @@ export default function OnboardingPage() {
       <DateWheelPicker
         open={pickerState?.type === 'birthDate'}
         title="Fecha de nacimiento"
-        subtitle="DeslizÃ¡ cada columna hasta dejar tu fecha exacta en la franja central."
+        subtitle="Deslizá cada columna hasta dejar tu fecha exacta en la franja central."
         value={birthDraft}
         onChange={setBirthDraft}
         onClose={() => setPickerState(null)}
@@ -1472,7 +1472,7 @@ export default function OnboardingPage() {
       <NumberWheelPicker
         open={pickerState?.type === 'height'}
         title="Altura actual"
-        subtitle="SeleccionÃ¡ tu altura real para mejorar mÃ©tricas, progreso y cÃ¡lculos energÃ©ticos."
+        subtitle="Seleccioná tu altura real para mejorar métricas, progreso y cálculos energéticos."
         value={{ whole: heightDraft.value }}
         onChange={(nextValue) => setHeightDraft({ value: nextValue.whole })}
         wholeOptions={buildNumberOptions(140, 220)}
@@ -1484,7 +1484,7 @@ export default function OnboardingPage() {
       <NumberWheelPicker
         open={pickerState?.type === 'weight'}
         title="Peso actual"
-        subtitle="Este valor se usa como punto de partida para estadÃ­sticas y recomendaciones."
+        subtitle="Este valor se usa como punto de partida para estadísticas y recomendaciones."
         value={weightDraft}
         onChange={(nextValue) => setWeightDraft({ whole: nextValue.whole, decimal: nextValue.decimal ?? '0' })}
         wholeOptions={buildNumberOptions(40, 180)}
@@ -1512,7 +1512,7 @@ export default function OnboardingPage() {
       <TimeWheelPicker
         open={pickerState?.type === 'time'}
         title={pickerState?.type === 'time' && pickerState.day ? `Horario para ${pickerState.day}` : 'Horario principal'}
-        subtitle="DejÃ¡ una hora cÃ³moda y realista. Luego podÃ©s ajustarla cuando quieras."
+        subtitle="Dejá una hora cómoda y realista. Luego podés ajustarla cuando quieras."
         value={timeDraft}
         onChange={setTimeDraft}
         onClose={() => setPickerState(null)}

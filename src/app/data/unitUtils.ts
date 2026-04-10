@@ -41,11 +41,13 @@ export function formatWeightInputValue(valueKg: number, unit: AppSettings['weigh
     return '';
   }
 
-  return formatWeightNumber(valueKg, unit, unit === 'kg' ? 0 : 1);
+  const converted = Number(convertWeightFromKg(valueKg, unit).toFixed(2));
+  return converted.toString();
 }
 
 export function parseWeightInputValue(value: string, unit: AppSettings['weightUnit']) {
-  const numericValue = Number.parseFloat(value);
+  const normalizedValue = value.replace(',', '.');
+  const numericValue = Number.parseFloat(normalizedValue);
   if (!Number.isFinite(numericValue)) {
     return 0;
   }

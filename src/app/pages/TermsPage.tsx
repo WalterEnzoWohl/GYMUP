@@ -6,22 +6,22 @@ const sections = [
   {
     title: '1. Objeto',
     body:
-      'WOHL es una aplicaciÃ³n destinada al registro, organizaciÃ³n y seguimiento personal de entrenamientos, rutinas, ejercicios, mÃ©tricas y notas asociadas a la actividad fÃ­sica del usuario.',
+      'WOHL es una aplicación destinada al registro, organización y seguimiento personal de entrenamientos, rutinas, ejercicios, métricas y notas asociadas a la actividad física del usuario.',
   },
   {
     title: '2. Uso personal',
     body:
-      'La app estÃ¡ pensada para uso personal y no exclusivo. El usuario es responsable de la informaciÃ³n que carga, de la confidencialidad de su cuenta y del uso que realice de las funciones disponibles.',
+      'La app está pensada para uso personal y no exclusivo. El usuario es responsable de la información que carga, de la confidencialidad de su cuenta y del uso que realice de las funciones disponibles.',
   },
   {
     title: '3. Datos y contenidos cargados',
     body:
-      'El usuario conserva la titularidad sobre los datos que ingresa en WOHL, incluyendo rutinas, pesos, repeticiones, notas, historial y perfil. WOHL utiliza esos datos para operar correctamente y mejorar la experiencia dentro de la aplicaciÃ³n.',
+      'El usuario conserva la titularidad sobre los datos que ingresa en WOHL, incluyendo rutinas, pesos, repeticiones, notas, historial y perfil. WOHL utiliza esos datos para operar correctamente y mejorar la experiencia dentro de la aplicación.',
   },
   {
     title: '4. Salud y entrenamiento',
     body:
-      'WOHL no reemplaza asesoramiento mÃ©dico, nutricional, kinÃ©sico ni de entrenamiento profesional. Toda decisiÃ³n sobre cargas, ejercicios, recuperaciÃ³n o alimentaciÃ³n debe ser evaluada por el usuario segÃºn su contexto y, cuando corresponda, con acompaÃ±amiento profesional.',
+      'WOHL no reemplaza asesoramiento médico, nutricional, kinésico ni de entrenamiento profesional. Toda decisión sobre cargas, ejercicios, recuperación o alimentación debe ser evaluada por el usuario según su contexto y, cuando corresponda, con acompañamiento profesional.',
   },
   {
     title: '5. Disponibilidad del servicio',
@@ -31,27 +31,27 @@ const sections = [
   {
     title: '6. Seguridad y acceso',
     body:
-      'El usuario debe elegir una contraseÃ±a segura y mantenerla bajo reserva. WOHL no serÃ¡ responsable por accesos no autorizados derivados del uso negligente de las credenciales por parte del usuario.',
+      'El usuario debe elegir una contraseña segura y mantenerla bajo reserva. WOHL no será responsable por accesos no autorizados derivados del uso negligente de las credenciales por parte del usuario.',
   },
   {
-    title: '7. LimitaciÃ³n de responsabilidad',
+    title: '7. Limitación de responsabilidad',
     body:
-      'Dentro del marco permitido por la normativa aplicable, WOHL y su titular no asumen responsabilidad por daÃ±os directos o indirectos derivados del uso, interrupciÃ³n, pÃ©rdida de datos, decisiones de entrenamiento o resultados fÃ­sicos obtenidos a partir del uso de la app.',
+      'Dentro del marco permitido por la normativa aplicable, WOHL y su titular no asumen responsabilidad por daños directos o indirectos derivados del uso, interrupción, pérdida de datos, decisiones de entrenamiento o resultados físicos obtenidos a partir del uso de la app.',
   },
   {
     title: '8. Propiedad intelectual',
     body:
-      'La marca WOHL, su diseÃ±o visual, estructura de navegaciÃ³n, textos generales y materiales propios de la aplicaciÃ³n pertenecen a su titular, salvo contenidos o recursos de terceros debidamente identificados.',
+      'La marca WOHL, su diseño visual, estructura de navegación, textos generales y materiales propios de la aplicación pertenecen a su titular, salvo contenidos o recursos de terceros debidamente identificados.',
   },
   {
     title: '9. Modificaciones',
     body:
-      'Estos tÃ©rminos pueden actualizarse cuando resulte necesario. La continuidad en el uso de WOHL despuÃ©s de una modificaciÃ³n implica la aceptaciÃ³n de la versiÃ³n vigente publicada en la aplicaciÃ³n.',
+      'Estos términos pueden actualizarse cuando resulte necesario. La continuidad en el uso de WOHL después de una modificación implica la aceptación de la versión vigente publicada en la aplicación.',
   },
   {
-    title: '10. Ley aplicable y jurisdicciÃ³n',
+    title: '10. Ley aplicable y jurisdicción',
     body:
-      'Estos tÃ©rminos se interpretan conforme a las leyes de la RepÃºblica Argentina. Cualquier controversia vinculada al uso de WOHL serÃ¡ sometida a la jurisdicciÃ³n de los tribunales competentes de la RepÃºblica Argentina, salvo disposiciÃ³n legal en contrario.',
+      'Estos términos se interpretan conforme a las leyes de la República Argentina. Cualquier controversia vinculada al uso de WOHL será sometida a la jurisdicción de los tribunales competentes de la República Argentina, salvo disposición legal en contrario.',
   },
 ];
 
@@ -60,7 +60,7 @@ export default function TermsPage() {
 
   return (
     <div className="flex flex-col" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-      <Header showBack title="TÃ©rminos y condiciones" onBack={() => navigate('/config')} />
+      <Header showBack title="Términos y condiciones" onBack={() => navigate('/config')} />
 
       <div className="flex flex-col gap-6 px-4 py-5 pb-7 sm:px-5 sm:py-6">
         <div className="rounded-3xl border border-[rgba(0,201,167,0.14)] bg-[rgba(0,201,167,0.06)] p-5">
@@ -71,7 +71,7 @@ export default function TermsPage() {
             <div className="min-w-0">
               <h1 className="text-2xl font-bold tracking-tight text-white">Condiciones generales de uso</h1>
               <p className="mt-2 text-sm leading-6 text-[#C8C8C8]" style={{ fontFamily: "'Inter', sans-serif" }}>
-                Texto informativo general adaptado al uso de WOHL y al marco legal argentino. Ãšltima actualizaciÃ³n: 7 de abril de 2026.
+                Texto informativo general adaptado al uso de WOHL y al marco legal argentino. Última actualización: 7 de abril de 2026.
               </p>
             </div>
           </div>

@@ -32,17 +32,17 @@ function buildCsvContent(sessionHistory: SessionHistory[], unit: AppSettings['we
   const unitLabel = getWeightUnitLabel(unit);
   const header = [
     'Fecha',
-    'SesiÃ³n',
+    'Sesión',
     'Rutina vinculada',
-    'MÃºsculos',
-    'DuraciÃ³n (min)',
-    'CalorÃ­as',
+    'Músculos',
+    'Duración (min)',
+    'Calorías',
     `Volumen (${unitLabel})`,
     'RPE promedio',
     'Notas',
     'Ejercicio',
     'Implemento',
-    'MÃºsculo principal',
+    'Músculo principal',
     'Serie',
     `Peso (${unitLabel})`,
     'Repeticiones',
@@ -55,7 +55,7 @@ function buildCsvContent(sessionHistory: SessionHistory[], unit: AppSettings['we
         [
           session.date,
           session.name,
-          session.routineId ? 'SÃ­' : 'No',
+          session.routineId ? 'Sí' : 'No',
           session.muscle,
           session.duration,
           session.kcal,
@@ -77,7 +77,7 @@ function buildCsvContent(sessionHistory: SessionHistory[], unit: AppSettings['we
       exercise.sets.map((set, index) => [
         session.date,
         session.name,
-        session.routineId ? 'SÃ­' : 'No',
+        session.routineId ? 'Sí' : 'No',
         session.muscle,
         session.duration,
         session.kcal,
@@ -273,7 +273,7 @@ export default function ConfigPage() {
 
   const handleExportCsv = () => {
     if (sessionHistory.length === 0) {
-      setFeedbackMessage('TodavÃ­a no hay sesiones para exportar.');
+      setFeedbackMessage('Todavía no hay sesiones para exportar.');
       return;
     }
 
@@ -285,18 +285,18 @@ export default function ConfigPage() {
     link.download = `wohl-historial-${new Date().toISOString().slice(0, 10)}.csv`;
     link.click();
     window.URL.revokeObjectURL(objectUrl);
-    setFeedbackMessage('ExportaciÃ³n lista. El archivo CSV ya se descargÃ³.');
+    setFeedbackMessage('Exportación lista. El archivo CSV ya se descargó.');
   };
 
   return (
     <div className="relative flex flex-col" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-      <Header showBack title="ConfiguraciÃ³n" onBack={() => navigate('/profile')} />
+      <Header showBack title="Configuración" onBack={() => navigate('/profile')} />
 
       <div className="flex flex-col gap-6 px-4 py-5 pb-7 sm:px-5 sm:py-6">
         <SettingPanel
           icon={<Moon size={20} className="text-[#00C9A7]" />}
           title="Tu app, a tu manera"
-          body="Desde acÃ¡ ajustÃ¡s cÃ³mo querÃ©s ver tus datos, cÃ³mo se comportan los entrenamientos y cÃ³mo acceder a la ayuda cuando la necesites."
+          body="Desde acá ajustás cómo querés ver tus datos, cómo se comportan los entrenamientos y cómo acceder a la ayuda cuando la necesites."
         />
 
         {feedbackMessage && (
@@ -311,13 +311,13 @@ export default function ConfigPage() {
             <SettingRow
               icon={<User size={18} className="text-[#00C9A7]" />}
               label="Editar perfil"
-              description="ActualizÃ¡ tu nombre, peso, altura, objetivo y nivel."
+              description="Actualizá tu nombre, peso, altura, objetivo y nivel."
               onClick={() => navigate('/profile/edit')}
             />
             <SettingRow
               icon={<Lock size={18} className="text-[#00C9A7]" />}
-              label="Cambiar contraseÃ±a"
-              description="ProtegÃ© tu cuenta cambiando tu contraseÃ±a actual."
+              label="Cambiar contraseña"
+              description="Protegé tu cuenta cambiando tu contraseña actual."
               onClick={() => navigate('/config/password')}
             />
           </div>
@@ -337,7 +337,7 @@ export default function ConfigPage() {
                   <div className="min-w-0">
                     <span className="block text-[1.03rem] font-semibold text-white">Unidades</span>
                     <p className="mt-1 text-sm leading-5 text-[#9BAEC1]" style={{ fontFamily: "'Inter', sans-serif" }}>
-                      DefinÃ­ cÃ³mo querÃ©s ver y cargar el peso en toda la app.
+                      Definí cómo querés ver y cargar el peso en toda la app.
                     </p>
                   </div>
                 </div>
@@ -361,7 +361,7 @@ export default function ConfigPage() {
                   <div className="min-w-0">
                     <span className="block text-[1.03rem] font-semibold text-white">Tema</span>
                     <p className="mt-1 text-sm leading-5 text-[#9BAEC1]" style={{ fontFamily: "'Inter', sans-serif" }}>
-                      AlternÃ¡ entre la versiÃ³n oscura y la versiÃ³n clara.
+                      Alterná entre la versión oscura y la versión clara.
                     </p>
                   </div>
                 </div>
@@ -379,16 +379,16 @@ export default function ConfigPage() {
             <SettingRow
               icon={<TrendingUp size={18} className="text-[#00C9A7]" />}
               label="Sonidos"
-              description="Los sonidos de confirmaciÃ³n y descanso los activaremos en la prÃ³xima fase."
-              right={<span className="text-xs font-semibold uppercase tracking-widest text-[#9BAEC1]">PrÃ³ximamente</span>}
+              description="Los sonidos de confirmación y descanso los activaremos en la próxima fase."
+              right={<span className="text-xs font-semibold uppercase tracking-widest text-[#9BAEC1]">Próximamente</span>}
               disabled
             />
 
             <SettingRow
               icon={<TrendingUp size={18} className="text-[#00C9A7]" />}
-              label="VibraciÃ³n"
-              description="La vibraciÃ³n hÃ¡ptica tambiÃ©n la dejamos para la siguiente iteraciÃ³n."
-              right={<span className="text-xs font-semibold uppercase tracking-widest text-[#9BAEC1]">PrÃ³ximamente</span>}
+              label="Vibración"
+              description="La vibración háptica también la dejamos para la siguiente iteración."
+              right={<span className="text-xs font-semibold uppercase tracking-widest text-[#9BAEC1]">Próximamente</span>}
               disabled
             />
           </div>
@@ -421,7 +421,7 @@ export default function ConfigPage() {
                   <TrendingUp size={18} className="text-[#00C9A7]" />
                 </SettingIcon>
                 <div className="min-w-0 flex-1">
-                  <span className="block text-[1.03rem] font-semibold text-white">Incrementar peso automÃ¡tico</span>
+                  <span className="block text-[1.03rem] font-semibold text-white">Incrementar peso automático</span>
                   <p className="mt-1 text-sm leading-5 text-[#9BAEC1]" style={{ fontFamily: "'Inter', sans-serif" }}>
                     Al agregar una serie nueva, propone subir el peso en vez de copiarlo igual.
                   </p>
@@ -450,9 +450,9 @@ export default function ConfigPage() {
                   </svg>
                 </SettingIcon>
                 <div className="min-w-0 flex-1">
-                  <span className="block text-[1.03rem] font-semibold text-white">Mostrar Ãºltimo peso</span>
+                  <span className="block text-[1.03rem] font-semibold text-white">Mostrar último peso</span>
                   <p className="mt-1 text-sm leading-5 text-[#9BAEC1]" style={{ fontFamily: "'Inter', sans-serif" }}>
-                    Si estÃ¡ activo, verÃ¡s la referencia anterior dentro del mismo campo de peso.
+                    Si está activo, verás la referencia anterior dentro del mismo campo de peso.
                   </p>
                 </div>
                 <div className="shrink-0 self-center pt-0.5">
@@ -469,7 +469,7 @@ export default function ConfigPage() {
             <SettingRow
               icon={<Download size={18} className="text-[#00C9A7]" />}
               label="Exportar a CSV"
-              description={`DescargÃ¡ ${csvPreviewCount} sesiones de historial en un archivo editable.`}
+              description={`Descargá ${csvPreviewCount} sesiones de historial en un archivo editable.`}
               onClick={handleExportCsv}
             />
           </div>
@@ -481,18 +481,18 @@ export default function ConfigPage() {
             <SettingRow
               icon={<HelpCircle size={18} className="text-[#00C9A7]" />}
               label="Centro de ayuda"
-              description="Manual completo con todas las funciones de WOHL y cÃ³mo aprovecharlas."
+              description="Manual completo con todas las funciones de WOHL y cómo aprovecharlas."
               onClick={() => navigate('/config/help')}
             />
             <SettingRow
               icon={<Mail size={18} className="text-[#00C9A7]" />}
               label="Contactar soporte"
-              description="CompletÃ¡ un formulario para redactar un mail de soporte."
+              description="Completá un formulario para redactar un mail de soporte."
               onClick={() => navigate('/config/support')}
             />
             <SettingRow
               icon={<FileText size={18} className="text-[#00C9A7]" />}
-              label="TÃ©rminos y condiciones"
+              label="Términos y condiciones"
               description="Condiciones generales de uso de WOHL bajo ley argentina."
               onClick={() => navigate('/config/terms')}
             />
@@ -506,13 +506,13 @@ export default function ConfigPage() {
             type="button"
           >
             <LogOut size={18} />
-            <span className="text-base font-semibold">Cerrar sesiÃ³n</span>
+            <span className="text-base font-semibold">Cerrar sesión</span>
           </button>
         </div>
 
         <div className="pb-2 text-center">
           <p className="text-[10px] uppercase tracking-[0.22em] text-[#333]" style={{ fontFamily: "'Inter', sans-serif" }}>
-            WOHL V2.0 â€¢ ConfiguraciÃ³n optimizada para pantallas mÃ³viles
+            WOHL V2.0 • Configuración optimizada para pantallas móviles
           </p>
         </div>
       </div>
@@ -523,12 +523,12 @@ export default function ConfigPage() {
             className="absolute inset-0 bg-black/70"
             onClick={() => setShowRestTimerModal(false)}
             type="button"
-            aria-label="Cerrar configuraciÃ³n de descanso"
+            aria-label="Cerrar configuración de descanso"
           />
           <div className="relative w-full rounded-[2rem] bg-[#1A2D42] p-6">
             <h3 className="text-center text-2xl font-bold text-white">Descanso por defecto</h3>
             <p className="mt-2 text-center text-sm text-[#9BAEC1]" style={{ fontFamily: "'Inter', sans-serif" }}>
-              DefinÃ­ cuÃ¡ntos segundos querÃ©s usar por defecto entre series.
+              Definí cuántos segundos querés usar por defecto entre series.
             </p>
 
             <div className="mt-6 flex items-center justify-center gap-3 sm:gap-4">

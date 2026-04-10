@@ -169,7 +169,7 @@ export default function ProfilePage() {
       setShowAvatarEditor(true);
     };
     image.onerror = () => {
-      setAvatarError('No pudimos abrir esa imagen. ProbÃ¡ con otra foto.');
+      setAvatarError('No pudimos abrir esa imagen. Probá con otra foto.');
     };
     image.src = src;
   };
@@ -183,7 +183,7 @@ export default function ProfilePage() {
     }
 
     if (!file.type.startsWith('image/')) {
-      setAvatarError('ElegÃ­ un archivo de imagen vÃ¡lido.');
+      setAvatarError('Elegí un archivo de imagen válido.');
       return;
     }
 
@@ -194,7 +194,7 @@ export default function ProfilePage() {
       }
     };
     reader.onerror = () => {
-      setAvatarError('No pudimos leer esa imagen. ProbÃ¡ de nuevo.');
+      setAvatarError('No pudimos leer esa imagen. Probá de nuevo.');
     };
     reader.readAsDataURL(file);
   };
@@ -406,7 +406,7 @@ export default function ProfilePage() {
 
       await new Promise<void>((resolve, reject) => {
         image.onload = () => resolve();
-        image.onerror = () => reject(new Error('No pudimos guardar la imagen. ProbÃ¡ otra vez.'));
+        image.onerror = () => reject(new Error('No pudimos guardar la imagen. Probá otra vez.'));
         image.src = pendingAvatar.src;
       });
 
@@ -449,7 +449,7 @@ export default function ProfilePage() {
       await updateProfileAvatar(avatarBlob);
       closeAvatarEditor();
     } catch {
-      setAvatarError('No pudimos guardar la imagen. ProbÃ¡ otra vez.');
+      setAvatarError('No pudimos guardar la imagen. Probá otra vez.');
       setIsSavingAvatar(false);
     }
   };
@@ -524,7 +524,7 @@ export default function ProfilePage() {
               unit: weightUnitLabel,
             },
             { label: 'ALTURA', value: userProfile.heightCm.toString(), unit: 'cm' },
-            { label: 'EDAD', value: userProfile.age.toString(), unit: 'aÃ±os' },
+            { label: 'EDAD', value: userProfile.age.toString(), unit: 'años' },
           ].map(({ label, value, unit }) => (
             <div key={label} className="rounded-xl border border-[rgba(255,255,255,0.05)] bg-[#13263A] p-4">
               <p
@@ -702,7 +702,7 @@ export default function ProfilePage() {
             ) : (
               <div className="rounded-2xl border border-[rgba(255,255,255,0.05)] bg-[#13263A] p-5">
                 <p className="text-center text-sm text-[#9BAEC1]" style={{ fontFamily: "'Inter', sans-serif" }}>
-                  No hay sesiones registradas para ese dÃ­a.
+                  No hay sesiones registradas para ese día.
                 </p>
               </div>
             )}
@@ -738,7 +738,7 @@ export default function ProfilePage() {
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[rgba(229,57,53,0.1)]">
                   <LogOut size={18} className="text-[#E53935]" />
                 </div>
-                <span className="text-base font-medium text-[#E53935]">Cerrar sesiÃ³n</span>
+                <span className="text-base font-medium text-[#E53935]">Cerrar sesión</span>
               </div>
             </button>
           </div>
@@ -781,7 +781,7 @@ export default function ProfilePage() {
         <div className="absolute inset-0 z-50 flex items-center justify-center px-3 py-6 sm:px-6">
           <div className="absolute inset-0 bg-black/70" onClick={() => setShowLogoutModal(false)} />
           <div className="relative w-full rounded-3xl p-6" style={{ background: '#1A2D42' }}>
-            <h3 className="mb-2 text-center text-xl font-bold text-white">Cerrar sesiÃ³n</h3>
+            <h3 className="mb-2 text-center text-xl font-bold text-white">Cerrar sesión</h3>
             <p className="mb-6 text-center text-sm text-[#9BAEC1]" style={{ fontFamily: "'Inter', sans-serif" }}>
               Vas a salir de tu cuenta de WOHL en este dispositivo.
             </p>
@@ -791,7 +791,7 @@ export default function ProfilePage() {
                 className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#E53935] py-4 font-bold text-white"
               >
                 <LogOut size={16} />
-                Cerrar sesiÃ³n
+                Cerrar sesión
               </button>
               <button
                 onClick={() => setShowLogoutModal(false)}
@@ -818,9 +818,9 @@ export default function ProfilePage() {
             </button>
             <div className="mb-5 text-center text-white">
               <div>
-                <h3 className="text-xl font-bold text-white sm:text-2xl">AjustÃ¡ tu foto de perfil</h3>
+                <h3 className="text-xl font-bold text-white sm:text-2xl">Ajustá tu foto de perfil</h3>
                 <p className="mt-2 text-sm text-[#98A2B3] sm:text-[15px]" style={{ fontFamily: "'Inter', sans-serif" }}>
-                  ElegÃ­ el encuadre antes de guardarla.
+                  Elegí el encuadre antes de guardarla.
                 </p>
               </div>
             </div>

@@ -5,7 +5,7 @@ import { ActiveWorkoutEditLockModal } from '../components/ActiveWorkoutEditLockM
 import { Header } from '../components/Header';
 import { useAppData } from '../data/AppDataContext';
 
-const muscleOptions = ['Todos', 'Pecho', 'Espalda', 'Hombros', 'TrÃ­ceps', 'BÃ­ceps', 'Piernas', 'Core', 'Full Body'];
+const muscleOptions = ['Todos', 'Pecho', 'Espalda', 'Hombros', 'Tríceps', 'Bíceps', 'Piernas', 'Core', 'Full Body'];
 
 const exerciseLibrary = [
   { name: 'Bench Press (Barra)', muscle: 'Pecho' },
@@ -15,14 +15,14 @@ const exerciseLibrary = [
   { name: 'Elevaciones Laterales', muscle: 'Hombros' },
   { name: 'Dominadas', muscle: 'Espalda' },
   { name: 'Remo con Barra', muscle: 'Espalda' },
-  { name: 'JalÃ³n al Pecho', muscle: 'Espalda' },
+  { name: 'Jalón al Pecho', muscle: 'Espalda' },
   { name: 'Sentadilla', muscle: 'Piernas' },
   { name: 'Peso Muerto', muscle: 'Piernas' },
   { name: 'Prensa de Piernas', muscle: 'Piernas' },
-  { name: 'Curl con Barra', muscle: 'BÃ­ceps' },
-  { name: 'Curl Martillo', muscle: 'BÃ­ceps' },
-  { name: 'Extensiones TrÃ­ceps', muscle: 'TrÃ­ceps' },
-  { name: 'Rompe CrÃ¡neos', muscle: 'TrÃ­ceps' },
+  { name: 'Curl con Barra', muscle: 'Bíceps' },
+  { name: 'Curl Martillo', muscle: 'Bíceps' },
+  { name: 'Extensiones Tríceps', muscle: 'Tríceps' },
+  { name: 'Rompe Cráneos', muscle: 'Tríceps' },
   { name: 'Plancha', muscle: 'Core' },
 ];
 
@@ -45,7 +45,7 @@ export default function RoutineEditorPage() {
         sets: ex.sets.length,
         reps: ex.sets[0]?.reps || 10,
       })),
-    })) || [{ name: 'DÃ­a 1', exercises: [] }]
+    })) || [{ name: 'Día 1', exercises: [] }]
   );
   const [expandedDay, setExpandedDay] = useState<number>(0);
   const [showExSearch, setShowExSearch] = useState<number | null>(null);
@@ -59,7 +59,7 @@ export default function RoutineEditorPage() {
   });
 
   const addDay = () => {
-    setDays((prev) => [...prev, { name: `DÃ­a ${prev.length + 1}`, exercises: [] }]);
+    setDays((prev) => [...prev, { name: `Día ${prev.length + 1}`, exercises: [] }]);
   };
 
   const addExercise = (dayIdx: number, exName: string, muscle: string) => {
@@ -108,7 +108,7 @@ export default function RoutineEditorPage() {
       days: days.map((day, dayIndex) => ({
         id: existing?.days[dayIndex]?.id,
         name: day.name,
-        focus: day.exercises.map((exercise) => exercise.muscle).slice(0, 3).join(', ') || 'SesiÃ³n personalizada',
+        focus: day.exercises.map((exercise) => exercise.muscle).slice(0, 3).join(', ') || 'Sesión personalizada',
         description: existing?.days[dayIndex]?.description ?? undefined,
         exercises: day.exercises.map((exercise, exerciseIndex) => ({
           id: existing?.days[dayIndex]?.exercises[exerciseIndex]?.id ?? exerciseIndex + 1,
@@ -156,7 +156,7 @@ export default function RoutineEditorPage() {
         {/* Frequency selector */}
         <div>
           <label className="text-[#9BAEC1] text-xs uppercase tracking-widest font-semibold mb-3 block" style={{ fontFamily: "'Inter', sans-serif" }}>
-            DÃ­as por semana
+            Días por semana
           </label>
           <div className="flex gap-2">
             {[2, 3, 4, 5, 6, 7].map((d) => (
@@ -179,14 +179,14 @@ export default function RoutineEditorPage() {
         <div>
           <div className="flex items-center justify-between mb-3">
             <label className="text-[#9BAEC1] text-xs uppercase tracking-widest font-semibold" style={{ fontFamily: "'Inter', sans-serif" }}>
-              DÃ­as de entrenamiento
+              Días de entrenamiento
             </label>
             <button
               onClick={addDay}
               className="flex items-center gap-1 text-[#00C9A7] text-xs font-semibold"
             >
               <Plus size={14} />
-              AÃ±adir dÃ­a
+              Añadir día
             </button>
           </div>
 
@@ -226,7 +226,7 @@ export default function RoutineEditorPage() {
                   <div className="border-t border-[#203347] px-4 pb-4">
                     {day.exercises.length === 0 ? (
                       <p className="text-[#9BAEC1] text-sm text-center py-4" style={{ fontFamily: "'Inter', sans-serif" }}>
-                        No hay ejercicios. AÃ±ade uno.
+                        No hay ejercicios. Añade uno.
                       </p>
                     ) : (
                       <div className="flex flex-col gap-2 mt-3">
@@ -244,7 +244,7 @@ export default function RoutineEditorPage() {
                                   onChange={(e) => updateExercise(dayIdx, exIdx, 'sets', Number(e.target.value))}
                                   className="w-8 bg-[#203347] text-white text-xs text-center rounded-lg py-1 outline-none"
                                 />
-                                <span className="text-[#9BAEC1] text-xs">Ã—</span>
+                                <span className="text-[#9BAEC1] text-xs">×</span>
                                 <input
                                   type="number"
                                   value={ex.reps}
@@ -265,7 +265,7 @@ export default function RoutineEditorPage() {
                       className="w-full mt-3 flex items-center justify-center gap-2 border border-dashed border-[rgba(0,201,167,0.3)] rounded-xl py-3 text-[#00C9A7] text-sm font-semibold"
                     >
                       <Plus size={14} />
-                      AÃ±adir Ejercicio
+                      Añadir Ejercicio
                     </button>
                   </div>
                 )}

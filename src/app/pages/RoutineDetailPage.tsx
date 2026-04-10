@@ -15,7 +15,7 @@ export default function RoutineDetailPage() {
     return (
       <div className="flex flex-col" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
         <Header showBack title="Rutina" />
-        <div className="px-5 py-5 text-sm text-[#9BAEC1]">No se encontrÃ³ la rutina.</div>
+        <div className="px-5 py-5 text-sm text-[#9BAEC1]">No se encontró la rutina.</div>
       </div>
     );
   }
@@ -82,7 +82,7 @@ export default function RoutineDetailPage() {
               fontFamily: "'Inter', sans-serif",
             }}
           >
-            {routine.daysPerWeek} dÃ­as por semana
+            {routine.daysPerWeek} días por semana
           </div>
           <h1 className="text-3xl font-extrabold leading-tight tracking-tight text-white">{routine.name}</h1>
           <p className="text-sm leading-6 text-[#9BAEC1]" style={{ fontFamily: "'Inter', sans-serif" }}>

@@ -1,10 +1,9 @@
 import type { MouseEvent } from 'react';
 import { useState } from 'react';
-import { CheckCircle2, Clock, Copy, Pencil, Plus, Target, Trash2, TrendingUp } from 'lucide-react';
+import { CheckCircle2, Clock, Copy, Pencil, Plus, Settings, Target, Trash2, TrendingUp } from 'lucide-react';
 import { useNavigate } from 'react-router';
 import { ActiveWorkoutEditLockModal } from '../components/ActiveWorkoutEditLockModal';
 import { Header } from '../components/Header';
-import { UserAvatar } from '../components/UserAvatar';
 import type { Routine } from '../data/models';
 import { useAppData } from '../data/AppDataContext';
 import { formatCompactWeight } from '../data/unitUtils';
@@ -25,6 +24,16 @@ export default function WorkoutsPage() {
         .reduce((acc, session) => acc + session.volume, 0)
     : 0;
   const weeklyHours = ((activeRoutine?.daysPerWeek ?? 0) * (activeRoutine?.avgMinutes ?? 0)) / 60;
+  const headerSettingsAction = (
+    <button
+      onClick={() => navigate('/config')}
+      className="flex h-10 w-10 items-center justify-center rounded-full border border-[rgba(0,201,167,0.22)] bg-[rgba(0,201,167,0.08)] transition-colors hover:bg-[rgba(0,201,167,0.14)]"
+      type="button"
+      aria-label="Abrir configuración"
+    >
+      <Settings size={17} className="text-[#00C9A7]" />
+    </button>
+  );
 
   const copyCurrentRoutine = async (routine: Routine, event: MouseEvent<HTMLButtonElement>) => {
     event.stopPropagation();
@@ -60,11 +69,7 @@ export default function WorkoutsPage() {
 
   return (
     <div className="relative flex flex-col" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-      <Header
-        rightContent={
-          <UserAvatar />
-        }
-      />
+      <Header rightContent={headerSettingsAction} />
 
       <div className="flex flex-col gap-6 px-5 py-6 pb-4">
         <div className="flex flex-col gap-5">
@@ -82,7 +87,7 @@ export default function WorkoutsPage() {
             className="flex w-full items-center justify-center gap-2 rounded-2xl border border-[rgba(245,185,66,0.24)] bg-[rgba(245,185,66,0.08)] py-4 font-bold text-[#F5B942] transition-colors active:bg-[rgba(245,185,66,0.14)]"
             type="button"
           >
-            Empezar entrenamiento vacÃ­o
+            Empezar entrenamiento vacío
           </button>
         </div>
 
@@ -97,7 +102,7 @@ export default function WorkoutsPage() {
                   <h2 className="mt-2 text-2xl font-bold tracking-tight text-white">{activeRoutine.name}</h2>
                   <p className="mt-2 text-sm text-[#C8C8C8]" style={{ fontFamily: "'Inter', sans-serif" }}>
                     {activeRoutine.description ??
-                      `${activeRoutine.daysPerWeek} dÃ­as por semana con ${activeRoutine.days.length} entrenamientos disponibles.`}
+                      `${activeRoutine.daysPerWeek} días por semana con ${activeRoutine.days.length} entrenamientos disponibles.`}
                   </p>
                 </div>
                 <div className="rounded-2xl border border-[rgba(0,201,167,0.2)] bg-[rgba(0,201,167,0.08)] p-3">
@@ -128,7 +133,7 @@ export default function WorkoutsPage() {
                       className="text-[10px] font-semibold uppercase tracking-wider text-[#777575]"
                       style={{ fontFamily: "'Inter', sans-serif" }}
                     >
-                      Volumen histÃ³rico
+                      Volumen histórico
                     </span>
                   </div>
                   <div className="flex items-baseline gap-1">
@@ -150,10 +155,10 @@ export default function WorkoutsPage() {
                     Sin rutina seleccionada
                   </p>
                   <h2 className="mt-2 text-xl font-bold tracking-tight text-white">
-                    ElegÃ­ una rutina para empezar
+                    Elegí una rutina para empezar
                   </h2>
                   <p className="mt-2 text-sm text-[#D6B9B9]" style={{ fontFamily: "'Inter', sans-serif" }}>
-                    SeleccionÃ¡ una de tus rutinas disponibles abajo para actualizar los entrenamientos,
+                    Seleccioná una de tus rutinas disponibles abajo para actualizar los entrenamientos,
                     el resumen de la rutina y las opciones de inicio.
                   </p>
                 </div>
@@ -162,7 +167,7 @@ export default function WorkoutsPage() {
           )
         ) : (
           <div className="rounded-3xl border border-[#203347] bg-[#13263A] p-6 text-sm text-[#9BAEC1]">
-            TodavÃ­a no tenÃ©s rutinas creadas. CreÃ¡ una nueva para empezar a entrenar.
+            Todavía no tenés rutinas creadas. Creá una nueva para empezar a entrenar.
           </div>
         )}
 
@@ -211,7 +216,7 @@ export default function WorkoutsPage() {
                         className="mt-1 text-[10px] font-semibold uppercase tracking-wider text-white/60"
                         style={{ fontFamily: "'Inter', sans-serif" }}
                       >
-                        {routine.daysPerWeek} dÃ­as / semana
+                        {routine.daysPerWeek} días / semana
                       </p>
                     </div>
                     <div className="-mr-1 flex items-center gap-1">
@@ -326,7 +331,7 @@ export default function WorkoutsPage() {
           <div className="relative w-full rounded-3xl p-6" style={{ background: '#1A2D42' }}>
             <h3 className="mb-2 text-center text-xl font-bold text-white">Eliminar rutina</h3>
             <p className="mb-6 text-center text-sm text-[#9BAEC1]" style={{ fontFamily: "'Inter', sans-serif" }}>
-              Esta acciÃ³n no se puede deshacer. Â¿EstÃ¡s seguro?
+              Esta acción no se puede deshacer. ¿Estás seguro?
             </p>
             <div className="flex flex-col gap-3">
               <button

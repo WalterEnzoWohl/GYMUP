@@ -15,7 +15,7 @@ export default function SupportContactPage() {
 
   const handleSubmit = () => {
     if (!name.trim() || !email.trim() || !subject.trim() || !message.trim()) {
-      setError('CompletÃ¡ todos los campos antes de enviar el formulario.');
+      setError('Completá todos los campos antes de enviar el formulario.');
       return;
     }
 
@@ -47,7 +47,7 @@ export default function SupportContactPage() {
             <div className="min-w-0">
               <h1 className="text-2xl font-bold tracking-tight text-white">Formulario de soporte</h1>
               <p className="mt-2 text-sm leading-6 text-[#C8C8C8]" style={{ fontFamily: "'Inter', sans-serif" }}>
-                CompletÃ¡ el mensaje y WOHL te va a abrir tu aplicaciÃ³n de correo para enviarlo a {SUPPORT_EMAIL}.
+                Completá el mensaje y WOHL te va a abrir tu aplicación de correo para enviarlo a {SUPPORT_EMAIL}.
               </p>
             </div>
           </div>
@@ -63,7 +63,7 @@ export default function SupportContactPage() {
                 id="support-name"
                 value={name}
                 onChange={(event) => setName(event.target.value)}
-                placeholder="CÃ³mo te llamÃ¡s"
+                placeholder="Cómo te llamás"
                 className="w-full rounded-2xl border border-[rgba(0,201,167,0.16)] bg-[#0F131B] px-4 py-3 text-white outline-none transition-colors focus:border-[rgba(0,201,167,0.4)]"
                 style={{ fontFamily: "'Inter', sans-serif" }}
               />
@@ -92,7 +92,7 @@ export default function SupportContactPage() {
                 id="support-subject"
                 value={subject}
                 onChange={(event) => setSubject(event.target.value)}
-                placeholder="Ej. Problema al guardar una sesiÃ³n"
+                placeholder="Ej. Problema al guardar una sesión"
                 className="w-full rounded-2xl border border-[rgba(0,201,167,0.16)] bg-[#0F131B] px-4 py-3 text-white outline-none transition-colors focus:border-[rgba(0,201,167,0.4)]"
                 style={{ fontFamily: "'Inter', sans-serif" }}
               />
@@ -106,7 +106,7 @@ export default function SupportContactPage() {
                 id="support-message"
                 value={message}
                 onChange={(event) => setMessage(event.target.value)}
-                placeholder="ContÃ¡ quÃ© pasÃ³, quÃ© esperabas que ocurriera y cÃ³mo reproducirlo."
+                placeholder="Contá qué pasó, qué esperabas que ocurriera y cómo reproducirlo."
                 className="min-h-36 w-full resize-none rounded-2xl border border-[rgba(0,201,167,0.16)] bg-[#0F131B] px-4 py-3 text-white outline-none transition-colors focus:border-[rgba(0,201,167,0.4)]"
                 style={{ fontFamily: "'Inter', sans-serif" }}
               />
@@ -134,7 +134,7 @@ export default function SupportContactPage() {
             className="w-full rounded-2xl bg-[#13263A] py-4 font-semibold text-white"
             type="button"
           >
-            Volver a configuraciÃ³n
+            Volver a configuración
           </button>
         </div>
       </div>
