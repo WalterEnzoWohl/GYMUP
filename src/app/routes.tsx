@@ -1,45 +1,36 @@
-import { createBrowserRouter } from 'react-router';
+import type { ComponentType } from 'react';
+import { createBrowserRouter, type RouteObject } from 'react-router';
 import Root from './Root';
-import HomePage from './pages/HomePage';
-import TrainingSessionPage from './pages/TrainingSessionPage';
-import WorkoutsPage from './pages/WorkoutsPage';
-import ProfilePage from './pages/ProfilePage';
-import ProfileEditorPage from './pages/ProfileEditorPage';
-import ConfigPage from './pages/ConfigPage';
-import ChangePasswordPage from './pages/ChangePasswordPage';
-import HelpCenterPage from './pages/HelpCenterPage';
-import PostSessionPage from './pages/PostSessionPage';
-import RoutineDetailPage from './pages/RoutineDetailPage';
-import RoutineEditorPage from './pages/RoutineEditorPage';
-import SessionHistoryPage from './pages/SessionHistoryPage';
-import MuscleProgressPage from './pages/MuscleProgressPage';
-import HistoryPage from './pages/HistoryPage';
-import SupportContactPage from './pages/SupportContactPage';
-import TermsPage from './pages/TermsPage';
-import OnboardingPage from './pages/OnboardingPage';
+
+function lazyPage(importPage: () => Promise<{ default: ComponentType }>): RouteObject['lazy'] {
+  return async () => {
+    const module = await importPage();
+    return { Component: module.default };
+  };
+}
 
 export const router = createBrowserRouter([
   {
     path: '/',
     Component: Root,
     children: [
-      { index: true, Component: HomePage },
-      { path: 'session', Component: TrainingSessionPage },
-      { path: 'post-session', Component: PostSessionPage },
-      { path: 'workouts', Component: WorkoutsPage },
-      { path: 'profile', Component: ProfilePage },
-      { path: 'profile/edit', Component: ProfileEditorPage },
-      { path: 'onboarding', Component: OnboardingPage },
-      { path: 'config', Component: ConfigPage },
-      { path: 'config/password', Component: ChangePasswordPage },
-      { path: 'config/help', Component: HelpCenterPage },
-      { path: 'config/support', Component: SupportContactPage },
-      { path: 'config/terms', Component: TermsPage },
-      { path: 'routine/:id', Component: RoutineDetailPage },
-      { path: 'routine-editor/:id', Component: RoutineEditorPage },
-      { path: 'session-history/:id', Component: SessionHistoryPage },
-      { path: 'muscle-progress/:id', Component: MuscleProgressPage },
-      { path: 'history', Component: HistoryPage },
+      { index: true, lazy: lazyPage(() => import('@/features/home/pages/HomePage')) },
+      { path: 'session', lazy: lazyPage(() => import('@/features/session/pages/TrainingSessionPage')) },
+      { path: 'post-session', lazy: lazyPage(() => import('@/features/session/pages/PostSessionPage')) },
+      { path: 'workouts', lazy: lazyPage(() => import('@/features/routines/pages/WorkoutsPage')) },
+      { path: 'profile', lazy: lazyPage(() => import('@/features/profile/pages/ProfilePage')) },
+      { path: 'profile/edit', lazy: lazyPage(() => import('@/features/profile/pages/ProfileEditorPage')) },
+      { path: 'onboarding', lazy: lazyPage(() => import('@/features/onboarding/pages/OnboardingPage')) },
+      { path: 'config', lazy: lazyPage(() => import('@/features/settings/pages/ConfigPage')) },
+      { path: 'config/password', lazy: lazyPage(() => import('@/features/auth/pages/ChangePasswordPage')) },
+      { path: 'config/help', lazy: lazyPage(() => import('@/features/settings/pages/HelpCenterPage')) },
+      { path: 'config/support', lazy: lazyPage(() => import('@/features/settings/pages/SupportContactPage')) },
+      { path: 'config/terms', lazy: lazyPage(() => import('@/features/settings/pages/TermsPage')) },
+      { path: 'routine/:id', lazy: lazyPage(() => import('@/features/routines/pages/RoutineDetailPage')) },
+      { path: 'routine-editor/:id', lazy: lazyPage(() => import('@/features/routines/pages/RoutineEditorPage')) },
+      { path: 'session-history/:id', lazy: lazyPage(() => import('@/features/history/pages/SessionHistoryPage')) },
+      { path: 'muscle-progress/:id', lazy: lazyPage(() => import('@/features/history/pages/MuscleProgressPage')) },
+      { path: 'history', lazy: lazyPage(() => import('@/features/history/pages/HistoryPage')) },
     ],
   },
 ]);

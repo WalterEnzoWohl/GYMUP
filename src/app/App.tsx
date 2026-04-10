@@ -2,11 +2,11 @@ import { useEffect, useState } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { RouterProvider } from 'react-router';
 import { brandLogoWhite } from '@/assets';
-import { AppDataProvider } from './data/AppDataContext';
+import { AppDataProvider } from '@/core/app-data/AppDataContext';
 import { router } from './routes';
-import { AuthScreen } from './components/AuthScreen';
-import { AppSetupScreen } from './components/AppSetupScreen';
-import { getSupabaseClient, isSupabaseConfigured } from './lib/supabase';
+import { AuthScreen } from '@/features/auth/components/AuthScreen';
+import { AppSetupScreen } from '@/shared/components/layout/AppSetupScreen';
+import { getSupabaseClient, isSupabaseConfigured } from '@/shared/lib/supabase';
 
 function LoadingScreen() {
   return (

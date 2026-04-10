@@ -1,10 +1,10 @@
 import { useEffect } from 'react';
 import { Navigate, Outlet, useLocation, useNavigate } from 'react-router';
-import { ActiveWorkoutDock } from './components/ActiveWorkoutDock';
-import { BottomNav } from './components/BottomNav';
-import { useAppData } from './data/AppDataContext';
-import { hasCompletedOnboarding } from './data/userProfileUtils';
-import { getSupabaseClient } from './lib/supabase';
+import { ActiveWorkoutDock } from '@/shared/components/layout/ActiveWorkoutDock';
+import { BottomNav } from '@/shared/components/layout/BottomNav';
+import { useAppData } from '@/core/app-data/AppDataContext';
+import { hasCompletedOnboarding } from '@/shared/lib/userProfileUtils';
+import { getSupabaseClient } from '@/shared/lib/supabase';
 
 const HIDE_NAV_PATHS = ['/session', '/post-session', '/onboarding'];
 
