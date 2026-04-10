@@ -135,7 +135,12 @@ function writeAppSettings(userId: string, settings: AppSettings) {
 
 function withDerivedState(userProfile: UserProfile, routines: Routine[], sessionHistory: SessionHistory[]) {
   const appContext = buildAppContext(routines, sessionHistory, userProfile.activeRoutineId);
-  const weekDays = buildWeekDayStatus(sessionHistory, appContext.todayIso);
+  const weekDays = buildWeekDayStatus(
+    sessionHistory,
+    appContext.todayIso,
+    userProfile.preferredTrainingDays,
+    userProfile.onboardingCompletedAt
+  );
   const historyDays = buildHistoryCalendar(appContext.todayIso);
 
   return {

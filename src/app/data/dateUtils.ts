@@ -17,6 +17,10 @@ const SHORT_DATE_FORMATTER = new Intl.DateTimeFormat('es-AR', {
   day: 'numeric',
   month: 'long',
 });
+const LONG_WEEKDAY_FORMATTER = new Intl.DateTimeFormat('es-AR', {
+  timeZone: TIME_ZONE,
+  weekday: 'long',
+});
 
 function normalizeText(value: string) {
   return value.charAt(0).toUpperCase() + value.slice(1);
@@ -136,15 +140,26 @@ function startOfWeek(isoDate: string) {
 
 const WEEKDAY_LABELS = ['DOM', 'LUN', 'MAR', 'MIE', 'JUE', 'VIE', 'SAB'];
 
-export function buildWeekDayStatus(sessions: SessionHistory[], referenceIso: string): WeekDayStatus[] {
+export function buildWeekDayStatus(
+  sessions: SessionHistory[],
+  referenceIso: string,
+  preferredTrainingDays: string[] = [],
+  onboardingCompletedAt?: string
+): WeekDayStatus[] {
   const mondayIso = startOfWeek(referenceIso);
+  const preferredDays = new Set(preferredTrainingDays.map((day) => day.trim().toLowerCase()));
+  const onboardingIso = onboardingCompletedAt?.slice(0, 10) ?? null;
 
   return Array.from({ length: 7 }, (_, index) => {
     const isoDate = addDays(mondayIso, index);
     const date = parseIsoDate(isoDate);
     const completed = sessions.some((session) => session.isoDate === isoDate);
     const active = isoDate === referenceIso;
-    const missed = isoDate < referenceIso && !completed;
+    const weekdayName = normalizeText(LONG_WEEKDAY_FORMATTER.format(date));
+    const hasExpectedSchedule =
+      preferredDays.size === 0 || preferredDays.has(weekdayName.toLowerCase());
+    const alreadyUsingApp = !onboardingIso || isoDate >= onboardingIso;
+    const missed = isoDate < referenceIso && !completed && hasExpectedSchedule && alreadyUsingApp;
 
     return {
       day: WEEKDAY_LABELS[date.getDay()],

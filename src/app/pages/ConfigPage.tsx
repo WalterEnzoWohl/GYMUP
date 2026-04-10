@@ -212,13 +212,18 @@ function SegmentedControl<T extends string>({
   onChange: (value: T) => void;
 }) {
   return (
-    <div className="flex shrink-0 flex-wrap gap-1 rounded-2xl bg-[#203347] p-1">
+    <div
+      className="grid w-full shrink-0 gap-1 rounded-2xl bg-[#203347] p-1"
+      style={{ gridTemplateColumns: `repeat(${options.length}, minmax(0, 1fr))` }}
+    >
       {options.map((option) => (
         <button
           key={option.value}
           onClick={() => onChange(option.value)}
-          className={`rounded-xl px-3 py-1.5 text-[11px] font-bold uppercase tracking-wide transition-all ${
-            value === option.value ? 'bg-[#00C9A7] text-[#041016]' : 'text-[#9BAEC1]'
+          className={`min-h-[42px] rounded-xl px-3 py-2 text-center text-[11px] font-bold uppercase tracking-wide transition-all ${
+            value === option.value
+              ? 'bg-[#00C9A7] text-[#041016] shadow-[0_10px_24px_rgba(0,201,167,0.18)]'
+              : 'text-[#9BAEC1]'
           }`}
           type="button"
         >
@@ -327,7 +332,7 @@ export default function ConfigPage() {
           <SectionLabel>App</SectionLabel>
           <div className="overflow-hidden rounded-3xl bg-[#13263A]">
             <div className="border-b border-[rgba(255,255,255,0.04)] px-4 py-4">
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex flex-col gap-4">
                 <div className="flex items-start gap-4">
                   <SettingIcon>
                     <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
@@ -341,19 +346,21 @@ export default function ConfigPage() {
                     </p>
                   </div>
                 </div>
-                <SegmentedControl
-                  value={appSettings.weightUnit}
-                  options={[
-                    { value: 'kg', label: 'KG' },
-                    { value: 'lb', label: 'LB' },
-                  ]}
-                  onChange={(value) => updateAppSettings({ weightUnit: value })}
-                />
+                <div className="w-full sm:max-w-[220px]">
+                  <SegmentedControl
+                    value={appSettings.weightUnit}
+                    options={[
+                      { value: 'kg', label: 'KG' },
+                      { value: 'lb', label: 'LB' },
+                    ]}
+                    onChange={(value) => updateAppSettings({ weightUnit: value })}
+                  />
+                </div>
               </div>
             </div>
 
             <div className="border-b border-[rgba(255,255,255,0.04)] px-4 py-4">
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex flex-col gap-4">
                 <div className="flex items-start gap-4">
                   <SettingIcon>
                     <Moon size={18} className="text-[#00C9A7]" />
@@ -365,14 +372,16 @@ export default function ConfigPage() {
                     </p>
                   </div>
                 </div>
-                <SegmentedControl
-                  value={appSettings.theme}
-                  options={[
-                    { value: 'dark', label: 'Oscuro' },
-                    { value: 'light', label: 'Claro' },
-                  ]}
-                  onChange={(value) => updateAppSettings({ theme: value })}
-                />
+                <div className="w-full sm:max-w-[220px]">
+                  <SegmentedControl
+                    value={appSettings.theme}
+                    options={[
+                      { value: 'dark', label: 'Oscuro' },
+                      { value: 'light', label: 'Claro' },
+                    ]}
+                    onChange={(value) => updateAppSettings({ theme: value })}
+                  />
+                </div>
               </div>
             </div>
 

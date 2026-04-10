@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
-import { Plus, Trash2, ChevronDown, ChevronUp, Save, Search } from 'lucide-react';
+import { ChevronDown, ChevronUp, Plus, Save, Search, Trash2 } from 'lucide-react';
 import { ActiveWorkoutEditLockModal } from '../components/ActiveWorkoutEditLockModal';
 import { Header } from '../components/Header';
 import { useAppData } from '../data/AppDataContext';
+import type { Routine } from '../data/models';
 
 const muscleOptions = ['Todos', 'Pecho', 'Espalda', 'Hombros', 'Tríceps', 'Bíceps', 'Piernas', 'Core', 'Full Body'];
 
@@ -26,88 +27,216 @@ const exerciseLibrary = [
   { name: 'Plancha', muscle: 'Core' },
 ];
 
+type RoutineExerciseDraft = {
+  name: string;
+  muscle: string;
+  sets: number;
+  reps: number;
+};
+
+type RoutineDayDraft = {
+  name: string;
+  exercises: RoutineExerciseDraft[];
+};
+
+function createEmptyDay(index: number): RoutineDayDraft {
+  return {
+    name: `Día ${index + 1}`,
+    exercises: [],
+  };
+}
+
+function isGenericDayName(name: string) {
+  return /^d[ií]a\s+\d+$/i.test(name.trim());
+}
+
+function normalizeDayNames(days: RoutineDayDraft[]) {
+  return days.map((day, index) =>
+    isGenericDayName(day.name) ? { ...day, name: `Día ${index + 1}` } : day
+  );
+}
+
+function buildInitialDays(existing: Routine | null) {
+  if (existing?.days.length) {
+    return existing.days.map((day) => ({
+      name: day.name,
+      exercises: day.exercises.map((exercise) => ({
+        name: exercise.name,
+        muscle: exercise.muscle,
+        sets: exercise.sets.length || 3,
+        reps: exercise.sets[0]?.reps || 10,
+      })),
+    }));
+  }
+
+  const initialCount = Math.max(existing?.daysPerWeek ?? 4, 2);
+  return Array.from({ length: initialCount }, (_, index) => createEmptyDay(index));
+}
+
 export default function RoutineEditorPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { activeWorkout, routines, saveRoutine } = useAppData();
   const isNew = id === 'new';
-  const existing = !isNew ? routines.find((r) => r.id === Number(id)) : null;
+  const existing = !isNew ? routines.find((routine) => routine.id === Number(id)) ?? null : null;
   const isEditingBlocked = Boolean(activeWorkout && !isNew && existing);
+  const initialDays = buildInitialDays(existing);
 
-  const [name, setName] = useState(existing?.name || '');
-  const [daysPerWeek, setDaysPerWeek] = useState(existing?.daysPerWeek || 4);
-  const [days, setDays] = useState(
-    existing?.days.map((d) => ({
-      name: d.name,
-      exercises: d.exercises.map((ex) => ({
-        name: ex.name,
-        muscle: ex.muscle,
-        sets: ex.sets.length,
-        reps: ex.sets[0]?.reps || 10,
-      })),
-    })) || [{ name: 'Día 1', exercises: [] }]
-  );
-  const [expandedDay, setExpandedDay] = useState<number>(0);
+  const [name, setName] = useState(existing?.name ?? '');
+  const [nameError, setNameError] = useState('');
+  const [daysPerWeek, setDaysPerWeek] = useState(Math.max(existing?.daysPerWeek ?? initialDays.length, 2));
+  const [days, setDays] = useState<RoutineDayDraft[]>(initialDays);
+  const [expandedDay, setExpandedDay] = useState(0);
   const [showExSearch, setShowExSearch] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedMuscle, setSelectedMuscle] = useState('Todos');
 
-  const filteredExercises = exerciseLibrary.filter((ex) => {
-    const matchMuscle = selectedMuscle === 'Todos' || ex.muscle === selectedMuscle;
-    const matchSearch = ex.name.toLowerCase().includes(searchQuery.toLowerCase());
+  const filteredExercises = exerciseLibrary.filter((exercise) => {
+    const matchMuscle = selectedMuscle === 'Todos' || exercise.muscle === selectedMuscle;
+    const matchSearch = exercise.name.toLowerCase().includes(searchQuery.toLowerCase());
     return matchMuscle && matchSearch;
   });
 
-  const addDay = () => {
-    setDays((prev) => [...prev, { name: `Día ${prev.length + 1}`, exercises: [] }]);
+  const syncDayCount = (nextCount: number) => {
+    if (nextCount === days.length) {
+      setDaysPerWeek(nextCount);
+      return;
+    }
+
+    if (nextCount < days.length) {
+      const removedDays = days.slice(nextCount);
+      const willDeleteExercises = removedDays.some((day) => day.exercises.length > 0);
+
+      if (
+        willDeleteExercises &&
+        !window.confirm('Los días que quites también van a borrar sus ejercicios. ¿Querés continuar?')
+      ) {
+        return;
+      }
+    }
+
+    setDaysPerWeek(nextCount);
+    setDays((previous) => {
+      if (previous.length < nextCount) {
+        return [
+          ...previous,
+          ...Array.from({ length: nextCount - previous.length }, (_, index) => createEmptyDay(previous.length + index)),
+        ];
+      }
+
+      return normalizeDayNames(previous.slice(0, nextCount));
+    });
+    setExpandedDay((current) => (current >= nextCount ? nextCount - 1 : current));
+    setShowExSearch((current) => (current !== null && current >= nextCount ? null : current));
   };
 
-  const addExercise = (dayIdx: number, exName: string, muscle: string) => {
-    setDays((prev) =>
-      prev.map((d, i) =>
-        i === dayIdx
-          ? { ...d, exercises: [...d.exercises, { name: exName, muscle, sets: 3, reps: 10 }] }
-          : d
+  const addDay = () => {
+    if (days.length >= 7) {
+      return;
+    }
+
+    const nextCount = days.length + 1;
+    setDays((previous) => [...previous, createEmptyDay(previous.length)]);
+    setDaysPerWeek(nextCount);
+    setExpandedDay(nextCount - 1);
+  };
+
+  const removeDay = (dayIndex: number) => {
+    if (days.length <= 2) {
+      return;
+    }
+
+    const dayToRemove = days[dayIndex];
+    if (
+      dayToRemove.exercises.length > 0 &&
+      !window.confirm(`Se eliminará ${dayToRemove.name} con todos sus ejercicios. ¿Querés continuar?`)
+    ) {
+      return;
+    }
+
+    setDays((previous) => normalizeDayNames(previous.filter((_, index) => index !== dayIndex)));
+    setDaysPerWeek((previous) => Math.max(2, previous - 1));
+    setExpandedDay((current) => {
+      if (current === dayIndex) {
+        return Math.max(0, dayIndex - 1);
+      }
+
+      return current > dayIndex ? current - 1 : current;
+    });
+    setShowExSearch((current) => {
+      if (current === null) {
+        return null;
+      }
+
+      if (current === dayIndex) {
+        return null;
+      }
+
+      return current > dayIndex ? current - 1 : current;
+    });
+  };
+
+  const addExercise = (dayIndex: number, exerciseName: string, muscle: string) => {
+    setDays((previous) =>
+      previous.map((day, index) =>
+        index === dayIndex
+          ? {
+              ...day,
+              exercises: [...day.exercises, { name: exerciseName, muscle, sets: 3, reps: 10 }],
+            }
+          : day
       )
     );
     setShowExSearch(null);
     setSearchQuery('');
+    setSelectedMuscle('Todos');
   };
 
-  const removeExercise = (dayIdx: number, exIdx: number) => {
-    setDays((prev) =>
-      prev.map((d, i) =>
-        i === dayIdx ? { ...d, exercises: d.exercises.filter((_, ei) => ei !== exIdx) } : d
+  const removeExercise = (dayIndex: number, exerciseIndex: number) => {
+    setDays((previous) =>
+      previous.map((day, index) =>
+        index === dayIndex
+          ? { ...day, exercises: day.exercises.filter((_, currentExerciseIndex) => currentExerciseIndex !== exerciseIndex) }
+          : day
       )
     );
   };
 
-  const updateExercise = (dayIdx: number, exIdx: number, field: 'sets' | 'reps', value: number) => {
-    setDays((prev) =>
-      prev.map((d, i) =>
-        i === dayIdx
+  const updateExercise = (dayIndex: number, exerciseIndex: number, field: 'sets' | 'reps', value: number) => {
+    const nextValue = Number.isFinite(value) && value > 0 ? value : 1;
+
+    setDays((previous) =>
+      previous.map((day, index) =>
+        index === dayIndex
           ? {
-              ...d,
-              exercises: d.exercises.map((ex, ei) => (ei === exIdx ? { ...ex, [field]: value } : ex)),
+              ...day,
+              exercises: day.exercises.map((exercise, currentExerciseIndex) =>
+                currentExerciseIndex === exerciseIndex ? { ...exercise, [field]: nextValue } : exercise
+              ),
             }
-          : d
+          : day
       )
     );
   };
 
   const handleSave = async () => {
-    const routineToSave = {
+    if (!name.trim()) {
+      setNameError('Tu rutina necesita un nombre para poder guardarse.');
+      return;
+    }
+
+    const routineToSave: Routine = {
       id: existing?.id ?? 0,
-      name: name.trim() || 'Nueva rutina',
-      daysPerWeek,
+      name: name.trim(),
+      daysPerWeek: days.length,
       color: existing?.color ?? '#00C9A7',
       categories: existing?.categories ?? [],
-      description: existing?.description ?? 'Rutina personalizada creada en WOHL.',
+      description: existing?.description ?? 'Sistema personalizado creado en WOHL.',
       tags: existing?.tags ?? ['PERSONALIZADA'],
       avgMinutes: existing?.avgMinutes ?? 75,
       days: days.map((day, dayIndex) => ({
         id: existing?.days[dayIndex]?.id,
-        name: day.name,
+        name: day.name.trim() || `Día ${dayIndex + 1}`,
         focus: day.exercises.map((exercise) => exercise.muscle).slice(0, 3).join(', ') || 'Sesión personalizada',
         description: existing?.days[dayIndex]?.description ?? undefined,
         exercises: day.exercises.map((exercise, exerciseIndex) => ({
@@ -138,222 +267,293 @@ export default function RoutineEditorPage() {
 
       {!isEditingBlocked ? (
         <div className="flex flex-col gap-5 px-5 py-5 pb-6">
-        {/* Name input */}
-        <div>
-          <label className="text-[#9BAEC1] text-xs uppercase tracking-widest font-semibold mb-2 block" style={{ fontFamily: "'Inter', sans-serif" }}>
-            Nombre de la Rutina
-          </label>
-          <input
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="ej. Upper / Lower Volumen..."
-            className="w-full bg-[#13263A] border border-[#203347] rounded-xl px-4 py-3 text-white text-base outline-none focus:border-[rgba(0,201,167,0.4)] transition-colors"
-            style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
-          />
-        </div>
-
-        {/* Frequency selector */}
-        <div>
-          <label className="text-[#9BAEC1] text-xs uppercase tracking-widest font-semibold mb-3 block" style={{ fontFamily: "'Inter', sans-serif" }}>
-            Días por semana
-          </label>
-          <div className="flex gap-2">
-            {[2, 3, 4, 5, 6, 7].map((d) => (
-              <button
-                key={d}
-                onClick={() => setDaysPerWeek(d)}
-                className={`w-10 h-10 rounded-xl font-bold text-sm transition-all ${
-                  daysPerWeek === d
-                    ? 'bg-[#00C9A7] text-black'
-                    : 'bg-[#1A2D42] text-[#9BAEC1] border border-[#203347]'
-                }`}
-              >
-                {d}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Days / Exercises */}
-        <div>
-          <div className="flex items-center justify-between mb-3">
-            <label className="text-[#9BAEC1] text-xs uppercase tracking-widest font-semibold" style={{ fontFamily: "'Inter', sans-serif" }}>
-              Días de entrenamiento
-            </label>
-            <button
-              onClick={addDay}
-              className="flex items-center gap-1 text-[#00C9A7] text-xs font-semibold"
+          <div>
+            <label
+              className="mb-2 block text-xs font-semibold uppercase tracking-widest text-[#9BAEC1]"
+              style={{ fontFamily: "'Inter', sans-serif" }}
             >
-              <Plus size={14} />
-              Añadir día
-            </button>
+              Nombre de la rutina
+            </label>
+            <input
+              type="text"
+              value={name}
+              onChange={(event) => {
+                setName(event.target.value);
+                if (nameError && event.target.value.trim()) {
+                  setNameError('');
+                }
+              }}
+              placeholder="Ponle un nombre a tu sistema"
+              className={`w-full rounded-xl border bg-[#13263A] px-4 py-3 text-base text-white outline-none transition-colors ${
+                nameError
+                  ? 'border-[rgba(255,125,125,0.45)]'
+                  : 'border-[#203347] focus:border-[rgba(0,201,167,0.4)]'
+              }`}
+              style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+            />
+            {nameError ? (
+              <p className="mt-2 text-sm text-[#FF8E8E]" style={{ fontFamily: "'Inter', sans-serif" }}>
+                {nameError}
+              </p>
+            ) : null}
           </div>
 
-          <div className="flex flex-col gap-3">
-            {days.map((day, dayIdx) => (
-              <div key={dayIdx} className="bg-[#13263A] rounded-2xl border border-[#203347] overflow-hidden">
+          <div>
+            <label
+              className="mb-3 block text-xs font-semibold uppercase tracking-widest text-[#9BAEC1]"
+              style={{ fontFamily: "'Inter', sans-serif" }}
+            >
+              Días por semana
+            </label>
+            <div className="flex gap-2">
+              {[2, 3, 4, 5, 6, 7].map((dayCount) => (
                 <button
-                  onClick={() => setExpandedDay(expandedDay === dayIdx ? -1 : dayIdx)}
-                  className="w-full flex items-center justify-between px-4 py-4"
+                  key={dayCount}
+                  onClick={() => syncDayCount(dayCount)}
+                  className={`h-10 w-10 rounded-xl text-sm font-bold transition-all ${
+                    daysPerWeek === dayCount
+                      ? 'bg-[#00C9A7] text-black'
+                      : 'border border-[#203347] bg-[#1A2D42] text-[#9BAEC1]'
+                  }`}
+                  type="button"
                 >
-                  <div>
-                    <input
-                      type="text"
-                      value={day.name}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        setDays((prev) =>
-                          prev.map((d, i) => (i === dayIdx ? { ...d, name: val } : d))
-                        );
-                        e.stopPropagation();
-                      }}
-                      onClick={(e) => e.stopPropagation()}
-                      className="bg-transparent text-white font-semibold text-base outline-none"
-                    />
-                    <p className="text-[#9BAEC1] text-xs mt-0.5" style={{ fontFamily: "'Inter', sans-serif" }}>
-                      {day.exercises.length} ejercicios
-                    </p>
-                  </div>
-                  {expandedDay === dayIdx ? (
-                    <ChevronUp size={16} className="text-[#9BAEC1]" />
-                  ) : (
-                    <ChevronDown size={16} className="text-[#9BAEC1]" />
-                  )}
+                  {dayCount}
                 </button>
-
-                {expandedDay === dayIdx && (
-                  <div className="border-t border-[#203347] px-4 pb-4">
-                    {day.exercises.length === 0 ? (
-                      <p className="text-[#9BAEC1] text-sm text-center py-4" style={{ fontFamily: "'Inter', sans-serif" }}>
-                        No hay ejercicios. Añade uno.
-                      </p>
-                    ) : (
-                      <div className="flex flex-col gap-2 mt-3">
-                        {day.exercises.map((ex, exIdx) => (
-                          <div key={exIdx} className="flex items-center gap-3 bg-[#1A2D42] rounded-xl px-3 py-3">
-                            <div className="flex-1">
-                              <p className="text-white text-sm font-semibold">{ex.name}</p>
-                              <p className="text-[#9BAEC1] text-xs" style={{ fontFamily: "'Inter', sans-serif" }}>{ex.muscle}</p>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <div className="flex items-center gap-1">
-                                <input
-                                  type="number"
-                                  value={ex.sets}
-                                  onChange={(e) => updateExercise(dayIdx, exIdx, 'sets', Number(e.target.value))}
-                                  className="w-8 bg-[#203347] text-white text-xs text-center rounded-lg py-1 outline-none"
-                                />
-                                <span className="text-[#9BAEC1] text-xs">×</span>
-                                <input
-                                  type="number"
-                                  value={ex.reps}
-                                  onChange={(e) => updateExercise(dayIdx, exIdx, 'reps', Number(e.target.value))}
-                                  className="w-8 bg-[#203347] text-white text-xs text-center rounded-lg py-1 outline-none"
-                                />
-                              </div>
-                              <button onClick={() => removeExercise(dayIdx, exIdx)}>
-                                <Trash2 size={14} className="text-[#E53935]/60" />
-                              </button>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                    <button
-                      onClick={() => setShowExSearch(dayIdx)}
-                      className="w-full mt-3 flex items-center justify-center gap-2 border border-dashed border-[rgba(0,201,167,0.3)] rounded-xl py-3 text-[#00C9A7] text-sm font-semibold"
-                    >
-                      <Plus size={14} />
-                      Añadir Ejercicio
-                    </button>
-                  </div>
-                )}
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
 
-        {/* Save button */}
-        <button
-          onClick={() => void handleSave()}
-          className="w-full bg-[#00C9A7] rounded-2xl py-4 flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(0,201,167,0.2)]"
-        >
-          <Save size={18} className="text-black" />
-          <span className="text-black font-bold text-base">Guardar Rutina</span>
-        </button>
+          <div>
+            <div className="mb-3 flex items-center justify-between gap-4">
+              <label
+                className="text-xs font-semibold uppercase tracking-widest text-[#9BAEC1]"
+                style={{ fontFamily: "'Inter', sans-serif" }}
+              >
+                Días de entrenamiento
+              </label>
+              <span className="text-xs text-[#6F859A]" style={{ fontFamily: "'Inter', sans-serif" }}>
+                {days.length} días armados
+              </span>
+            </div>
+
+            <div className="flex flex-col gap-3">
+              {days.map((day, dayIndex) => (
+                <div key={`${day.name}-${dayIndex}`} className="overflow-hidden rounded-2xl border border-[#203347] bg-[#13263A]">
+                  <button
+                    onClick={() => setExpandedDay(expandedDay === dayIndex ? -1 : dayIndex)}
+                    className="flex w-full items-center justify-between px-4 py-4"
+                    type="button"
+                  >
+                    <div className="min-w-0 flex-1 text-left">
+                      <input
+                        type="text"
+                        value={day.name}
+                        onChange={(event) => {
+                          const nextName = event.target.value;
+                          setDays((previous) =>
+                            previous.map((currentDay, index) => (index === dayIndex ? { ...currentDay, name: nextName } : currentDay))
+                          );
+                        }}
+                        onClick={(event) => event.stopPropagation()}
+                        className="w-full bg-transparent text-base font-semibold text-white outline-none"
+                      />
+                      <p className="mt-0.5 text-xs text-[#9BAEC1]" style={{ fontFamily: "'Inter', sans-serif" }}>
+                        {day.exercises.length} ejercicios
+                      </p>
+                    </div>
+
+                    <div className="ml-4 flex items-center gap-2">
+                      <button
+                        type="button"
+                        disabled={days.length <= 2}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          removeDay(dayIndex);
+                        }}
+                        className={`flex h-9 w-9 items-center justify-center rounded-xl border transition-colors ${
+                          days.length <= 2
+                            ? 'border-[#203347] text-[#4F6378] opacity-45'
+                            : 'border-[rgba(255,125,125,0.18)] bg-[rgba(255,125,125,0.08)] text-[#FF8E8E] active:bg-[rgba(255,125,125,0.14)]'
+                        }`}
+                      >
+                        <Trash2 size={14} />
+                      </button>
+
+                      {expandedDay === dayIndex ? (
+                        <ChevronUp size={16} className="text-[#9BAEC1]" />
+                      ) : (
+                        <ChevronDown size={16} className="text-[#9BAEC1]" />
+                      )}
+                    </div>
+                  </button>
+
+                  {expandedDay === dayIndex ? (
+                    <div className="border-t border-[#203347] px-4 pb-4">
+                      {day.exercises.length === 0 ? (
+                        <p
+                          className="py-4 text-center text-sm text-[#9BAEC1]"
+                          style={{ fontFamily: "'Inter', sans-serif" }}
+                        >
+                          No hay ejercicios. Añade uno.
+                        </p>
+                      ) : (
+                        <div className="mt-3 flex flex-col gap-2">
+                          {day.exercises.map((exercise, exerciseIndex) => (
+                            <div key={`${exercise.name}-${exerciseIndex}`} className="flex items-center gap-3 rounded-xl bg-[#1A2D42] px-3 py-3">
+                              <div className="flex-1">
+                                <p className="text-sm font-semibold text-white">{exercise.name}</p>
+                                <p className="text-xs text-[#9BAEC1]" style={{ fontFamily: "'Inter', sans-serif" }}>
+                                  {exercise.muscle}
+                                </p>
+                              </div>
+
+                              <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-1">
+                                  <input
+                                    type="number"
+                                    min={1}
+                                    value={exercise.sets}
+                                    onChange={(event) => updateExercise(dayIndex, exerciseIndex, 'sets', Number(event.target.value))}
+                                    className="w-9 rounded-lg bg-[#203347] py-1 text-center text-xs text-white outline-none"
+                                  />
+                                  <span className="text-xs text-[#9BAEC1]">×</span>
+                                  <input
+                                    type="number"
+                                    min={1}
+                                    value={exercise.reps}
+                                    onChange={(event) => updateExercise(dayIndex, exerciseIndex, 'reps', Number(event.target.value))}
+                                    className="w-9 rounded-lg bg-[#203347] py-1 text-center text-xs text-white outline-none"
+                                  />
+                                </div>
+
+                                <button type="button" onClick={() => removeExercise(dayIndex, exerciseIndex)}>
+                                  <Trash2 size={14} className="text-[#E53935]/60" />
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      <button
+                        onClick={() => {
+                          setShowExSearch(dayIndex);
+                          setSearchQuery('');
+                          setSelectedMuscle('Todos');
+                        }}
+                        className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-[rgba(0,201,167,0.3)] py-3 text-sm font-semibold text-[#00C9A7]"
+                        type="button"
+                      >
+                        <Plus size={14} />
+                        Añadir ejercicio
+                      </button>
+                    </div>
+                  ) : null}
+                </div>
+              ))}
+            </div>
+
+            {days.length < 7 ? (
+              <button
+                onClick={addDay}
+                className="mt-3 flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-[rgba(0,201,167,0.28)] bg-[rgba(0,201,167,0.06)] px-4 py-4 text-[#00C9A7] transition-colors active:bg-[rgba(0,201,167,0.12)]"
+                type="button"
+              >
+                <Plus size={16} />
+                <span className="text-sm font-semibold">Agregar día de entrenamiento</span>
+              </button>
+            ) : null}
+          </div>
+
+          <button
+            onClick={() => void handleSave()}
+            className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#00C9A7] py-4 shadow-[0_0_15px_rgba(0,201,167,0.2)]"
+            type="button"
+          >
+            <Save size={18} className="text-black" />
+            <span className="text-base font-bold text-black">Guardar rutina</span>
+          </button>
         </div>
       ) : (
         <div className="flex-1" />
       )}
 
-      {/* Exercise search bottom sheet */}
-      {showExSearch !== null && !isEditingBlocked && (
+      {showExSearch !== null && !isEditingBlocked ? (
         <div className="absolute inset-0 z-50">
           <div className="absolute inset-0 bg-black/60" onClick={() => setShowExSearch(null)} />
           <div
-            className="absolute bottom-0 left-0 right-0 rounded-t-3xl flex flex-col"
-            style={{ background: '#1A2D42', maxHeight: '80%' }}
+            className="absolute bottom-0 left-0 right-0 flex max-h-[80%] flex-col rounded-t-3xl"
+            style={{ background: '#1A2D42' }}
           >
-            <div className="w-10 h-1 bg-[#203347] rounded-full mx-auto mt-4 mb-3 flex-shrink-0" />
-            <div className="px-5 pb-4 flex-shrink-0">
-              <h3 className="text-white font-bold text-lg mb-3">Buscar Ejercicio</h3>
+            <div className="mx-auto mb-3 mt-4 h-1 w-10 shrink-0 rounded-full bg-[#203347]" />
+
+            <div className="shrink-0 px-5 pb-4">
+              <h3 className="mb-3 text-lg font-bold text-white">Buscar ejercicio</h3>
               <div className="relative mb-3">
                 <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9BAEC1]" />
                 <input
                   type="text"
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onChange={(event) => setSearchQuery(event.target.value)}
                   placeholder="Buscar ejercicio..."
-                  className="w-full bg-[#203347] rounded-xl pl-9 pr-4 py-3 text-white text-sm outline-none border border-[#333]"
-                  autoFocus
+                  className="w-full rounded-xl border border-[#333] bg-[#203347] py-3 pl-9 pr-4 text-sm text-white outline-none"
                 />
               </div>
+
               <div className="flex gap-2 overflow-x-auto pb-1">
-                {muscleOptions.map((m) => (
+                {muscleOptions.map((muscle) => (
                   <button
-                    key={m}
-                    onClick={() => setSelectedMuscle(m)}
-                    className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap flex-shrink-0 transition-all ${
-                      selectedMuscle === m
-                        ? 'bg-[#00C9A7] text-black'
-                        : 'bg-[#203347] text-[#9BAEC1]'
+                    key={muscle}
+                    onClick={() => setSelectedMuscle(muscle)}
+                    className={`shrink-0 whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-semibold transition-all ${
+                      selectedMuscle === muscle ? 'bg-[#00C9A7] text-black' : 'bg-[#203347] text-[#9BAEC1]'
                     }`}
+                    type="button"
                   >
-                    {m}
+                    {muscle}
                   </button>
                 ))}
               </div>
             </div>
+
             <div className="overflow-y-auto px-5 pb-6">
               <div className="flex flex-col gap-2">
-                {filteredExercises.map((ex) => (
+                {filteredExercises.map((exercise) => (
                   <button
-                    key={ex.name}
-                    onClick={() => addExercise(showExSearch, ex.name, ex.muscle)}
-                    className="flex items-center justify-between bg-[#203347] rounded-xl px-4 py-3 text-left hover:bg-[#333] transition-colors"
+                    key={exercise.name}
+                    onClick={() => addExercise(showExSearch, exercise.name, exercise.muscle)}
+                    className="flex items-center justify-between rounded-xl bg-[#203347] px-4 py-3 text-left transition-colors hover:bg-[#2A415A]"
+                    type="button"
                   >
                     <div>
-                      <p className="text-white text-sm font-medium">{ex.name}</p>
-                      <p className="text-[#9BAEC1] text-xs" style={{ fontFamily: "'Inter', sans-serif" }}>{ex.muscle}</p>
+                      <p className="text-sm font-medium text-white">{exercise.name}</p>
+                      <p className="text-xs text-[#9BAEC1]" style={{ fontFamily: "'Inter', sans-serif" }}>
+                        {exercise.muscle}
+                      </p>
                     </div>
-                    <Plus size={16} className="text-[#00C9A7] flex-shrink-0" />
+                    <Plus size={16} className="shrink-0 text-[#00C9A7]" />
                   </button>
                 ))}
+
+                {filteredExercises.length === 0 ? (
+                  <div className="rounded-2xl border border-[#203347] bg-[#13263A] px-4 py-5 text-center text-sm text-[#9BAEC1]">
+                    No encontramos ejercicios con ese filtro.
+                  </div>
+                ) : null}
               </div>
             </div>
           </div>
         </div>
-      )}
+      ) : null}
 
-      {isEditingBlocked && activeWorkout && (
+      {isEditingBlocked && activeWorkout ? (
         <ActiveWorkoutEditLockModal
           activeWorkoutName={activeWorkout.sessionName}
           onResume={() => navigate('/session')}
           onFinish={() => navigate('/session', { state: { action: 'finish' } })}
           onCancel={() => navigate(-1)}
         />
-      )}
+      ) : null}
     </div>
   );
 }

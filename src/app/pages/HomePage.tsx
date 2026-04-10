@@ -304,7 +304,9 @@ export default function HomePage() {
                       </svg>
                     </div>
                   ) : (
-                    <div className="h-10 w-10 rounded-full bg-[#203347]" />
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full border border-[rgba(144,164,184,0.18)] bg-[rgba(32,51,71,0.72)]">
+                      <span className="text-lg font-semibold leading-none text-[#90A4B8]">-</span>
+                    </div>
                   )}
                 </div>
               ))}

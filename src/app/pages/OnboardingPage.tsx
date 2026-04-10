@@ -334,7 +334,7 @@ function PremiumInput({
   onChange,
 }: {
   label: string;
-  placeholder: string;
+  placeholder?: string;
   value: string;
   onChange: (value: string) => void;
 }) {
@@ -1003,13 +1003,11 @@ export default function OnboardingPage() {
             <div className="space-y-4 rounded-[30px] border border-[rgba(255,255,255,0.06)] bg-[#0F1420] p-5">
               <PremiumInput
                 label="Nombre"
-                placeholder="Enzo"
                 value={formData.firstName}
                 onChange={(value) => setField('firstName', value)}
               />
               <PremiumInput
                 label="Apellido"
-                placeholder="Wohl"
                 value={formData.lastName}
                 onChange={(value) => setField('lastName', value)}
               />

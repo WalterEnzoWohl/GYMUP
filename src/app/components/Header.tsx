@@ -31,7 +31,7 @@ export function Header({ showBack, backLabel, title, rightContent, onBack }: Hea
       className="sticky top-0 shrink-0 z-30 border-b border-[#203347] px-4 backdrop-blur-xl"
       style={{
         background: 'rgba(11, 31, 51, 0.94)',
-        paddingTop: 'env(safe-area-inset-top)',
+        paddingTop: 'var(--wohl-safe-top)',
       }}
     >
       <div className="flex h-14 items-center">

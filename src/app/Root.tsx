@@ -26,7 +26,7 @@ export default function Root() {
 
   return (
     <div
-      className={`wohl-stage min-h-screen flex items-center justify-center ${isLightMode ? 'wohl-light-stage' : ''}`}
+      className={`wohl-stage flex min-h-[100dvh] items-stretch justify-center md:items-center ${isLightMode ? 'wohl-light-stage' : ''}`}
     >
       <div
         className={`wohl-shell relative flex flex-col ${isLightMode ? 'wohl-light-mode' : ''}`}

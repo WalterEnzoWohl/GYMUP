@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 
 const VISIBLE_ROWS = 5;
@@ -25,6 +25,8 @@ function clamp(value: number, min: number, max: number) {
 function WheelColumn({ active, value, options, onChange, align = 'center' }: WheelColumnProps) {
   const scrollerRef = useRef<HTMLDivElement | null>(null);
   const snapTimeoutRef = useRef<number | null>(null);
+  const settleTimeoutRef = useRef<number | null>(null);
+  const [settledValue, setSettledValue] = useState(value);
 
   const selectedIndex = useMemo(() => {
     const index = options.findIndex((option) => option.value === value);
@@ -50,8 +52,30 @@ function WheelColumn({ active, value, options, onChange, align = 'center' }: Whe
       if (snapTimeoutRef.current) {
         window.clearTimeout(snapTimeoutRef.current);
       }
+
+      if (settleTimeoutRef.current) {
+        window.clearTimeout(settleTimeoutRef.current);
+      }
     };
   }, []);
+
+  useEffect(() => {
+    setSettledValue((current) => (current === value ? current : ''));
+
+    if (settleTimeoutRef.current) {
+      window.clearTimeout(settleTimeoutRef.current);
+    }
+
+    settleTimeoutRef.current = window.setTimeout(() => {
+      setSettledValue(value);
+    }, 1000);
+
+    return () => {
+      if (settleTimeoutRef.current) {
+        window.clearTimeout(settleTimeoutRef.current);
+      }
+    };
+  }, [value]);
 
   const handleScroll = () => {
     const element = scrollerRef.current;
@@ -92,6 +116,7 @@ function WheelColumn({ active, value, options, onChange, align = 'center' }: Whe
       >
         {options.map((option) => {
           const selected = option.value === value;
+          const illuminated = selected && settledValue === value;
 
           return (
             <div
@@ -107,8 +132,12 @@ function WheelColumn({ active, value, options, onChange, align = 'center' }: Whe
                 }`}
               >
                 <span
-                  className={`block truncate tracking-tight transition-all duration-150 ${
-                    selected ? 'text-[2rem] font-black text-[#00C9A7]' : 'text-[1.2rem] font-semibold opacity-70'
+                  className={`block truncate tracking-tight transition-all duration-200 ${
+                    illuminated
+                      ? 'text-[2rem] font-black text-[#00C9A7]'
+                      : selected
+                        ? 'text-[1.85rem] font-extrabold text-white'
+                        : 'text-[1.2rem] font-semibold opacity-70'
                   }`}
                 >
                   {option.label}
