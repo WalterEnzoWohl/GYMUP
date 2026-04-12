@@ -1,0 +1,79 @@
+{
+  "id": "ABEC557F",
+  "slug": "shrug-dumbbell",
+  "primary_group": "traps",
+  "secondary_groups": [
+    "neck"
+  ],
+  "primary_muscles": [
+    "trapezius"
+  ],
+  "secondary_muscles": [
+    "neck"
+  ],
+  "equipment": [
+    "dumbbell"
+  ],
+  "station_or_machine": "rack",
+  "grip_or_stance": "medium_pronated",
+  "movement_pattern": "horizontal_pull",
+  "mechanic_type": "compound",
+  "difficulty": "intermediate",
+  "bodyweight": false,
+  "unilateral": false,
+  "media": {
+    "cover_image": "",
+    "animation_media": "exercises/shrug-dumbbell/demo.mp4",
+    "animation_media_type": "video"
+  },
+  "i18n": {
+    "es": {
+      "title": "Shrug (mancuernas)",
+      "description": "Ejercicio enfocado principalmente en trapecio.",
+      "overview": "Movimiento de tirón horizontal enfocado en la espalda media y superior.",
+      "instructions": [
+        "Ubicate en rack con postura estable y pecho abierto.",
+        "Tomá el implemento con agarre pronado medio.",
+        "Llevá los codos hacia atrás acercando la carga al torso.",
+        "Regresá lento, manteniendo tensión en la espalda durante todo el recorrido."
+      ],
+      "tips": [
+        "Pensá en llevar los codos hacia atrás en vez de tirar con las manos.",
+        "Mantené el pecho abierto durante todo el ejercicio."
+      ],
+      "common_mistakes": [
+        "Encoger hombros durante el tirón",
+        "Usar impulso del torso"
+      ],
+      "benefits": [
+        "Contribuye al desarrollo de la espalda media y superior."
+      ]
+    },
+    "en": {
+      "title": "Shrug (Dumbbell)",
+      "description": "Exercise primarily focused on the traps.",
+      "overview": "Horizontal pulling movement focused on the mid and upper back.",
+      "instructions": [
+        "Set up on the rack with a stable posture and open chest.",
+        "Take the implement with a medium pronated grip.",
+        "Drive the elbows back and bring the load toward the torso.",
+        "Return slowly while maintaining tension through the back."
+      ],
+      "tips": [
+        "Think about driving the elbows back instead of pulling with the hands.",
+        "Keep the chest open throughout the exercise."
+      ],
+      "common_mistakes": [
+        "Shrugging during the pull",
+        "Using torso momentum"
+      ],
+      "benefits": [
+        "Supports development of the mid and upper back."
+      ]
+    }
+  },
+  "source": {
+    "original_title": "Shrug (Dumbbell)"
+  },
+  "is_active": true
+}

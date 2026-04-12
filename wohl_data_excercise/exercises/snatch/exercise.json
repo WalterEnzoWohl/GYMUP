@@ -1,0 +1,75 @@
+{
+  "id": "FB09C938",
+  "slug": "snatch",
+  "primary_group": "full_body",
+  "secondary_groups": [],
+  "primary_muscles": [
+    "full_body"
+  ],
+  "secondary_muscles": [],
+  "equipment": [
+    "barbell"
+  ],
+  "station_or_machine": "rack",
+  "grip_or_stance": "medium_pronated",
+  "movement_pattern": "cardio",
+  "mechanic_type": "cardio",
+  "difficulty": "advanced",
+  "bodyweight": false,
+  "unilateral": false,
+  "media": {
+    "cover_image": "",
+    "animation_media": "exercises/snatch/demo.mp4",
+    "animation_media_type": "video"
+  },
+  "i18n": {
+    "es": {
+      "title": "Snatch",
+      "description": "Ejercicio enfocado principalmente en cuerpo entero.",
+      "overview": "Ejercicio cardiovascular.",
+      "instructions": [
+        "Prepará una postura cómoda y segura.",
+        "Iniciá el movimiento con ritmo controlado.",
+        "Sostené la técnica durante todo el ejercicio.",
+        "Finalizá reduciendo progresivamente la intensidad."
+      ],
+      "tips": [
+        "Mantené una técnica consistente a lo largo del esfuerzo.",
+        "Ajustá el ritmo según tu capacidad y objetivo."
+      ],
+      "common_mistakes": [
+        "Empezar demasiado rápido",
+        "Perder la técnica por fatiga"
+      ],
+      "benefits": [
+        "Contribuye a la capacidad cardiovascular y al gasto energético."
+      ]
+    },
+    "en": {
+      "title": "Snatch",
+      "description": "Exercise primarily focused on the full body.",
+      "overview": "Cardio exercise.",
+      "instructions": [
+        "Set up in a safe and comfortable starting position.",
+        "Begin the movement at a controlled pace.",
+        "Maintain sound technique throughout the exercise.",
+        "Finish by gradually reducing intensity."
+      ],
+      "tips": [
+        "Keep technique consistent throughout the effort.",
+        "Adjust the pace according to your capacity and goal."
+      ],
+      "common_mistakes": [
+        "Starting too fast",
+        "Losing technique due to fatigue"
+      ],
+      "benefits": [
+        "Supports cardiovascular fitness and energy expenditure."
+      ]
+    }
+  },
+  "source": {
+    "original_title": "Snatch"
+  },
+  "is_active": true
+}

@@ -18,6 +18,7 @@ function figmaAssetPlugin() {
 }
 
 export default defineConfig({
+  publicDir: 'wohl_data_excercise',
   plugins: [
     react(),
     tailwindcss(),

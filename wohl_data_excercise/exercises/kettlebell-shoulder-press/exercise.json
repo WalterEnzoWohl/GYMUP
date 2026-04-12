@@ -1,0 +1,79 @@
+{
+  "id": "6433CD93",
+  "slug": "kettlebell-shoulder-press",
+  "primary_group": "shoulders",
+  "secondary_groups": [
+    "triceps"
+  ],
+  "primary_muscles": [
+    "deltoids"
+  ],
+  "secondary_muscles": [
+    "triceps"
+  ],
+  "equipment": [
+    "kettlebell"
+  ],
+  "station_or_machine": "rack",
+  "grip_or_stance": "medium_pronated",
+  "movement_pattern": "vertical_push",
+  "mechanic_type": "compound",
+  "difficulty": "intermediate",
+  "bodyweight": false,
+  "unilateral": false,
+  "media": {
+    "cover_image": "",
+    "animation_media": "exercises/kettlebell-shoulder-press/demo.mp4",
+    "animation_media_type": "video"
+  },
+  "i18n": {
+    "es": {
+      "title": "Kettlebell Press de hombros",
+      "description": "Ejercicio enfocado principalmente en hombros.",
+      "overview": "Movimiento de empuje vertical con énfasis en hombros y tríceps.",
+      "instructions": [
+        "Colocate en rack con el torso firme y el abdomen activo.",
+        "Tomá el implemento con agarre pronado medio a la altura adecuada.",
+        "Empujá hacia arriba sin perder alineación del tronco.",
+        "Volvé de manera controlada hasta la posición inicial."
+      ],
+      "tips": [
+        "Mantené el abdomen activo para no compensar con la zona lumbar.",
+        "Evitá perder la línea de empuje al final del recorrido."
+      ],
+      "common_mistakes": [
+        "Compensar con la zona lumbar",
+        "Empujar fuera de la línea del movimiento"
+      ],
+      "benefits": [
+        "Mejora la fuerza de empuje por encima de la cabeza."
+      ]
+    },
+    "en": {
+      "title": "Kettlebell Shoulder Press",
+      "description": "Exercise primarily focused on the shoulders.",
+      "overview": "Vertical pressing movement emphasizing shoulders and triceps.",
+      "instructions": [
+        "Set up on the rack with a braced torso and active core.",
+        "Take the implement with a medium pronated grip at the appropriate height.",
+        "Press upward without losing trunk alignment.",
+        "Return under control to the starting position."
+      ],
+      "tips": [
+        "Keep the core braced to avoid lower-back compensation.",
+        "Do not lose the pressing line at the top of the movement."
+      ],
+      "common_mistakes": [
+        "Overusing the lower back",
+        "Pressing out of the intended path"
+      ],
+      "benefits": [
+        "Improves overhead pressing strength."
+      ]
+    }
+  },
+  "source": {
+    "original_title": "Kettlebell Shoulder Press"
+  },
+  "is_active": true
+}

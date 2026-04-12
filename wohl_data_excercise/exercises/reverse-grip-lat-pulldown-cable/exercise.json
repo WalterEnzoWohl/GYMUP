@@ -1,0 +1,81 @@
+{
+  "id": "046E25A2",
+  "slug": "reverse-grip-lat-pulldown-cable",
+  "primary_group": "dorsals",
+  "secondary_groups": [
+    "upper_back",
+    "biceps"
+  ],
+  "primary_muscles": [
+    "latissimus_dorsi"
+  ],
+  "secondary_muscles": [
+    "upper_back",
+    "biceps"
+  ],
+  "equipment": [
+    "machine"
+  ],
+  "station_or_machine": "lat_pulldown_station",
+  "grip_or_stance": "medium_pronated",
+  "movement_pattern": "vertical_pull",
+  "mechanic_type": "compound",
+  "difficulty": "beginner",
+  "bodyweight": false,
+  "unilateral": false,
+  "media": {
+    "cover_image": "",
+    "animation_media": "exercises/reverse-grip-lat-pulldown-cable/demo.mp4",
+    "animation_media_type": "video"
+  },
+  "i18n": {
+    "es": {
+      "title": "Reverse Grip Jalón al pecho (polea)",
+      "description": "Ejercicio enfocado principalmente en dorsales.",
+      "overview": "Movimiento de tirón vertical enfocado en dorsales y brazos.",
+      "instructions": [
+        "Ajustate en polea alta con el tronco firme y hombros descendidos.",
+        "Tomá el implemento con agarre pronado medio.",
+        "Tirá llevando los codos hacia abajo y cerca del cuerpo según la variante.",
+        "Volvé arriba de forma controlada sin soltar la tensión."
+      ],
+      "tips": [
+        "Bajá los hombros antes de iniciar el tirón.",
+        "Guiá el movimiento con los codos y no con las manos."
+      ],
+      "common_mistakes": [
+        "Tirar con los brazos antes que con la espalda",
+        "Perder el control al subir"
+      ],
+      "benefits": [
+        "Favorece el desarrollo de dorsales y estabilidad escapular."
+      ]
+    },
+    "en": {
+      "title": "Reverse Grip Lat Pulldown (Cable)",
+      "description": "Exercise primarily focused on the lats.",
+      "overview": "Vertical pulling movement focused on lats and arms.",
+      "instructions": [
+        "Set up on the lat pulldown station with a stable torso and shoulders down.",
+        "Take the implement with a medium pronated grip.",
+        "Pull by driving the elbows down according to the variation.",
+        "Return upward under control without dropping the tension."
+      ],
+      "tips": [
+        "Set the shoulders down before starting the pull.",
+        "Lead the motion with the elbows, not the hands."
+      ],
+      "common_mistakes": [
+        "Pulling with the arms before the back",
+        "Losing control on the way up"
+      ],
+      "benefits": [
+        "Helps build the lats and scapular control."
+      ]
+    }
+  },
+  "source": {
+    "original_title": "Reverse Grip Lat Pulldown (Cable)"
+  },
+  "is_active": true
+}

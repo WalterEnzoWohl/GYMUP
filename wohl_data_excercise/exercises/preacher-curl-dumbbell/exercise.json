@@ -1,0 +1,75 @@
+{
+  "id": "FAB6EB2F",
+  "slug": "preacher-curl-dumbbell",
+  "primary_group": "biceps",
+  "secondary_groups": [],
+  "primary_muscles": [
+    "biceps"
+  ],
+  "secondary_muscles": [],
+  "equipment": [
+    "dumbbell"
+  ],
+  "station_or_machine": "rack",
+  "grip_or_stance": "medium_pronated",
+  "movement_pattern": "elbow_flexion",
+  "mechanic_type": "isolation",
+  "difficulty": "intermediate",
+  "bodyweight": false,
+  "unilateral": false,
+  "media": {
+    "cover_image": "",
+    "animation_media": "exercises/preacher-curl-dumbbell/demo.mp4",
+    "animation_media_type": "video"
+  },
+  "i18n": {
+    "es": {
+      "title": "Preacher Curl (mancuernas)",
+      "description": "Ejercicio enfocado principalmente en bíceps.",
+      "overview": "Movimiento de flexión de codo enfocado en bíceps y antebrazo.",
+      "instructions": [
+        "Ubicate en rack con los brazos alineados al costado del cuerpo.",
+        "Tomá el implemento con agarre pronado medio.",
+        "Flexioná los codos elevando la carga sin balancear el torso.",
+        "Descendé de forma controlada hasta extender nuevamente los brazos."
+      ],
+      "tips": [
+        "Mantené los codos relativamente quietos durante la repetición.",
+        "No balancees el torso para levantar la carga."
+      ],
+      "common_mistakes": [
+        "Mover los codos hacia adelante",
+        "Balancear el torso"
+      ],
+      "benefits": [
+        "Aísla la flexión de codo para desarrollar bíceps y antebrazo."
+      ]
+    },
+    "en": {
+      "title": "Preacher Curl (Dumbbell)",
+      "description": "Exercise primarily focused on the biceps.",
+      "overview": "Elbow flexion movement focused on biceps and forearm.",
+      "instructions": [
+        "Set up on the rack with the arms aligned by your sides.",
+        "Take the implement with a medium pronated grip.",
+        "Flex the elbows to raise the load without swinging the torso.",
+        "Lower under control until the arms are extended again."
+      ],
+      "tips": [
+        "Keep the elbows relatively still during the rep.",
+        "Avoid swinging the torso to lift the load."
+      ],
+      "common_mistakes": [
+        "Letting the elbows drift forward",
+        "Swinging the torso"
+      ],
+      "benefits": [
+        "Isolates elbow flexion to develop the biceps and forearm."
+      ]
+    }
+  },
+  "source": {
+    "original_title": "Preacher Curl (Dumbbell)"
+  },
+  "is_active": true
+}

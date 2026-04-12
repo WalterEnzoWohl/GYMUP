@@ -1,0 +1,83 @@
+{
+  "id": "291ABA92",
+  "slug": "hip-thrust-smith-machine",
+  "primary_group": "glutes",
+  "secondary_groups": [
+    "hamstrings",
+    "quadriceps",
+    "adductors"
+  ],
+  "primary_muscles": [
+    "glutes"
+  ],
+  "secondary_muscles": [
+    "hamstrings",
+    "quadriceps",
+    "adductors"
+  ],
+  "equipment": [
+    "machine"
+  ],
+  "station_or_machine": "smith_machine",
+  "grip_or_stance": "medium_pronated",
+  "movement_pattern": "hip_extension",
+  "mechanic_type": "compound",
+  "difficulty": "beginner",
+  "bodyweight": false,
+  "unilateral": false,
+  "media": {
+    "cover_image": "",
+    "animation_media": "exercises/hip-thrust-smith-machine/demo.mp4",
+    "animation_media_type": "video"
+  },
+  "i18n": {
+    "es": {
+      "title": "Hip thrust (Smith)",
+      "description": "Ejercicio enfocado principalmente en glúteos.",
+      "overview": "Movimiento de extensión de cadera enfocado en glúteos.",
+      "instructions": [
+        "Colocate en máquina Smith con el cuerpo bien apoyado.",
+        "Iniciá el movimiento extendiendo la cadera.",
+        "Contraé glúteos al final del recorrido.",
+        "Volvé lento a la posición inicial manteniendo el control."
+      ],
+      "tips": [
+        "Buscá la contracción de glúteos al final del recorrido.",
+        "Evitá hiperextender la zona lumbar en la parte alta."
+      ],
+      "common_mistakes": [
+        "Extender con la zona lumbar",
+        "Perder la tensión al volver"
+      ],
+      "benefits": [
+        "Enfatiza el trabajo de glúteos y la extensión de cadera."
+      ]
+    },
+    "en": {
+      "title": "Hip Thrust (Smith Machine)",
+      "description": "Exercise primarily focused on the glutes.",
+      "overview": "Hip extension movement focused on the glutes.",
+      "instructions": [
+        "Set up on the smith machine with the body well supported.",
+        "Start the movement by extending the hips.",
+        "Squeeze the glutes at the end of the range.",
+        "Return slowly to the starting position with control."
+      ],
+      "tips": [
+        "Focus on glute contraction at the top.",
+        "Avoid hyperextending the lower back at lockout."
+      ],
+      "common_mistakes": [
+        "Driving the motion with the lower back",
+        "Losing tension on the return"
+      ],
+      "benefits": [
+        "Emphasizes glute work and hip extension."
+      ]
+    }
+  },
+  "source": {
+    "original_title": "Hip Thrust (Smith Machine)"
+  },
+  "is_active": true
+}

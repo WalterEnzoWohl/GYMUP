@@ -14,6 +14,8 @@ import { DndProvider } from 'react-dnd';
 import { TouchBackend } from 'react-dnd-touch-backend';
 import { useLocation, useNavigate } from 'react-router';
 import { brandLogoWhite } from '@/assets';
+import { buildExerciseTemplateFromCatalog } from '@/features/exercises/lib/exerciseCatalog';
+import { useExerciseCatalog } from '@/features/exercises/hooks/useExerciseCatalog';
 import { ActiveWorkoutEditLockModal } from '@/shared/components/layout/ActiveWorkoutEditLockModal';
 import { TrainingExerciseCard } from '@/features/session/components/TrainingExerciseCard';
 import {
@@ -60,6 +62,11 @@ type ExerciseHistoryEntry = {
 export default function TrainingSessionPage() {
   const navigate = useNavigate();
   const { state } = useLocation() as { state?: SessionLocationState };
+  const {
+    catalog: exerciseCatalog,
+    error: exerciseCatalogError,
+    isLoading: isExerciseCatalogLoading,
+  } = useExerciseCatalog();
   const {
     activeWorkout,
     appContext,
@@ -326,6 +333,26 @@ export default function TrainingSessionPage() {
   }, []);
 
   const currentExercise = exerciseList[currentExIdx] ?? null;
+  const catalogExerciseTemplates = useMemo(
+    () => exerciseCatalog.map((exercise) => buildExerciseTemplateFromCatalog(exercise)),
+    [exerciseCatalog]
+  );
+  const fallbackExerciseTemplates = useMemo(
+    () =>
+      routines
+        .flatMap((item) => item.days.flatMap((day) => day.exercises))
+        .filter(
+          (exercise, index, array) =>
+            array.findIndex((candidate) => {
+              const candidateKey = candidate.exerciseSlug?.toLowerCase() ?? candidate.name.toLowerCase();
+              const exerciseKey = exercise.exerciseSlug?.toLowerCase() ?? exercise.name.toLowerCase();
+              return candidateKey === exerciseKey;
+            }) === index
+        ),
+    [routines]
+  );
+  const exerciseCatalogTemplates =
+    catalogExerciseTemplates.length > 0 ? catalogExerciseTemplates : fallbackExerciseTemplates;
   const hasExercises = exerciseList.length > 0;
   const totalSetsCompleted = exerciseList.reduce(
     (total, exercise) => total + exercise.sets.filter((set) => set.completed).length,
@@ -370,28 +397,27 @@ export default function TrainingSessionPage() {
       return [];
     }
 
-    return routines
-      .flatMap((item) => item.days.flatMap((day) => day.exercises))
-      .filter((exercise) => exercise.name !== currentExercise.name)
-      .filter(
-        (exercise, index, array) =>
-          array.findIndex((candidate) => candidate.name === exercise.name) === index
-      );
-  }, [currentExercise, routines]);
+    const currentIdentity =
+      currentExercise.exerciseSlug?.toLowerCase() ?? currentExercise.name.toLowerCase();
+
+    return exerciseCatalogTemplates.filter((exercise) => {
+      const exerciseIdentity =
+        exercise.exerciseSlug?.toLowerCase() ?? exercise.name.toLowerCase();
+      return exerciseIdentity !== currentIdentity;
+    });
+  }, [currentExercise, exerciseCatalogTemplates]);
 
   const databaseExerciseOptions = useMemo(() => {
-    const currentNames = new Set(exerciseList.map((exercise) => exercise.name.toLowerCase()));
+    const currentNames = new Set(
+      exerciseList.map((exercise) => exercise.exerciseSlug?.toLowerCase() ?? exercise.name.toLowerCase())
+    );
 
-    return routines
-      .flatMap((item) => item.days.flatMap((day) => day.exercises))
-      .filter(
-        (exercise, index, array) =>
-          array.findIndex(
-            (candidate) => candidate.name.toLowerCase() === exercise.name.toLowerCase()
-          ) === index
-      )
-      .filter((exercise) => !currentNames.has(exercise.name.toLowerCase()));
-  }, [exerciseList, routines]);
+    return exerciseCatalogTemplates.filter((exercise) => {
+      const exerciseIdentity =
+        exercise.exerciseSlug?.toLowerCase() ?? exercise.name.toLowerCase();
+      return !currentNames.has(exerciseIdentity);
+    });
+  }, [exerciseCatalogTemplates, exerciseList]);
 
   const normalizedReplaceQuery = replaceQuery.trim().toLowerCase();
   const filteredReplacementOptions = replacementOptions.filter((exercise) => {
@@ -422,6 +448,15 @@ export default function TrainingSessionPage() {
   const closeContextMenus = () => {
     setExerciseMenuAnchor(null);
     setSetMenuAnchor(null);
+  };
+
+  const buildExerciseOptionSummary = (exercise: ExerciseData) => {
+    const baseReps = exercise.sets[0]?.reps ?? 10;
+    const repsLabel = exercise.sets.every((set) => set.reps === baseReps)
+      ? `${baseReps} reps`
+      : `${exercise.sets[0]?.reps ?? 0}-${exercise.sets[exercise.sets.length - 1]?.reps ?? 0} reps`;
+
+    return `${exercise.sets.length} series base · ${repsLabel}`;
   };
 
   const updateInlineFeedback = (message: string | null) => {
@@ -1368,7 +1403,7 @@ export default function TrainingSessionPage() {
             <div className="mx-auto mb-5 h-1.5 w-12 rounded-full bg-[#3A3F50]" />
             <h3 className="text-2xl font-bold tracking-tight text-white">Reemplazar ejercicio</h3>
             <p className="mt-2 text-sm text-[#90A4B8]" style={{ fontFamily: "'Inter', sans-serif" }}>
-              Elegí otra variante disponible en tus rutinas.
+              Elegí otra variante disponible en el catálogo de WOHL.
             </p>
 
             <div className="mt-5 rounded-2xl border border-[#2A2F3D] bg-[#13263A] px-4 py-3">
@@ -1385,10 +1420,22 @@ export default function TrainingSessionPage() {
             </div>
 
             <div className="mt-5 flex max-h-[24rem] flex-col gap-3 overflow-y-auto pr-1">
+              {exerciseCatalogError ? (
+                <div className="rounded-2xl border border-[rgba(255,125,125,0.22)] bg-[rgba(255,125,125,0.08)] p-4 text-sm text-[#FFB4B4]">
+                  {exerciseCatalogError}. Mientras tanto usamos tus rutinas guardadas como respaldo.
+                </div>
+              ) : null}
+
+              {isExerciseCatalogLoading && exerciseCatalog.length === 0 ? (
+                <div className="rounded-2xl border border-[#2A2F3D] bg-[#13263A] p-5 text-sm text-[#90A4B8]">
+                  Cargando catálogo de ejercicios...
+                </div>
+              ) : null}
+
               {filteredReplacementOptions.length > 0 ? (
                 filteredReplacementOptions.map((exercise) => (
                   <button
-                    key={exercise.name}
+                    key={exercise.exerciseSlug ?? exercise.name}
                     onClick={() => replaceCurrentExercise(exercise)}
                     className="rounded-2xl border border-[#2A2F3D] bg-[#13263A] p-4 text-left"
                     type="button"
@@ -1396,17 +1443,10 @@ export default function TrainingSessionPage() {
                     <p className="text-lg font-bold text-white">{exercise.name}</p>
                     <p className="mt-1 text-sm text-[#90A4B8]" style={{ fontFamily: "'Inter', sans-serif" }}>
                       {exercise.muscle}
-                      {exercise.implement ? ` - ${exercise.implement}` : ''}
+                      {exercise.implement ? ` · ${exercise.implement}` : ''}
                     </p>
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      {exercise.sets.slice(0, 3).map((set, index) => (
-                        <span
-                          key={`${exercise.name}-${index}`}
-                          className="rounded-full bg-[rgba(0,201,167,0.1)] px-3 py-1 text-[10px] font-semibold uppercase tracking-widest text-[#00C9A7]"
-                        >
-                          {set.kg > 0 ? `${formatWeightNumber(set.kg, appSettings.weightUnit)}${weightUnitLabel}` : 'PC'} x {set.reps}
-                        </span>
-                      ))}
+                    <div className="mt-3 inline-flex rounded-full bg-[rgba(0,201,167,0.1)] px-3 py-1 text-[10px] font-semibold uppercase tracking-widest text-[#00C9A7]">
+                      {buildExerciseOptionSummary(exercise)}
                     </div>
                   </button>
                 ))
@@ -1436,8 +1476,8 @@ export default function TrainingSessionPage() {
             <h3 className="mt-2 text-2xl font-bold tracking-tight text-white">Agregar Ejercicio</h3>
             <p className="mt-2 text-sm text-[#90A4B8]" style={{ fontFamily: "'Inter', sans-serif" }}>
               {isHistoryEditSession
-                ? 'Elegí ejercicios ya existentes en tus rutinas para sumarlos a esta sesión del historial.'
-                : 'Elegí ejercicios ya existentes en tus rutinas para sumarlos a este entrenamiento libre.'}
+                ? 'Elegí ejercicios del catálogo para sumarlos a esta sesión del historial.'
+                : 'Elegí ejercicios del catálogo para sumarlos a este entrenamiento libre.'}
             </p>
 
             <div className="mt-5 rounded-2xl border border-[#2A2F3D] bg-[#13263A] px-4 py-3">
@@ -1454,10 +1494,22 @@ export default function TrainingSessionPage() {
             </div>
 
             <div className="mt-5 flex max-h-[24rem] flex-col gap-3 overflow-y-auto pr-1">
+              {exerciseCatalogError ? (
+                <div className="rounded-2xl border border-[rgba(255,125,125,0.22)] bg-[rgba(255,125,125,0.08)] p-4 text-sm text-[#FFB4B4]">
+                  {exerciseCatalogError}. Mientras tanto usamos tus rutinas guardadas como respaldo.
+                </div>
+              ) : null}
+
+              {isExerciseCatalogLoading && exerciseCatalog.length === 0 ? (
+                <div className="rounded-2xl border border-[#2A2F3D] bg-[#13263A] p-5 text-sm text-[#90A4B8]">
+                  Cargando catálogo de ejercicios...
+                </div>
+              ) : null}
+
               {filteredDatabaseExerciseOptions.length > 0 ? (
                 filteredDatabaseExerciseOptions.map((exercise) => (
                   <button
-                    key={exercise.name}
+                    key={exercise.exerciseSlug ?? exercise.name}
                     onClick={() => addDatabaseExercise(exercise)}
                     className="rounded-2xl border border-[#2A2F3D] bg-[#13263A] p-4 text-left"
                     type="button"
@@ -1467,7 +1519,7 @@ export default function TrainingSessionPage() {
                         <p className="text-lg font-bold text-white">{exercise.name}</p>
                         <p className="mt-1 text-sm text-[#90A4B8]" style={{ fontFamily: "'Inter', sans-serif" }}>
                           {exercise.muscle}
-                          {exercise.implement ? ` - ${exercise.implement}` : ''}
+                          {exercise.implement ? ` · ${exercise.implement}` : ''}
                         </p>
                       </div>
                       <div className="rounded-full bg-[rgba(0,201,167,0.1)] px-3 py-1 text-[10px] font-semibold uppercase tracking-widest text-[#00C9A7]">
@@ -1475,15 +1527,8 @@ export default function TrainingSessionPage() {
                       </div>
                     </div>
 
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      {exercise.sets.slice(0, 3).map((set, index) => (
-                        <span
-                          key={`${exercise.name}-${index}`}
-                          className="rounded-full bg-[rgba(0,201,167,0.1)] px-3 py-1 text-[10px] font-semibold uppercase tracking-widest text-[#00C9A7]"
-                        >
-                          {set.kg > 0 ? `${formatWeightNumber(set.kg, appSettings.weightUnit)}${weightUnitLabel}` : 'PC'} x {set.reps}
-                        </span>
-                      ))}
+                    <div className="mt-3 inline-flex rounded-full bg-[rgba(0,201,167,0.1)] px-3 py-1 text-[10px] font-semibold uppercase tracking-widest text-[#00C9A7]">
+                      {buildExerciseOptionSummary(exercise)}
                     </div>
                   </button>
                 ))

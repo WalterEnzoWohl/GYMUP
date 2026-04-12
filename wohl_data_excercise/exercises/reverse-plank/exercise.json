@@ -1,0 +1,79 @@
+{
+  "id": "99B49684",
+  "slug": "reverse-plank",
+  "primary_group": "abs",
+  "secondary_groups": [
+    "triceps"
+  ],
+  "primary_muscles": [
+    "abdominals"
+  ],
+  "secondary_muscles": [
+    "triceps"
+  ],
+  "equipment": [
+    "bodyweight"
+  ],
+  "station_or_machine": "floor",
+  "grip_or_stance": "medium_pronated",
+  "movement_pattern": "core_stability",
+  "mechanic_type": "isolation",
+  "difficulty": "intermediate",
+  "bodyweight": true,
+  "unilateral": false,
+  "media": {
+    "cover_image": "",
+    "animation_media": "exercises/reverse-plank/demo.mp4",
+    "animation_media_type": "video"
+  },
+  "i18n": {
+    "es": {
+      "title": "Reverse Plancha",
+      "description": "Ejercicio enfocado principalmente en abdominales.",
+      "overview": "Ejercicio de estabilidad del core.",
+      "instructions": [
+        "Colocate en una postura estable y alineada.",
+        "Activá abdomen y glúteos antes de iniciar.",
+        "Sostené la posición manteniendo respiración controlada.",
+        "Terminá el ejercicio sin perder la alineación corporal."
+      ],
+      "tips": [
+        "Respirá de forma controlada sin perder la postura.",
+        "Mantené pelvis y costillas alineadas."
+      ],
+      "common_mistakes": [
+        "Perder la alineación corporal",
+        "Contener el aire de forma excesiva"
+      ],
+      "benefits": [
+        "Mejora la estabilidad del core y el control postural."
+      ]
+    },
+    "en": {
+      "title": "Reverse Plank",
+      "description": "Exercise primarily focused on the abdominals.",
+      "overview": "Core stability exercise.",
+      "instructions": [
+        "Set up in a stable, aligned position.",
+        "Brace the abdominals and glutes before starting.",
+        "Hold the position while breathing under control.",
+        "Finish the exercise without losing alignment."
+      ],
+      "tips": [
+        "Breathe under control without losing posture.",
+        "Keep the pelvis and ribcage aligned."
+      ],
+      "common_mistakes": [
+        "Losing body alignment",
+        "Holding the breath excessively"
+      ],
+      "benefits": [
+        "Improves core stability and postural control."
+      ]
+    }
+  },
+  "source": {
+    "original_title": "Reverse Plank"
+  },
+  "is_active": true
+}

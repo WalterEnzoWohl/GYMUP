@@ -834,7 +834,7 @@ export default function OnboardingPage() {
                     {formData.firstName.trim()} {formData.lastName.trim()}
                   </p>
                   <p className="text-sm text-[#98A2B3]">
-                    {calculateAgeFromBirthDate(formData.birthDate)} a?os ? {formData.heightCm} cm ? {formData.weightKg.toFixed(1).replace('.0', '')} kg
+                    {calculateAgeFromBirthDate(formData.birthDate)} años · {formData.heightCm} cm · {formData.weightKg.toFixed(1).replace('.0', '')} kg
                   </p>
                 </div>
               </div>

@@ -30,6 +30,7 @@ export function buildExerciseState(
 
     return {
       id: exercise.id,
+      exerciseSlug: exercise.exerciseSlug,
       name: exercise.name,
       muscle: exercise.muscle,
       implement: exercise.implement,
@@ -64,6 +65,7 @@ export function buildExerciseStateFromHistorySession(
 
     return {
       id: exerciseIndex + 1,
+      exerciseSlug: exercise.exerciseSlug,
       name: exercise.name,
       muscle: exercise.muscle,
       implement: exercise.implement,
@@ -95,6 +97,7 @@ export function buildExerciseStateFromTemplate(
 
   return {
     id: exercise.id,
+    exerciseSlug: exercise.exerciseSlug,
     name: exercise.name,
     muscle: exercise.muscle,
     implement: exercise.implement,

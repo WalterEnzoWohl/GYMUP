@@ -1,0 +1,75 @@
+{
+  "id": "422B08F1",
+  "slug": "lateral-raise-dumbbell",
+  "primary_group": "shoulders",
+  "secondary_groups": [],
+  "primary_muscles": [
+    "deltoids"
+  ],
+  "secondary_muscles": [],
+  "equipment": [
+    "dumbbell"
+  ],
+  "station_or_machine": "rack",
+  "grip_or_stance": "medium_pronated",
+  "movement_pattern": "shoulder_abduction",
+  "mechanic_type": "isolation",
+  "difficulty": "intermediate",
+  "bodyweight": false,
+  "unilateral": false,
+  "media": {
+    "cover_image": "",
+    "animation_media": "exercises/lateral-raise-dumbbell/demo.mp4",
+    "animation_media_type": "video"
+  },
+  "i18n": {
+    "es": {
+      "title": "Elevación lateral (mancuernas)",
+      "description": "Ejercicio enfocado principalmente en hombros.",
+      "overview": "Movimiento de elevación del hombro enfocado en deltoides.",
+      "instructions": [
+        "Ubicate en rack con el torso firme.",
+        "Tomá el implemento con agarre pronado medio.",
+        "Elevá los brazos siguiendo el plano del movimiento indicado.",
+        "Descendé con control sin usar impulso."
+      ],
+      "tips": [
+        "Usá una carga que te permita mover sin impulso.",
+        "Mantené el cuello relajado durante la elevación."
+      ],
+      "common_mistakes": [
+        "Usar impulso",
+        "Subir con los trapecios"
+      ],
+      "benefits": [
+        "Ayuda a desarrollar los deltoides y el control del hombro."
+      ]
+    },
+    "en": {
+      "title": "Lateral Raise (Dumbbell)",
+      "description": "Exercise primarily focused on the shoulders.",
+      "overview": "Shoulder elevation movement focused on the deltoids.",
+      "instructions": [
+        "Set up on the rack with a stable torso.",
+        "Take the implement with a medium pronated grip.",
+        "Raise the arms through the intended movement plane.",
+        "Lower under control without using momentum."
+      ],
+      "tips": [
+        "Use a load you can lift without momentum.",
+        "Keep the neck relaxed during the raise."
+      ],
+      "common_mistakes": [
+        "Using momentum",
+        "Shrugging the traps during the raise"
+      ],
+      "benefits": [
+        "Helps develop the deltoids and shoulder control."
+      ]
+    }
+  },
+  "source": {
+    "original_title": "Lateral Raise (Dumbbell)"
+  },
+  "is_active": true
+}

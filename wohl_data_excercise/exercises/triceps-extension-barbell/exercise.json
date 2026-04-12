@@ -1,0 +1,75 @@
+{
+  "id": "2F8D3067",
+  "slug": "triceps-extension-barbell",
+  "primary_group": "triceps",
+  "secondary_groups": [],
+  "primary_muscles": [
+    "triceps"
+  ],
+  "secondary_muscles": [],
+  "equipment": [
+    "barbell"
+  ],
+  "station_or_machine": "rack",
+  "grip_or_stance": "medium_pronated",
+  "movement_pattern": "elbow_extension",
+  "mechanic_type": "isolation",
+  "difficulty": "intermediate",
+  "bodyweight": false,
+  "unilateral": false,
+  "media": {
+    "cover_image": "",
+    "animation_media": "exercises/triceps-extension-barbell/demo.mp4",
+    "animation_media_type": "video"
+  },
+  "i18n": {
+    "es": {
+      "title": "Triceps Extension (barra)",
+      "description": "Ejercicio enfocado principalmente en tríceps.",
+      "overview": "Movimiento de extensión de codo enfocado en tríceps.",
+      "instructions": [
+        "Ubicate en rack con postura estable.",
+        "Tomá el implemento con agarre pronado medio.",
+        "Extendé los codos para mover la carga sin compensar con hombros.",
+        "Regresá lento a la posición inicial manteniendo el control."
+      ],
+      "tips": [
+        "Fijá la posición del codo antes de iniciar el movimiento.",
+        "Controlá el regreso y evitá perder tensión."
+      ],
+      "common_mistakes": [
+        "Separar demasiado los codos",
+        "Perder el control en la fase de regreso"
+      ],
+      "benefits": [
+        "Aísla la extensión de codo para trabajar tríceps."
+      ]
+    },
+    "en": {
+      "title": "Triceps Extension (Barbell)",
+      "description": "Exercise primarily focused on the triceps.",
+      "overview": "Elbow extension movement focused on triceps.",
+      "instructions": [
+        "Set up on the rack with a stable posture.",
+        "Take the implement with a medium pronated grip.",
+        "Extend the elbows to move the load without compensating with the shoulders.",
+        "Return slowly to the starting position with control."
+      ],
+      "tips": [
+        "Set the elbow position before starting the movement.",
+        "Control the return and avoid losing tension."
+      ],
+      "common_mistakes": [
+        "Flaring the elbows too much",
+        "Losing control on the return phase"
+      ],
+      "benefits": [
+        "Isolates elbow extension to target the triceps."
+      ]
+    }
+  },
+  "source": {
+    "original_title": "Triceps Extension (Barbell)"
+  },
+  "is_active": true
+}

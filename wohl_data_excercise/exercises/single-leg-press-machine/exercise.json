@@ -1,0 +1,81 @@
+{
+  "id": "3FD83744",
+  "slug": "single-leg-press-machine",
+  "primary_group": "quadriceps",
+  "secondary_groups": [
+    "glutes",
+    "hamstrings"
+  ],
+  "primary_muscles": [
+    "quadriceps"
+  ],
+  "secondary_muscles": [
+    "glutes",
+    "hamstrings"
+  ],
+  "equipment": [
+    "machine"
+  ],
+  "station_or_machine": "leg_press_machine",
+  "grip_or_stance": "single_leg",
+  "movement_pattern": "squat",
+  "mechanic_type": "compound",
+  "difficulty": "beginner",
+  "bodyweight": false,
+  "unilateral": true,
+  "media": {
+    "cover_image": "",
+    "animation_media": "exercises/single-leg-press-machine/demo.mp4",
+    "animation_media_type": "video"
+  },
+  "i18n": {
+    "es": {
+      "title": "Single Prensa (máquina)",
+      "description": "Ejercicio enfocado principalmente en cuádriceps.",
+      "overview": "Patrón dominante de rodilla con énfasis en tren inferior.",
+      "instructions": [
+        "Colocate en prensa con una pierna.",
+        "Iniciá la bajada flexionando cadera y rodillas de forma coordinada.",
+        "Descendé con control manteniendo el tronco estable.",
+        "Empujá el suelo para volver a la posición inicial."
+      ],
+      "tips": [
+        "Distribuí el peso de forma estable sobre todo el pie.",
+        "Mantené el tronco firme y la bajada controlada."
+      ],
+      "common_mistakes": [
+        "Despegar los talones",
+        "Perder control en la bajada"
+      ],
+      "benefits": [
+        "Fortalece el tren inferior con un patrón dominante de rodilla."
+      ]
+    },
+    "en": {
+      "title": "Single Leg Press (Machine)",
+      "description": "Exercise primarily focused on the quadriceps.",
+      "overview": "Knee-dominant movement emphasizing the lower body.",
+      "instructions": [
+        "Set up on the leg press machine with a single leg stance.",
+        "Begin the descent by bending at the hips and knees together.",
+        "Lower under control while keeping the torso stable.",
+        "Drive through the floor to return to the starting position."
+      ],
+      "tips": [
+        "Distribute pressure evenly through the whole foot.",
+        "Keep the torso braced and control the descent."
+      ],
+      "common_mistakes": [
+        "Lifting the heels",
+        "Losing control in the descent"
+      ],
+      "benefits": [
+        "Strengthens the lower body through a knee-dominant pattern."
+      ]
+    }
+  },
+  "source": {
+    "original_title": "Single Leg Press (Machine)"
+  },
+  "is_active": true
+}

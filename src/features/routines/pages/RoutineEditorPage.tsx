@@ -1,35 +1,47 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import { ChevronDown, ChevronUp, Plus, Save, Search, Trash2 } from 'lucide-react';
+import { useAppData } from '@/core/app-data/AppDataContext';
+import { useExerciseCatalog } from '@/features/exercises/hooks/useExerciseCatalog';
 import { ActiveWorkoutEditLockModal } from '@/shared/components/layout/ActiveWorkoutEditLockModal';
 import { Header } from '@/shared/components/layout/Header';
-import { useAppData } from '@/core/app-data/AppDataContext';
 import type { Routine } from '@/shared/types/models';
 
-const muscleOptions = ['Todos', 'Pecho', 'Espalda', 'Hombros', 'Tríceps', 'Bíceps', 'Piernas', 'Core', 'Full Body'];
+const ALL_MUSCLES_OPTION = 'Todos';
 
-const exerciseLibrary = [
-  { name: 'Bench Press (Barra)', muscle: 'Pecho' },
-  { name: 'Press Inclinado', muscle: 'Pecho' },
-  { name: 'Aperturas Mancuernas', muscle: 'Pecho' },
-  { name: 'Press Militar', muscle: 'Hombros' },
-  { name: 'Elevaciones Laterales', muscle: 'Hombros' },
-  { name: 'Dominadas', muscle: 'Espalda' },
-  { name: 'Remo con Barra', muscle: 'Espalda' },
-  { name: 'Jalón al Pecho', muscle: 'Espalda' },
-  { name: 'Sentadilla', muscle: 'Piernas' },
-  { name: 'Peso Muerto', muscle: 'Piernas' },
-  { name: 'Prensa de Piernas', muscle: 'Piernas' },
-  { name: 'Curl con Barra', muscle: 'Bíceps' },
-  { name: 'Curl Martillo', muscle: 'Bíceps' },
-  { name: 'Extensiones Tríceps', muscle: 'Tríceps' },
-  { name: 'Rompe Cráneos', muscle: 'Tríceps' },
-  { name: 'Plancha', muscle: 'Core' },
+type RoutineLibraryItem = {
+  exerciseSlug?: string;
+  name: string;
+  muscle: string;
+  implement?: string;
+  secondaryMuscles?: string[];
+};
+
+const fallbackExerciseLibrary: RoutineLibraryItem[] = [
+  { name: 'Press de banca (barra)', muscle: 'Pecho', implement: 'Barra' },
+  { name: 'Press inclinado', muscle: 'Pecho', implement: 'Barra' },
+  { name: 'Aperturas con mancuernas', muscle: 'Pecho', implement: 'Mancuernas' },
+  { name: 'Press militar', muscle: 'Hombros', implement: 'Barra' },
+  { name: 'Elevaciones laterales', muscle: 'Hombros', implement: 'Mancuernas' },
+  { name: 'Dominadas', muscle: 'Espalda', implement: 'Peso corporal' },
+  { name: 'Remo con barra', muscle: 'Espalda', implement: 'Barra' },
+  { name: 'Jalón al pecho', muscle: 'Espalda', implement: 'Máquina' },
+  { name: 'Sentadilla', muscle: 'Piernas', implement: 'Barra' },
+  { name: 'Peso muerto', muscle: 'Piernas', implement: 'Barra' },
+  { name: 'Prensa de piernas', muscle: 'Piernas', implement: 'Máquina' },
+  { name: 'Curl con barra', muscle: 'Bíceps', implement: 'Barra' },
+  { name: 'Curl martillo', muscle: 'Bíceps', implement: 'Mancuernas' },
+  { name: 'Extensiones de tríceps', muscle: 'Tríceps', implement: 'Polea' },
+  { name: 'Rompecráneos', muscle: 'Tríceps', implement: 'Barra' },
+  { name: 'Plancha', muscle: 'Core', implement: 'Peso corporal' },
 ];
 
 type RoutineExerciseDraft = {
+  exerciseSlug?: string;
   name: string;
   muscle: string;
+  implement?: string;
+  secondaryMuscles?: string[];
   sets: number;
   reps: number;
 };
@@ -61,8 +73,11 @@ function buildInitialDays(existing: Routine | null) {
     return existing.days.map((day) => ({
       name: day.name,
       exercises: day.exercises.map((exercise) => ({
+        exerciseSlug: exercise.exerciseSlug,
         name: exercise.name,
         muscle: exercise.muscle,
+        implement: exercise.implement,
+        secondaryMuscles: exercise.secondaryMuscles,
         sets: exercise.sets.length || 3,
         reps: exercise.sets[0]?.reps || 10,
       })),
@@ -77,6 +92,7 @@ export default function RoutineEditorPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { activeWorkout, routines, saveRoutine } = useAppData();
+  const { catalog, error: catalogError, isLoading: isCatalogLoading } = useExerciseCatalog();
   const isNew = id === 'new';
   const existing = !isNew ? routines.find((routine) => routine.id === Number(id)) ?? null : null;
   const isEditingBlocked = Boolean(activeWorkout && !isNew && existing);
@@ -84,18 +100,52 @@ export default function RoutineEditorPage() {
 
   const [name, setName] = useState(existing?.name ?? '');
   const [nameError, setNameError] = useState('');
-  const [daysPerWeek, setDaysPerWeek] = useState(Math.max(existing?.daysPerWeek ?? initialDays.length, 2));
+  const [daysPerWeek, setDaysPerWeek] = useState(
+    Math.max(existing?.daysPerWeek ?? initialDays.length, 2)
+  );
   const [days, setDays] = useState<RoutineDayDraft[]>(initialDays);
   const [expandedDay, setExpandedDay] = useState(0);
   const [showExSearch, setShowExSearch] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedMuscle, setSelectedMuscle] = useState('Todos');
+  const [selectedMuscle, setSelectedMuscle] = useState(ALL_MUSCLES_OPTION);
 
-  const filteredExercises = exerciseLibrary.filter((exercise) => {
-    const matchMuscle = selectedMuscle === 'Todos' || exercise.muscle === selectedMuscle;
-    const matchSearch = exercise.name.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchMuscle && matchSearch;
-  });
+  const exerciseLibrary = useMemo<RoutineLibraryItem[]>(
+    () =>
+      catalog.length > 0
+        ? catalog.map((exercise) => ({
+            exerciseSlug: exercise.slug,
+            name: exercise.title,
+            muscle: exercise.muscle,
+            implement: exercise.implement,
+            secondaryMuscles: exercise.secondaryMuscles,
+          }))
+        : fallbackExerciseLibrary,
+    [catalog]
+  );
+
+  const muscleOptions = useMemo(
+    () => [
+      ALL_MUSCLES_OPTION,
+      ...Array.from(new Set(exerciseLibrary.map((exercise) => exercise.muscle))).sort((a, b) =>
+        a.localeCompare(b, 'es')
+      ),
+    ],
+    [exerciseLibrary]
+  );
+
+  const filteredExercises = useMemo(() => {
+    const normalizedSearch = searchQuery.trim().toLowerCase();
+
+    return exerciseLibrary.filter((exercise) => {
+      const matchMuscle =
+        selectedMuscle === ALL_MUSCLES_OPTION || exercise.muscle === selectedMuscle;
+      const haystack = [exercise.name, exercise.muscle, exercise.implement ?? '']
+        .join(' ')
+        .toLowerCase();
+
+      return matchMuscle && (!normalizedSearch || haystack.includes(normalizedSearch));
+    });
+  }, [exerciseLibrary, searchQuery, selectedMuscle]);
 
   const syncDayCount = (nextCount: number) => {
     if (nextCount === days.length) {
@@ -120,7 +170,9 @@ export default function RoutineEditorPage() {
       if (previous.length < nextCount) {
         return [
           ...previous,
-          ...Array.from({ length: nextCount - previous.length }, (_, index) => createEmptyDay(previous.length + index)),
+          ...Array.from({ length: nextCount - previous.length }, (_, index) =>
+            createEmptyDay(previous.length + index)
+          ),
         ];
       }
 
@@ -176,33 +228,54 @@ export default function RoutineEditorPage() {
     });
   };
 
-  const addExercise = (dayIndex: number, exerciseName: string, muscle: string) => {
+  const addExercise = (dayIndex: number, exercise: RoutineLibraryItem) => {
     setDays((previous) =>
       previous.map((day, index) =>
         index === dayIndex
           ? {
               ...day,
-              exercises: [...day.exercises, { name: exerciseName, muscle, sets: 3, reps: 10 }],
+              exercises: [
+                ...day.exercises,
+                {
+                  exerciseSlug: exercise.exerciseSlug,
+                  name: exercise.name,
+                  muscle: exercise.muscle,
+                  implement: exercise.implement,
+                  secondaryMuscles: exercise.secondaryMuscles,
+                  sets: 3,
+                  reps: 10,
+                },
+              ],
             }
           : day
       )
     );
     setShowExSearch(null);
     setSearchQuery('');
-    setSelectedMuscle('Todos');
+    setSelectedMuscle(ALL_MUSCLES_OPTION);
   };
 
   const removeExercise = (dayIndex: number, exerciseIndex: number) => {
     setDays((previous) =>
       previous.map((day, index) =>
         index === dayIndex
-          ? { ...day, exercises: day.exercises.filter((_, currentExerciseIndex) => currentExerciseIndex !== exerciseIndex) }
+          ? {
+              ...day,
+              exercises: day.exercises.filter(
+                (_, currentExerciseIndex) => currentExerciseIndex !== exerciseIndex
+              ),
+            }
           : day
       )
     );
   };
 
-  const updateExercise = (dayIndex: number, exerciseIndex: number, field: 'sets' | 'reps', value: number) => {
+  const updateExercise = (
+    dayIndex: number,
+    exerciseIndex: number,
+    field: 'sets' | 'reps',
+    value: number
+  ) => {
     const nextValue = Number.isFinite(value) && value > 0 ? value : 1;
 
     setDays((previous) =>
@@ -211,7 +284,9 @@ export default function RoutineEditorPage() {
           ? {
               ...day,
               exercises: day.exercises.map((exercise, currentExerciseIndex) =>
-                currentExerciseIndex === exerciseIndex ? { ...exercise, [field]: nextValue } : exercise
+                currentExerciseIndex === exerciseIndex
+                  ? { ...exercise, [field]: nextValue }
+                  : exercise
               ),
             }
           : day
@@ -237,21 +312,34 @@ export default function RoutineEditorPage() {
       days: days.map((day, dayIndex) => ({
         id: existing?.days[dayIndex]?.id,
         name: day.name.trim() || `Día ${dayIndex + 1}`,
-        focus: day.exercises.map((exercise) => exercise.muscle).slice(0, 3).join(', ') || 'Sesión personalizada',
+        focus:
+          day.exercises.map((exercise) => exercise.muscle).slice(0, 3).join(', ') ||
+          'Sesión personalizada',
         description: existing?.days[dayIndex]?.description ?? undefined,
         exercises: day.exercises.map((exercise, exerciseIndex) => ({
           id: existing?.days[dayIndex]?.exercises[exerciseIndex]?.id ?? exerciseIndex + 1,
+          exerciseSlug:
+            exercise.exerciseSlug ??
+            existing?.days[dayIndex]?.exercises[exerciseIndex]?.exerciseSlug ??
+            undefined,
           name: exercise.name,
           muscle: exercise.muscle,
-          implement: existing?.days[dayIndex]?.exercises[exerciseIndex]?.implement,
-          secondaryMuscles: existing?.days[dayIndex]?.exercises[exerciseIndex]?.secondaryMuscles,
+          implement:
+            exercise.implement ??
+            existing?.days[dayIndex]?.exercises[exerciseIndex]?.implement ??
+            undefined,
+          secondaryMuscles:
+            exercise.secondaryMuscles ??
+            existing?.days[dayIndex]?.exercises[exerciseIndex]?.secondaryMuscles ??
+            undefined,
           notes: existing?.days[dayIndex]?.exercises[exerciseIndex]?.notes,
           sets: Array.from({ length: exercise.sets }, (_, setIndex) => ({
             id: setIndex + 1,
             kg: existing?.days[dayIndex]?.exercises[exerciseIndex]?.sets[setIndex]?.kg ?? 0,
             reps: exercise.reps,
-            rpe: existing?.days[dayIndex]?.exercises[exerciseIndex]?.sets[setIndex]?.rpe ?? 8,
+            rpe: existing?.days[dayIndex]?.exercises[exerciseIndex]?.sets[setIndex]?.rpe ?? 0,
             completed: false,
+            kind: 'normal' as const,
           })),
         })),
       })),
@@ -263,7 +351,7 @@ export default function RoutineEditorPage() {
 
   return (
     <div className="relative flex flex-col" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-      <Header showBack title={isNew ? 'Crear Rutina' : 'Editar Rutina'} />
+      <Header showBack title={isNew ? 'Crear rutina' : 'Editar rutina'} />
 
       {!isEditingBlocked ? (
         <div className="flex flex-col gap-5 px-5 py-5 pb-6">
@@ -283,7 +371,7 @@ export default function RoutineEditorPage() {
                   setNameError('');
                 }
               }}
-              placeholder="Ponle un nombre a tu sistema"
+              placeholder="Poné un nombre para este sistema"
               className={`w-full rounded-xl border bg-[#13263A] px-4 py-3 text-base text-white outline-none transition-colors ${
                 nameError
                   ? 'border-[rgba(255,125,125,0.45)]'
@@ -338,7 +426,10 @@ export default function RoutineEditorPage() {
 
             <div className="flex flex-col gap-3">
               {days.map((day, dayIndex) => (
-                <div key={dayIndex} className="overflow-hidden rounded-2xl border border-[#203347] bg-[#13263A]">
+                <div
+                  key={dayIndex}
+                  className="overflow-hidden rounded-2xl border border-[#203347] bg-[#13263A]"
+                >
                   <div className="flex w-full items-center justify-between px-4 py-4">
                     <div className="min-w-0 flex-1 text-left">
                       <input
@@ -347,7 +438,9 @@ export default function RoutineEditorPage() {
                         onChange={(event) => {
                           const nextName = event.target.value;
                           setDays((previous) =>
-                            previous.map((currentDay, index) => (index === dayIndex ? { ...currentDay, name: nextName } : currentDay))
+                            previous.map((currentDay, index) =>
+                              index === dayIndex ? { ...currentDay, name: nextName } : currentDay
+                            )
                           );
                         }}
                         onClick={(event) => event.stopPropagation()}
@@ -371,8 +464,8 @@ export default function RoutineEditorPage() {
                             ? 'border-[#203347] text-[#4F6378] opacity-45'
                             : 'border-[rgba(255,125,125,0.18)] bg-[rgba(255,125,125,0.08)] text-[#FF8E8E] active:bg-[rgba(255,125,125,0.14)]'
                         }`}
-                        >
-                          <Trash2 size={14} />
+                      >
+                        <Trash2 size={14} />
                       </button>
                       <button
                         onClick={() => setExpandedDay(expandedDay === dayIndex ? -1 : dayIndex)}
@@ -392,16 +485,19 @@ export default function RoutineEditorPage() {
                           className="py-4 text-center text-sm text-[#9BAEC1]"
                           style={{ fontFamily: "'Inter', sans-serif" }}
                         >
-                          No hay ejercicios. Añade uno.
+                          No hay ejercicios todavía. Sumá uno desde el catálogo.
                         </p>
                       ) : (
                         <div className="mt-3 flex flex-col gap-2">
                           {day.exercises.map((exercise, exerciseIndex) => (
-                            <div key={`${exercise.name}-${exerciseIndex}`} className="flex items-center gap-3 rounded-xl bg-[#1A2D42] px-3 py-3">
+                            <div
+                              key={`${exercise.exerciseSlug ?? exercise.name}-${exerciseIndex}`}
+                              className="flex items-center gap-3 rounded-xl bg-[#1A2D42] px-3 py-3"
+                            >
                               <div className="flex-1">
                                 <p className="text-sm font-semibold text-white">{exercise.name}</p>
                                 <p className="text-xs text-[#9BAEC1]" style={{ fontFamily: "'Inter', sans-serif" }}>
-                                  {exercise.muscle}
+                                  {[exercise.muscle, exercise.implement].filter(Boolean).join(' · ')}
                                 </p>
                               </div>
 
@@ -411,7 +507,9 @@ export default function RoutineEditorPage() {
                                     type="number"
                                     min={1}
                                     value={exercise.sets}
-                                    onChange={(event) => updateExercise(dayIndex, exerciseIndex, 'sets', Number(event.target.value))}
+                                    onChange={(event) =>
+                                      updateExercise(dayIndex, exerciseIndex, 'sets', Number(event.target.value))
+                                    }
                                     className="w-9 rounded-lg bg-[#203347] py-1 text-center text-xs text-white outline-none"
                                   />
                                   <span className="text-xs text-[#9BAEC1]">×</span>
@@ -419,7 +517,9 @@ export default function RoutineEditorPage() {
                                     type="number"
                                     min={1}
                                     value={exercise.reps}
-                                    onChange={(event) => updateExercise(dayIndex, exerciseIndex, 'reps', Number(event.target.value))}
+                                    onChange={(event) =>
+                                      updateExercise(dayIndex, exerciseIndex, 'reps', Number(event.target.value))
+                                    }
                                     className="w-9 rounded-lg bg-[#203347] py-1 text-center text-xs text-white outline-none"
                                   />
                                 </div>
@@ -437,7 +537,7 @@ export default function RoutineEditorPage() {
                         onClick={() => {
                           setShowExSearch(dayIndex);
                           setSearchQuery('');
-                          setSelectedMuscle('Todos');
+                          setSelectedMuscle(ALL_MUSCLES_OPTION);
                         }}
                         className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-[rgba(0,201,167,0.3)] py-3 text-sm font-semibold text-[#00C9A7]"
                         type="button"
@@ -486,14 +586,14 @@ export default function RoutineEditorPage() {
             <div className="mx-auto mb-3 mt-4 h-1 w-10 shrink-0 rounded-full bg-[#203347]" />
 
             <div className="shrink-0 px-5 pb-4">
-              <h3 className="mb-3 text-lg font-bold text-white">Buscar ejercicio</h3>
+              <h3 className="mb-3 text-lg font-bold text-white">Catálogo de ejercicios</h3>
               <div className="relative mb-3">
                 <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9BAEC1]" />
                 <input
                   type="text"
                   value={searchQuery}
                   onChange={(event) => setSearchQuery(event.target.value)}
-                  placeholder="Buscar ejercicio..."
+                  placeholder="Buscar por nombre, músculo o implemento"
                   className="w-full rounded-xl border border-[#333] bg-[#203347] py-3 pl-9 pr-4 text-sm text-white outline-none"
                 />
               </div>
@@ -504,7 +604,9 @@ export default function RoutineEditorPage() {
                     key={muscle}
                     onClick={() => setSelectedMuscle(muscle)}
                     className={`shrink-0 whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-semibold transition-all ${
-                      selectedMuscle === muscle ? 'bg-[#00C9A7] text-black' : 'bg-[#203347] text-[#9BAEC1]'
+                      selectedMuscle === muscle
+                        ? 'bg-[#00C9A7] text-black'
+                        : 'bg-[#203347] text-[#9BAEC1]'
                     }`}
                     type="button"
                   >
@@ -515,25 +617,37 @@ export default function RoutineEditorPage() {
             </div>
 
             <div className="overflow-y-auto px-5 pb-6">
+              {catalogError ? (
+                <div className="mb-3 rounded-2xl border border-[rgba(255,125,125,0.22)] bg-[rgba(255,125,125,0.08)] px-4 py-3 text-sm text-[#FFB4B4]">
+                  {catalogError}. Por ahora te mostramos una base local de respaldo.
+                </div>
+              ) : null}
+
+              {isCatalogLoading && catalog.length === 0 ? (
+                <div className="mb-3 rounded-2xl border border-[#203347] bg-[#13263A] px-4 py-5 text-center text-sm text-[#9BAEC1]">
+                  Cargando catálogo de ejercicios...
+                </div>
+              ) : null}
+
               <div className="flex flex-col gap-2">
                 {filteredExercises.map((exercise) => (
                   <button
-                    key={exercise.name}
-                    onClick={() => addExercise(showExSearch, exercise.name, exercise.muscle)}
+                    key={exercise.exerciseSlug ?? exercise.name}
+                    onClick={() => addExercise(showExSearch, exercise)}
                     className="flex items-center justify-between rounded-xl bg-[#203347] px-4 py-3 text-left transition-colors hover:bg-[#2A415A]"
                     type="button"
                   >
                     <div>
                       <p className="text-sm font-medium text-white">{exercise.name}</p>
                       <p className="text-xs text-[#9BAEC1]" style={{ fontFamily: "'Inter', sans-serif" }}>
-                        {exercise.muscle}
+                        {[exercise.muscle, exercise.implement].filter(Boolean).join(' · ')}
                       </p>
                     </div>
                     <Plus size={16} className="shrink-0 text-[#00C9A7]" />
                   </button>
                 ))}
 
-                {filteredExercises.length === 0 ? (
+                {!isCatalogLoading && filteredExercises.length === 0 ? (
                   <div className="rounded-2xl border border-[#203347] bg-[#13263A] px-4 py-5 text-center text-sm text-[#9BAEC1]">
                     No encontramos ejercicios con ese filtro.
                   </div>

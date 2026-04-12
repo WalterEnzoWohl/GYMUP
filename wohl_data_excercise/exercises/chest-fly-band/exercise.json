@@ -1,0 +1,75 @@
+{
+  "id": "DDB7C19F",
+  "slug": "chest-fly-band",
+  "primary_group": "chest",
+  "secondary_groups": [],
+  "primary_muscles": [
+    "pectoralis_major"
+  ],
+  "secondary_muscles": [],
+  "equipment": [
+    "resistance_band"
+  ],
+  "station_or_machine": "floor",
+  "grip_or_stance": "medium_pronated",
+  "movement_pattern": "horizontal_push",
+  "mechanic_type": "compound",
+  "difficulty": "intermediate",
+  "bodyweight": false,
+  "unilateral": false,
+  "media": {
+    "cover_image": "",
+    "animation_media": "exercises/chest-fly-band/demo.mp4",
+    "animation_media_type": "video"
+  },
+  "i18n": {
+    "es": {
+      "title": "Chest Fly Band",
+      "description": "Ejercicio enfocado principalmente en pecho.",
+      "overview": "Movimiento de empuje horizontal enfocado en el torso anterior.",
+      "instructions": [
+        "Ubicate en suelo con el cuerpo estable y los pies firmes.",
+        "Tomá el implemento con agarre pronado medio y mantené las escápulas activas.",
+        "Descendé la carga de forma controlada hacia el torso sin perder tensión.",
+        "Empujá hasta completar la repetición manteniendo estabilidad y control."
+      ],
+      "tips": [
+        "Mantené el torso estable durante todo el recorrido.",
+        "Controlá la fase excéntrica y evitá usar impulso."
+      ],
+      "common_mistakes": [
+        "Perder estabilidad del torso",
+        "Acortar demasiado el recorrido"
+      ],
+      "benefits": [
+        "Desarrolla fuerza y masa muscular en el torso anterior."
+      ]
+    },
+    "en": {
+      "title": "Chest Fly (Band)",
+      "description": "Exercise primarily focused on the chest.",
+      "overview": "Horizontal pressing movement focused on the anterior torso.",
+      "instructions": [
+        "Set up on the floor with a stable body position and feet planted.",
+        "Take the implement with a medium pronated grip and keep your shoulder blades engaged.",
+        "Lower the load toward the torso under control without losing tension.",
+        "Press back up while maintaining stability and control."
+      ],
+      "tips": [
+        "Keep the torso stable throughout the movement.",
+        "Control the eccentric phase and avoid using momentum."
+      ],
+      "common_mistakes": [
+        "Losing torso stability",
+        "Cutting the range of motion short"
+      ],
+      "benefits": [
+        "Builds strength and muscle in the anterior torso."
+      ]
+    }
+  },
+  "source": {
+    "original_title": "Chest Fly (Band)"
+  },
+  "is_active": true
+}

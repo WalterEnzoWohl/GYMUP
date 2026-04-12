@@ -1,0 +1,79 @@
+{
+  "id": "68B83EE0",
+  "slug": "glute-ham-raise",
+  "primary_group": "hamstrings",
+  "secondary_groups": [
+    "glutes"
+  ],
+  "primary_muscles": [
+    "hamstrings"
+  ],
+  "secondary_muscles": [
+    "glutes"
+  ],
+  "equipment": [
+    "machine"
+  ],
+  "station_or_machine": "seated_machine",
+  "grip_or_stance": "medium_pronated",
+  "movement_pattern": "hip_hinge",
+  "mechanic_type": "compound",
+  "difficulty": "beginner",
+  "bodyweight": false,
+  "unilateral": false,
+  "media": {
+    "cover_image": "",
+    "animation_media": "exercises/glute-ham-raise/demo.mp4",
+    "animation_media_type": "video"
+  },
+  "i18n": {
+    "es": {
+      "title": "Glute Ham Raise",
+      "description": "Ejercicio enfocado principalmente en isquiotibiales.",
+      "overview": "Patrón de bisagra de cadera con énfasis en cadena posterior.",
+      "instructions": [
+        "Prepará la posición en máquina sentado con pronado medio.",
+        "Llevá la cadera hacia atrás manteniendo la columna neutra.",
+        "Descendé hasta donde puedas sostener control y tensión posterior.",
+        "Extendé la cadera para volver sin perder alineación."
+      ],
+      "tips": [
+        "Mové la cadera hacia atrás sin perder la columna neutra.",
+        "Mantené la carga cerca del cuerpo cuando corresponda."
+      ],
+      "common_mistakes": [
+        "Redondear la espalda",
+        "Alejar la carga del cuerpo"
+      ],
+      "benefits": [
+        "Desarrolla la cadena posterior y la capacidad de producir fuerza desde la cadera."
+      ]
+    },
+    "en": {
+      "title": "Glute Ham Raise",
+      "description": "Exercise primarily focused on the hamstrings.",
+      "overview": "Hip hinge pattern emphasizing the posterior chain.",
+      "instructions": [
+        "Set up on the seated machine with a medium pronated position.",
+        "Push the hips back while keeping a neutral spine.",
+        "Lower only as far as you can maintain control and posterior-chain tension.",
+        "Extend the hips to return without losing alignment."
+      ],
+      "tips": [
+        "Push the hips back without losing a neutral spine.",
+        "Keep the load close to the body when appropriate."
+      ],
+      "common_mistakes": [
+        "Rounding the back",
+        "Letting the load drift away from the body"
+      ],
+      "benefits": [
+        "Develops the posterior chain and hip-driven force production."
+      ]
+    }
+  },
+  "source": {
+    "original_title": "Glute Ham Raise"
+  },
+  "is_active": true
+}

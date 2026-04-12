@@ -80,6 +80,7 @@ type DbRoutineDayExerciseRow = {
   id: number;
   routine_day_id: number;
   position: number;
+  exercise_slug: string | null;
   name: string;
   muscle: string;
   implement: string | null;
@@ -107,6 +108,7 @@ type DbSessionExerciseRow = {
   id: number;
   workout_session_id: number;
   position: number;
+  exercise_slug: string | null;
   name: string;
   muscle: string;
   implement: string | null;
@@ -329,6 +331,7 @@ function composeRoutine(days: DbRoutineDayRow[], exercises: DbRoutineDayExercise
           .sort((a, b) => a.position - b.position)
           .map((exercise) => ({
             id: exercise.id,
+            exerciseSlug: exercise.exercise_slug ?? undefined,
             name: exercise.name,
             muscle: exercise.muscle,
             implement: exercise.implement ?? undefined,
@@ -389,6 +392,7 @@ function composeSessions(
             }));
 
           return {
+            exerciseSlug: exercise.exercise_slug ?? undefined,
             name: exercise.name,
             muscle: exercise.muscle,
             implement: exercise.implement ?? undefined,
@@ -737,6 +741,7 @@ export async function saveRoutine(userId: string, routine: Routine) {
       const exercisePayload = day.exercises.map((exercise, exerciseIndex) => ({
         routine_day_id: insertedDay.id,
         position: exerciseIndex,
+        exercise_slug: exercise.exerciseSlug ?? null,
         name: exercise.name,
         muscle: exercise.muscle,
         implement: exercise.implement ?? null,
@@ -812,6 +817,7 @@ export async function completeSession(userId: string, input: CompletedSessionInp
       .insert({
         workout_session_id: insertedSession.id,
         position: exerciseIndex,
+        exercise_slug: exercise.exerciseSlug ?? null,
         name: exercise.name,
         muscle: exercise.muscle,
         implement: exercise.implement ?? null,

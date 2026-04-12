@@ -1,0 +1,75 @@
+{
+  "id": "D8911FC4",
+  "slug": "dead-bug",
+  "primary_group": "abs",
+  "secondary_groups": [],
+  "primary_muscles": [
+    "abdominals"
+  ],
+  "secondary_muscles": [],
+  "equipment": [
+    "bodyweight"
+  ],
+  "station_or_machine": "floor",
+  "grip_or_stance": "medium_pronated",
+  "movement_pattern": "core_flexion",
+  "mechanic_type": "isolation",
+  "difficulty": "intermediate",
+  "bodyweight": true,
+  "unilateral": false,
+  "media": {
+    "cover_image": "",
+    "animation_media": "exercises/dead-bug/demo.mp4",
+    "animation_media_type": "video"
+  },
+  "i18n": {
+    "es": {
+      "title": "Dead Bug",
+      "description": "Ejercicio enfocado principalmente en abdominales.",
+      "overview": "Movimiento de flexión del torso enfocado en abdominales.",
+      "instructions": [
+        "Prepará la posición en suelo.",
+        "Iniciá el movimiento contrayendo el abdomen.",
+        "Acortá el recorrido desde el torso sin tirar del cuello ni compensar.",
+        "Volvé de forma controlada manteniendo tensión abdominal."
+      ],
+      "tips": [
+        "Iniciá el gesto desde el abdomen y no desde el cuello.",
+        "Buscá acortar el torso con control."
+      ],
+      "common_mistakes": [
+        "Tirar del cuello",
+        "Acortar el rango por fatiga"
+      ],
+      "benefits": [
+        "Refuerza el abdomen a través de flexión controlada del torso."
+      ]
+    },
+    "en": {
+      "title": "Dead Bug",
+      "description": "Exercise primarily focused on the abdominals.",
+      "overview": "Torso flexion movement focused on the abdominals.",
+      "instructions": [
+        "Set up on the floor.",
+        "Initiate the movement by contracting the abdominals.",
+        "Shorten the torso without pulling on the neck or compensating elsewhere.",
+        "Return under control while maintaining abdominal tension."
+      ],
+      "tips": [
+        "Initiate the motion from the abs, not the neck.",
+        "Think about shortening the torso with control."
+      ],
+      "common_mistakes": [
+        "Pulling on the neck",
+        "Shortening the range due to fatigue"
+      ],
+      "benefits": [
+        "Strengthens the abdominals through controlled torso flexion."
+      ]
+    }
+  },
+  "source": {
+    "original_title": "Dead Bug"
+  },
+  "is_active": true
+}

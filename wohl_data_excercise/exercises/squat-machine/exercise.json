@@ -1,0 +1,81 @@
+{
+  "id": "CC35A01F",
+  "slug": "squat-machine",
+  "primary_group": "quadriceps",
+  "secondary_groups": [
+    "hamstrings",
+    "glutes"
+  ],
+  "primary_muscles": [
+    "quadriceps"
+  ],
+  "secondary_muscles": [
+    "hamstrings",
+    "glutes"
+  ],
+  "equipment": [
+    "machine"
+  ],
+  "station_or_machine": "seated_machine",
+  "grip_or_stance": "shoulder_width_stance",
+  "movement_pattern": "squat",
+  "mechanic_type": "compound",
+  "difficulty": "beginner",
+  "bodyweight": false,
+  "unilateral": false,
+  "media": {
+    "cover_image": "",
+    "animation_media": "exercises/squat-machine/demo.mp4",
+    "animation_media_type": "video"
+  },
+  "i18n": {
+    "es": {
+      "title": "Sentadilla (máquina)",
+      "description": "Ejercicio enfocado principalmente en cuádriceps.",
+      "overview": "Patrón dominante de rodilla con énfasis en tren inferior.",
+      "instructions": [
+        "Colocate en máquina sentado con apertura al ancho de hombros.",
+        "Iniciá la bajada flexionando cadera y rodillas de forma coordinada.",
+        "Descendé con control manteniendo el tronco estable.",
+        "Empujá el suelo para volver a la posición inicial."
+      ],
+      "tips": [
+        "Distribuí el peso de forma estable sobre todo el pie.",
+        "Mantené el tronco firme y la bajada controlada."
+      ],
+      "common_mistakes": [
+        "Despegar los talones",
+        "Perder control en la bajada"
+      ],
+      "benefits": [
+        "Fortalece el tren inferior con un patrón dominante de rodilla."
+      ]
+    },
+    "en": {
+      "title": "Squat (Machine)",
+      "description": "Exercise primarily focused on the quadriceps.",
+      "overview": "Knee-dominant movement emphasizing the lower body.",
+      "instructions": [
+        "Set up on the seated machine with a shoulder width stance stance.",
+        "Begin the descent by bending at the hips and knees together.",
+        "Lower under control while keeping the torso stable.",
+        "Drive through the floor to return to the starting position."
+      ],
+      "tips": [
+        "Distribute pressure evenly through the whole foot.",
+        "Keep the torso braced and control the descent."
+      ],
+      "common_mistakes": [
+        "Lifting the heels",
+        "Losing control in the descent"
+      ],
+      "benefits": [
+        "Strengthens the lower body through a knee-dominant pattern."
+      ]
+    }
+  },
+  "source": {
+    "original_title": "Squat (Machine)"
+  },
+  "is_active": true
+}

@@ -311,7 +311,7 @@ export default function ConfigPage() {
     }
 
     if (userProfile.preferredTrainingDays.length === 0) {
-      const defaultDays = ['Lunes', 'Mi?rcoles', 'Viernes'];
+      const defaultDays = ['Lunes', 'Miércoles', 'Viernes'];
       const defaultTime = userProfile.preferredWorkoutTime || DEFAULT_TIME;
       await updateUserProfile({
         preferredTrainingDays: defaultDays,
@@ -321,14 +321,14 @@ export default function ConfigPage() {
       });
     }
 
-    setFeedbackMessage('Ya pod?s elegir qu? d?as quer?s que WOHL te recuerde tu sesi?n.');
+    setFeedbackMessage('Ya podés elegir qué días querés que WOHL te recuerde tu sesión.');
   };
 
   const toggleNotificationDay = async (day: string) => {
     const exists = userProfile.preferredTrainingDays.includes(day);
 
     if (!exists && userProfile.preferredTrainingDays.length >= 6) {
-      setFeedbackMessage('Pod?s elegir hasta 6 d?as para las notificaciones.');
+      setFeedbackMessage('Podés elegir hasta 6 días para las notificaciones.');
       return;
     }
 
@@ -616,9 +616,9 @@ export default function ConfigPage() {
                   <Bell size={18} className="text-[#00C9A7]" />
                 </SettingIcon>
                 <div className="min-w-0 flex-1">
-                  <span className="block text-[1.03rem] font-semibold text-white">Notificar los d?as que toca ir al gym</span>
+                  <span className="block text-[1.03rem] font-semibold text-white">Notificar los días que toca ir al gym</span>
                   <p className="mt-1 text-sm leading-5 text-[#9BAEC1]" style={{ fontFamily: "'Inter', sans-serif" }}>
-                    Eleg? qu? d?as quer?s recordar y en qu? horario te conviene recibir ese aviso.
+                    Elegí qué días querés recordar y en qué horario te conviene recibir ese aviso.
                   </p>
                 </div>
                 <div className="shrink-0 self-center pt-0.5">
@@ -655,8 +655,8 @@ export default function ConfigPage() {
 
                   <div className="space-y-3">
                     <div>
-                      <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-[#8D98AA]">D?as de notificaci?n</p>
-                      <p className="mt-1 text-sm text-[#9BAEC1]">Pod?s elegir entre 1 y 6 d?as. Si quer?s desactivar todo, apag? el switch.</p>
+                      <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-[#8D98AA]">Días de notificación</p>
+                      <p className="mt-1 text-sm text-[#9BAEC1]">Podés elegir entre 1 y 6 días. Si querés desactivar todo, apagá el switch.</p>
                     </div>
                     <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
                       {WEEK_DAYS.map((day) => {
@@ -783,7 +783,7 @@ export default function ConfigPage() {
       <TimeWheelPicker
         open={Boolean(timePickerTarget)}
         title={timePickerTarget && timePickerTarget !== '__main__' ? `Horario para ${timePickerTarget}` : 'Horario principal'}
-        subtitle="Defin? la hora en la que quer?s recibir el recordatorio de esa sesi?n."
+        subtitle="Definí la hora en la que querés recibir el recordatorio de esa sesión."
         value={timeDraft}
         onChange={setTimeDraft}
         onClose={() => setTimePickerTarget(null)}

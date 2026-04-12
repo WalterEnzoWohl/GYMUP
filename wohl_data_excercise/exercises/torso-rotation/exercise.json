@@ -1,0 +1,75 @@
+{
+  "id": "FBB62888",
+  "slug": "torso-rotation",
+  "primary_group": "abs",
+  "secondary_groups": [],
+  "primary_muscles": [
+    "abdominals"
+  ],
+  "secondary_muscles": [],
+  "equipment": [
+    "machine"
+  ],
+  "station_or_machine": "seated_machine",
+  "grip_or_stance": "medium_pronated",
+  "movement_pattern": "core_flexion",
+  "mechanic_type": "isolation",
+  "difficulty": "beginner",
+  "bodyweight": false,
+  "unilateral": false,
+  "media": {
+    "cover_image": "",
+    "animation_media": "exercises/torso-rotation/demo.mp4",
+    "animation_media_type": "video"
+  },
+  "i18n": {
+    "es": {
+      "title": "Torso Rotation",
+      "description": "Ejercicio enfocado principalmente en abdominales.",
+      "overview": "Movimiento de flexión del torso enfocado en abdominales.",
+      "instructions": [
+        "Prepará la posición en máquina sentado.",
+        "Iniciá el movimiento contrayendo el abdomen.",
+        "Acortá el recorrido desde el torso sin tirar del cuello ni compensar.",
+        "Volvé de forma controlada manteniendo tensión abdominal."
+      ],
+      "tips": [
+        "Iniciá el gesto desde el abdomen y no desde el cuello.",
+        "Buscá acortar el torso con control."
+      ],
+      "common_mistakes": [
+        "Tirar del cuello",
+        "Acortar el rango por fatiga"
+      ],
+      "benefits": [
+        "Refuerza el abdomen a través de flexión controlada del torso."
+      ]
+    },
+    "en": {
+      "title": "Torso Rotation",
+      "description": "Exercise primarily focused on the abdominals.",
+      "overview": "Torso flexion movement focused on the abdominals.",
+      "instructions": [
+        "Set up on the seated machine.",
+        "Initiate the movement by contracting the abdominals.",
+        "Shorten the torso without pulling on the neck or compensating elsewhere.",
+        "Return under control while maintaining abdominal tension."
+      ],
+      "tips": [
+        "Initiate the motion from the abs, not the neck.",
+        "Think about shortening the torso with control."
+      ],
+      "common_mistakes": [
+        "Pulling on the neck",
+        "Shortening the range due to fatigue"
+      ],
+      "benefits": [
+        "Strengthens the abdominals through controlled torso flexion."
+      ]
+    }
+  },
+  "source": {
+    "original_title": "Torso Rotation"
+  },
+  "is_active": true
+}

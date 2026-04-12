@@ -1,0 +1,85 @@
+{
+  "id": "72CFFAD5",
+  "slug": "romanian-deadlift-dumbbell",
+  "primary_group": "hamstrings",
+  "secondary_groups": [
+    "glutes",
+    "lower_back",
+    "upper_back",
+    "dorsals"
+  ],
+  "primary_muscles": [
+    "hamstrings"
+  ],
+  "secondary_muscles": [
+    "glutes",
+    "erector_spinae",
+    "upper_back",
+    "latissimus_dorsi"
+  ],
+  "equipment": [
+    "dumbbell"
+  ],
+  "station_or_machine": "rack",
+  "grip_or_stance": "shoulder_width_stance",
+  "movement_pattern": "hip_hinge",
+  "mechanic_type": "compound",
+  "difficulty": "intermediate",
+  "bodyweight": false,
+  "unilateral": false,
+  "media": {
+    "cover_image": "",
+    "animation_media": "exercises/romanian-deadlift-dumbbell/demo.mp4",
+    "animation_media_type": "video"
+  },
+  "i18n": {
+    "es": {
+      "title": "Peso muerto rumano (mancuernas)",
+      "description": "Ejercicio enfocado principalmente en isquiotibiales.",
+      "overview": "Patrón de bisagra de cadera con énfasis en cadena posterior.",
+      "instructions": [
+        "Prepará la posición en rack con apertura al ancho de hombros.",
+        "Llevá la cadera hacia atrás manteniendo la columna neutra.",
+        "Descendé hasta donde puedas sostener control y tensión posterior.",
+        "Extendé la cadera para volver sin perder alineación."
+      ],
+      "tips": [
+        "Mové la cadera hacia atrás sin perder la columna neutra.",
+        "Mantené la carga cerca del cuerpo cuando corresponda."
+      ],
+      "common_mistakes": [
+        "Redondear la espalda",
+        "Alejar la carga del cuerpo"
+      ],
+      "benefits": [
+        "Desarrolla la cadena posterior y la capacidad de producir fuerza desde la cadera."
+      ]
+    },
+    "en": {
+      "title": "Romanian Deadlift (Dumbbell)",
+      "description": "Exercise primarily focused on the hamstrings.",
+      "overview": "Hip hinge pattern emphasizing the posterior chain.",
+      "instructions": [
+        "Set up on the rack with a shoulder width stance position.",
+        "Push the hips back while keeping a neutral spine.",
+        "Lower only as far as you can maintain control and posterior-chain tension.",
+        "Extend the hips to return without losing alignment."
+      ],
+      "tips": [
+        "Push the hips back without losing a neutral spine.",
+        "Keep the load close to the body when appropriate."
+      ],
+      "common_mistakes": [
+        "Rounding the back",
+        "Letting the load drift away from the body"
+      ],
+      "benefits": [
+        "Develops the posterior chain and hip-driven force production."
+      ]
+    }
+  },
+  "source": {
+    "original_title": "Romanian Deadlift (Dumbbell)"
+  },
+  "is_active": true
+}

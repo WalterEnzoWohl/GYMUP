@@ -1,0 +1,85 @@
+{
+  "id": "93472AC1",
+  "slug": "single-leg-romanian-deadlift-barbell",
+  "primary_group": "hamstrings",
+  "secondary_groups": [
+    "glutes",
+    "lower_back",
+    "upper_back",
+    "dorsals"
+  ],
+  "primary_muscles": [
+    "hamstrings"
+  ],
+  "secondary_muscles": [
+    "glutes",
+    "erector_spinae",
+    "upper_back",
+    "latissimus_dorsi"
+  ],
+  "equipment": [
+    "barbell"
+  ],
+  "station_or_machine": "rack",
+  "grip_or_stance": "single_leg",
+  "movement_pattern": "hip_hinge",
+  "mechanic_type": "compound",
+  "difficulty": "intermediate",
+  "bodyweight": false,
+  "unilateral": true,
+  "media": {
+    "cover_image": "",
+    "animation_media": "exercises/single-leg-romanian-deadlift-barbell/demo.mp4",
+    "animation_media_type": "video"
+  },
+  "i18n": {
+    "es": {
+      "title": "Single Leg Peso muerto rumano (barra)",
+      "description": "Ejercicio enfocado principalmente en isquiotibiales.",
+      "overview": "Patrón de bisagra de cadera con énfasis en cadena posterior.",
+      "instructions": [
+        "Prepará la posición en rack con una pierna.",
+        "Llevá la cadera hacia atrás manteniendo la columna neutra.",
+        "Descendé hasta donde puedas sostener control y tensión posterior.",
+        "Extendé la cadera para volver sin perder alineación."
+      ],
+      "tips": [
+        "Mové la cadera hacia atrás sin perder la columna neutra.",
+        "Mantené la carga cerca del cuerpo cuando corresponda."
+      ],
+      "common_mistakes": [
+        "Redondear la espalda",
+        "Alejar la carga del cuerpo"
+      ],
+      "benefits": [
+        "Desarrolla la cadena posterior y la capacidad de producir fuerza desde la cadera."
+      ]
+    },
+    "en": {
+      "title": "Single Leg Romanian Deadlift (Barbell)",
+      "description": "Exercise primarily focused on the hamstrings.",
+      "overview": "Hip hinge pattern emphasizing the posterior chain.",
+      "instructions": [
+        "Set up on the rack with a single leg position.",
+        "Push the hips back while keeping a neutral spine.",
+        "Lower only as far as you can maintain control and posterior-chain tension.",
+        "Extend the hips to return without losing alignment."
+      ],
+      "tips": [
+        "Push the hips back without losing a neutral spine.",
+        "Keep the load close to the body when appropriate."
+      ],
+      "common_mistakes": [
+        "Rounding the back",
+        "Letting the load drift away from the body"
+      ],
+      "benefits": [
+        "Develops the posterior chain and hip-driven force production."
+      ]
+    }
+  },
+  "source": {
+    "original_title": "Single Leg Romanian Deadlift (Barbell)"
+  },
+  "is_active": true
+}

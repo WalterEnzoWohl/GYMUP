@@ -17,6 +17,7 @@ export interface ActiveWorkoutSet extends SetData {
 
 export interface ExerciseData {
   id: number;
+  exerciseSlug?: string;
   name: string;
   muscle: string;
   implement?: string;
@@ -27,6 +28,7 @@ export interface ExerciseData {
 
 export interface ActiveWorkoutExercise {
   id: number;
+  exerciseSlug?: string;
   name: string;
   muscle: string;
   implement?: string;
@@ -68,6 +70,7 @@ export interface SessionHistoryExerciseSet {
 }
 
 export interface SessionHistoryExercise {
+  exerciseSlug?: string;
   name: string;
   muscle: string;
   implement?: string;

@@ -1,0 +1,75 @@
+{
+  "id": "B05C2C29",
+  "slug": "single-leg-standing-calf-raise-machine",
+  "primary_group": "calves",
+  "secondary_groups": [],
+  "primary_muscles": [
+    "calves"
+  ],
+  "secondary_muscles": [],
+  "equipment": [
+    "machine"
+  ],
+  "station_or_machine": "seated_machine",
+  "grip_or_stance": "single_leg",
+  "movement_pattern": "plantar_flexion",
+  "mechanic_type": "isolation",
+  "difficulty": "beginner",
+  "bodyweight": false,
+  "unilateral": true,
+  "media": {
+    "cover_image": "",
+    "animation_media": "exercises/single-leg-standing-calf-raise-machine/demo.mp4",
+    "animation_media_type": "video"
+  },
+  "i18n": {
+    "es": {
+      "title": "Single Leg Standing Elevación de gemelos (máquina)",
+      "description": "Ejercicio enfocado principalmente en gemelos.",
+      "overview": "Movimiento enfocado en el trabajo de gemelos.",
+      "instructions": [
+        "Ubicate en máquina sentado con apoyo firme.",
+        "Elevá los talones contrayendo los gemelos.",
+        "Sostené brevemente arriba si la técnica lo permite.",
+        "Descendé lento hasta el rango inicial."
+      ],
+      "tips": [
+        "Aprovechá el rango completo de tobillo sin rebotar.",
+        "Pausá un instante arriba para aumentar el control."
+      ],
+      "common_mistakes": [
+        "Rebotar abajo",
+        "No completar el rango"
+      ],
+      "benefits": [
+        "Fortalece los gemelos y la función del tobillo."
+      ]
+    },
+    "en": {
+      "title": "Single Leg Standing Calf Raise (Machine)",
+      "description": "Exercise primarily focused on the calves.",
+      "overview": "Movement focused on the calves.",
+      "instructions": [
+        "Set up on the seated machine with stable support.",
+        "Raise the heels by contracting the calves.",
+        "Pause briefly at the top if technique allows.",
+        "Lower slowly back to the starting range."
+      ],
+      "tips": [
+        "Use a full ankle range without bouncing.",
+        "Pause briefly at the top to improve control."
+      ],
+      "common_mistakes": [
+        "Bouncing at the bottom",
+        "Not using the full range"
+      ],
+      "benefits": [
+        "Strengthens the calves and ankle function."
+      ]
+    }
+  },
+  "source": {
+    "original_title": "Single Leg Standing Calf Raise (Machine)"
+  },
+  "is_active": true
+}
