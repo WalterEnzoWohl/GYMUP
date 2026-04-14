@@ -499,7 +499,9 @@ export default function RoutineEditorPage() {
       await saveRoutine(routineToSave);
       navigate('/');
     } catch (error) {
-      setSaveError(error instanceof Error ? error.message : 'No se pudo guardar la rutina. Intentá de nuevo.');
+      const cause = error instanceof Error ? (error.cause as Error | undefined) : undefined;
+      const detail = cause ? ` (${cause instanceof Error ? cause.message : String(cause)})` : '';
+      setSaveError(`${error instanceof Error ? error.message : 'No se pudo guardar la rutina. Intentá de nuevo.'}${detail}`);
     } finally {
       setIsSaving(false);
     }

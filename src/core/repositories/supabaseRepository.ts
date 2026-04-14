@@ -708,6 +708,10 @@ export async function saveRoutine(userId: string, routine: Routine) {
 
   const savedRoutine = (savedRoutineRows as DbRoutineRow[])[0];
 
+  if (!savedRoutine) {
+    throw new Error('No se encontró la rutina después de guardarla. Intentá cerrar sesión y volver a entrar.');
+  }
+
   try {
     if (existingId) {
       const { error: deleteDaysError } = await client
@@ -738,6 +742,10 @@ export async function saveRoutine(userId: string, routine: Routine) {
 
       const insertedDay = (dayRows as DbRoutineDayRow[])[0];
 
+      if (!insertedDay) {
+        throw new Error(`El día ${dayIndex + 1} no se guardó correctamente.`);
+      }
+
       if (day.exercises.length > 0) {
         const exercisePayload = day.exercises.map((exercise, exerciseIndex) => ({
           routine_day_id: insertedDay.id,
@@ -758,6 +766,7 @@ export async function saveRoutine(userId: string, routine: Routine) {
       }
     }
   } catch (cause) {
+    console.error('[saveRoutine] error guardando días/ejercicios:', cause);
     throw new Error(
       'No se pudieron guardar los días y ejercicios de la rutina. Revisá tu conexión e intentá de nuevo.',
       { cause }
