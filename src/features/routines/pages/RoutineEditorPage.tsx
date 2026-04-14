@@ -169,6 +169,8 @@ type RoutineExerciseDraft = {
   secondaryMuscles?: string[];
   sets: number;
   reps: number;
+  kg: number;
+  rpe?: number;
 };
 
 type RoutineDayDraft = {
@@ -205,6 +207,8 @@ function buildInitialDays(existing: Routine | null) {
         secondaryMuscles: exercise.secondaryMuscles,
         sets: exercise.sets.length || 3,
         reps: exercise.sets[0]?.reps || 10,
+        kg: exercise.sets[0]?.kg ?? 0,
+        rpe: exercise.sets[0]?.rpe,
       })),
     }));
   }
@@ -391,6 +395,7 @@ export default function RoutineEditorPage() {
                   secondaryMuscles: exercise.secondaryMuscles,
                   sets: 3,
                   reps: 10,
+                  kg: 0,
                 },
               ],
             }
@@ -465,34 +470,22 @@ export default function RoutineEditorPage() {
       tags: existing?.tags ?? ['PERSONALIZADA'],
       avgMinutes: existing?.avgMinutes ?? 75,
       days: days.map((day, dayIndex) => ({
-        id: existing?.days[dayIndex]?.id,
         name: day.name.trim() || `Día ${dayIndex + 1}`,
         focus:
           day.exercises.map((exercise) => exercise.muscle).slice(0, 3).join(', ') ||
           'Sesión personalizada',
-        description: existing?.days[dayIndex]?.description ?? undefined,
         exercises: day.exercises.map((exercise, exerciseIndex) => ({
-          id: existing?.days[dayIndex]?.exercises[exerciseIndex]?.id ?? exerciseIndex + 1,
-          exerciseSlug:
-            exercise.exerciseSlug ??
-            existing?.days[dayIndex]?.exercises[exerciseIndex]?.exerciseSlug ??
-            undefined,
+          id: exerciseIndex + 1,
+          exerciseSlug: exercise.exerciseSlug,
           name: exercise.name,
           muscle: exercise.muscle,
-          implement:
-            exercise.implement ??
-            existing?.days[dayIndex]?.exercises[exerciseIndex]?.implement ??
-            undefined,
-          secondaryMuscles:
-            exercise.secondaryMuscles ??
-            existing?.days[dayIndex]?.exercises[exerciseIndex]?.secondaryMuscles ??
-            undefined,
-          notes: existing?.days[dayIndex]?.exercises[exerciseIndex]?.notes,
+          implement: exercise.implement,
+          secondaryMuscles: exercise.secondaryMuscles,
           sets: Array.from({ length: exercise.sets }, (_, setIndex) => ({
             id: setIndex + 1,
-            kg: existing?.days[dayIndex]?.exercises[exerciseIndex]?.sets[setIndex]?.kg ?? 0,
+            kg: exercise.kg,
             reps: exercise.reps,
-            rpe: existing?.days[dayIndex]?.exercises[exerciseIndex]?.sets[setIndex]?.rpe ?? 0,
+            rpe: exercise.rpe ?? 0,
             completed: false,
             kind: 'normal' as const,
           })),
@@ -504,7 +497,7 @@ export default function RoutineEditorPage() {
     setSaveError(null);
     try {
       await saveRoutine(routineToSave);
-      navigate('/workouts');
+      navigate('/');
     } catch (error) {
       setSaveError(error instanceof Error ? error.message : 'No se pudo guardar la rutina. Intentá de nuevo.');
     } finally {
