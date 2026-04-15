@@ -1109,7 +1109,7 @@ export default function TrainingSessionPage() {
           )}
 
           {hasExercises ? (
-            <DndProvider backend={TouchBackend} options={{ enableMouseEvents: true, delayTouchStart: 140 }}>
+            <DndProvider backend={TouchBackend} options={{ enableMouseEvents: true, delayTouchStart: 500, delayMouseStart: 500 }}>
               <div className="flex flex-col gap-4">
                 {exerciseList.map((exercise, exerciseIdx) => {
                   const catalogEntry = exercise.exerciseSlug

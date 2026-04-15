@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Check, GripVertical, MoreVertical, Plus, TimerReset, Trash2 } from 'lucide-react';
 import { useDrag, useDrop } from 'react-dnd';
 import type { ActiveWorkoutExercise } from '@/shared/types/models';
@@ -56,26 +56,12 @@ export function TrainingExerciseCard({
 }: SessionExerciseCardProps) {
   const bodyweightExercise = isBodyweightExercise(exercise);
   const [weightDrafts, setWeightDrafts] = useState<Record<number, string>>({});
-  const [isHandleActive, setIsHandleActive] = useState(false);
+  const [isPressing, setIsPressing] = useState(false);
+  const pressTimerRef = useRef<number | null>(null);
 
   useEffect(() => {
     setWeightDrafts({});
   }, [exercise.id, weightUnit]);
-
-  useEffect(() => {
-    if (!isHandleActive) {
-      return;
-    }
-
-    const releaseHandle = () => setIsHandleActive(false);
-    window.addEventListener('pointerup', releaseHandle);
-    window.addEventListener('pointercancel', releaseHandle);
-
-    return () => {
-      window.removeEventListener('pointerup', releaseHandle);
-      window.removeEventListener('pointercancel', releaseHandle);
-    };
-  }, [isHandleActive]);
 
   const [{ isDragging }, drag] = useDrag(
     () => ({
@@ -129,7 +115,17 @@ export function TrainingExerciseCard({
     drop(element);
   };
 
-  const compactForReorder = isHandleActive || isDragging;
+  useEffect(() => {
+    if (isDragging) {
+      setIsPressing(false);
+      if (pressTimerRef.current !== null) {
+        window.clearTimeout(pressTimerRef.current);
+        pressTimerRef.current = null;
+      }
+    }
+  }, [isDragging]);
+
+  const compactForReorder = isDragging;
 
   return (
     <div
@@ -141,35 +137,49 @@ export function TrainingExerciseCard({
     >
       <div className={`flex justify-between gap-3 px-4 ${compactForReorder ? 'items-center py-3' : 'items-start py-4'}`}>
         <div className={`flex min-w-0 gap-3 ${compactForReorder ? 'items-center' : 'items-start'}`}>
-          <button
-            ref={drag}
-            onPointerDown={() => {
-              onExerciseFocus(exerciseIdx);
-              setIsHandleActive(true);
-            }}
-            onPointerUp={() => setIsHandleActive(false)}
-            onPointerCancel={() => setIsHandleActive(false)}
-            className={`flex shrink-0 items-center justify-center rounded-xl bg-[rgba(0,81,71,0.2)] active:scale-[0.98] ${compactForReorder ? 'h-10 w-10' : 'mt-0.5 h-12 w-12'}`}
-            type="button"
-            aria-label={`Reordenar ${exercise.name}`}
-          >
-            <GripVertical size={18} className="text-[#00C9A7]" />
-          </button>
-
-          {!compactForReorder && coverImageUrl ? (
+          {coverImageUrl ? (
             <button
+              ref={drag}
               type="button"
-              onClick={onThumbnailClick}
-              className="mt-0.5 shrink-0 overflow-hidden rounded-xl"
+              onPointerDown={() => {
+                onExerciseFocus(exerciseIdx);
+                pressTimerRef.current = window.setTimeout(() => setIsPressing(true), 350);
+              }}
+              onPointerUp={() => {
+                if (pressTimerRef.current) {
+                  window.clearTimeout(pressTimerRef.current);
+                  pressTimerRef.current = null;
+                }
+                setIsPressing(false);
+              }}
+              onPointerCancel={() => {
+                if (pressTimerRef.current) {
+                  window.clearTimeout(pressTimerRef.current);
+                  pressTimerRef.current = null;
+                }
+                setIsPressing(false);
+              }}
+              onClick={() => { if (!isDragging) onThumbnailClick?.(); }}
+              className={`shrink-0 overflow-hidden rounded-xl transition-all duration-150 ${
+                compactForReorder ? 'h-10 w-10' : 'mt-0.5 h-11 w-11'
+              } ${isPressing ? 'scale-[0.91] ring-2 ring-[rgba(0,201,167,0.8)] shadow-[0_0_16px_rgba(0,201,167,0.5)]' : ''}`}
               aria-label={`Ver detalles de ${exercise.name}`}
             >
-              <img
-                src={coverImageUrl}
-                alt=""
-                className="h-11 w-11 object-cover"
-              />
+              <img src={coverImageUrl} alt="" className="h-full w-full object-cover" />
             </button>
-          ) : null}
+          ) : (
+            <button
+              ref={drag}
+              onPointerDown={() => onExerciseFocus(exerciseIdx)}
+              className={`flex shrink-0 items-center justify-center rounded-xl bg-[rgba(0,81,71,0.2)] active:scale-[0.98] ${
+                compactForReorder ? 'h-10 w-10' : 'mt-0.5 h-12 w-12'
+              }`}
+              type="button"
+              aria-label={`Reordenar ${exercise.name}`}
+            >
+              <GripVertical size={18} className="text-[#00C9A7]" />
+            </button>
+          )}
 
           <div className="min-w-0">
             <h2 className={`font-bold italic uppercase leading-tight tracking-tight text-white ${compactForReorder ? 'text-base' : 'text-xl'}`}>
