@@ -1,10 +1,12 @@
 import { useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
-import { ChevronDown, ChevronUp, Info, Plus, Save, Search, Trash2, X } from 'lucide-react';
+import { BookOpen, ChevronDown, ChevronUp, Dumbbell, Info, MoreVertical, Plus, RefreshCw, Save, Search, Timer, Trash2, TrendingUp, X } from 'lucide-react';
 import { useAppData } from '@/core/app-data/AppDataContext';
 import { useExerciseCatalog } from '@/features/exercises/hooks/useExerciseCatalog';
 import { ActiveWorkoutEditLockModal } from '@/shared/components/layout/ActiveWorkoutEditLockModal';
 import { Header } from '@/shared/components/layout/Header';
+import { NumberWheelPicker } from '@/features/onboarding/components/WheelPickers';
+import type { WheelPickerOption } from '@/features/onboarding/components/WheelPickers';
 import type { Routine } from '@/shared/types/models';
 
 const ALL_MUSCLES_OPTION = 'Todos';
@@ -129,6 +131,17 @@ const POPULAR_RANK = new Map<string, number>(
   POPULAR_ORDER_EN.map((title, index) => [normalizeForRanking(title), index])
 );
 
+const REST_OPTIONS: WheelPickerOption[] = [
+  { value: '30', label: '30s' },
+  { value: '45', label: '45s' },
+  { value: '60', label: '1min' },
+  { value: '90', label: '1min 30s' },
+  { value: '120', label: '2min' },
+  { value: '180', label: '3min' },
+  { value: '240', label: '4min' },
+];
+const REST_VALID_VALUES = new Set(REST_OPTIONS.map((o) => o.value));
+
 type RoutineLibraryItem = {
   exerciseSlug?: string;
   name: string;
@@ -172,6 +185,7 @@ type RoutineExerciseDraft = {
   reps: number;
   kg: number;
   rpe?: number;
+  restSeconds?: number;
 };
 
 type RoutineDayDraft = {
@@ -210,6 +224,7 @@ function buildInitialDays(existing: Routine | null) {
         reps: exercise.sets[0]?.reps || 10,
         kg: exercise.sets[0]?.kg ?? 0,
         rpe: exercise.sets[0]?.rpe,
+        restSeconds: exercise.restSeconds,
       })),
     }));
   }
@@ -221,7 +236,7 @@ function buildInitialDays(existing: Routine | null) {
 export default function RoutineEditorPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { activeWorkout, routines, saveRoutine, sessionHistory } = useAppData();
+  const { activeWorkout, routines, saveRoutine, sessionHistory, appSettings } = useAppData();
   const { catalog, error: catalogError, isLoading: isCatalogLoading } = useExerciseCatalog();
   const isNew = id === 'new';
   const existing = !isNew ? routines.find((routine) => routine.id === Number(id)) ?? null : null;
@@ -244,6 +259,11 @@ export default function RoutineEditorPage() {
   const [showMuscleSheet, setShowMuscleSheet] = useState(false);
   const [showImplementSheet, setShowImplementSheet] = useState(false);
   const [selectedExerciseDetail, setSelectedExerciseDetail] = useState<RoutineLibraryItem | null>(null);
+  const [expandedExercises, setExpandedExercises] = useState<Set<string>>(new Set(['0-0']));
+  const [exerciseMenu, setExerciseMenu] = useState<{ dayIndex: number; exerciseIndex: number } | null>(null);
+  const [replaceTarget, setReplaceTarget] = useState<{ dayIndex: number; exerciseIndex: number } | null>(null);
+  const [restPickerTarget, setRestPickerTarget] = useState<{ dayIndex: number; exerciseIndex: number } | null>(null);
+  const [restPickerDraft, setRestPickerDraft] = useState('90');
 
   const exerciseLibrary = useMemo<RoutineLibraryItem[]>(
     () =>
@@ -424,27 +444,47 @@ export default function RoutineEditorPage() {
 
   const addExercise = (dayIndex: number, exercise: RoutineLibraryItem) => {
     setDays((previous) =>
-      previous.map((day, index) =>
-        index === dayIndex
-          ? {
-              ...day,
-              exercises: [
-                ...day.exercises,
-                {
-                  exerciseSlug: exercise.exerciseSlug,
-                  name: exercise.name,
-                  muscle: exercise.muscle,
-                  implement: exercise.implement,
-                  secondaryMuscles: exercise.secondaryMuscles,
-                  sets: 3,
-                  reps: 10,
-                  kg: 0,
-                },
-              ],
-            }
-          : day
-      )
+      previous.map((day, index) => {
+        if (index !== dayIndex) return day;
+        if (replaceTarget !== null && replaceTarget.dayIndex === dayIndex) {
+          return {
+            ...day,
+            exercises: day.exercises.map((ex, ei) =>
+              ei !== replaceTarget.exerciseIndex
+                ? ex
+                : {
+                    exerciseSlug: exercise.exerciseSlug,
+                    name: exercise.name,
+                    muscle: exercise.muscle,
+                    implement: exercise.implement,
+                    secondaryMuscles: exercise.secondaryMuscles,
+                    sets: ex.sets,
+                    reps: ex.reps,
+                    kg: ex.kg,
+                    restSeconds: ex.restSeconds,
+                  }
+            ),
+          };
+        }
+        return {
+          ...day,
+          exercises: [
+            ...day.exercises,
+            {
+              exerciseSlug: exercise.exerciseSlug,
+              name: exercise.name,
+              muscle: exercise.muscle,
+              implement: exercise.implement,
+              secondaryMuscles: exercise.secondaryMuscles,
+              sets: 3,
+              reps: 10,
+              kg: 0,
+            },
+          ],
+        };
+      })
     );
+    setReplaceTarget(null);
     setShowExSearch(null);
     setSearchQuery('');
     setSelectedMuscle(ALL_MUSCLES_OPTION);
@@ -466,13 +506,29 @@ export default function RoutineEditorPage() {
     );
   };
 
+  const toggleExercise = (dayIndex: number, exerciseIndex: number) => {
+    const key = `${dayIndex}-${exerciseIndex}`;
+    setExpandedExercises((previous) => {
+      const next = new Set(previous);
+      if (next.has(key)) {
+        next.delete(key);
+      } else {
+        next.add(key);
+      }
+      return next;
+    });
+  };
+
   const updateExercise = (
     dayIndex: number,
     exerciseIndex: number,
-    field: 'sets' | 'reps',
+    field: 'sets' | 'reps' | 'kg',
     value: number
   ) => {
-    const nextValue = Number.isFinite(value) && value > 0 ? value : 1;
+    const nextValue =
+      field === 'kg'
+        ? Number.isFinite(value) && value >= 0 ? value : 0
+        : Number.isFinite(value) && value > 0 ? value : 1;
 
     setDays((previous) =>
       previous.map((day, index) =>
@@ -525,6 +581,7 @@ export default function RoutineEditorPage() {
           muscle: exercise.muscle,
           implement: exercise.implement,
           secondaryMuscles: exercise.secondaryMuscles,
+          restSeconds: exercise.restSeconds,
           sets: Array.from({ length: exercise.sets }, (_, setIndex) => ({
             id: setIndex + 1,
             kg: exercise.kg,
@@ -693,55 +750,114 @@ export default function RoutineEditorPage() {
                         <div className="mt-3 flex flex-col gap-2">
                           {day.exercises.map((exercise, exerciseIndex) => {
                             const catalogEntry = exercise.exerciseSlug ? catalogBySlug.get(exercise.exerciseSlug) : undefined;
+                            const exerciseKey = `${dayIndex}-${exerciseIndex}`;
+                            const isExpanded = expandedExercises.has(exerciseKey);
                             return (
-                            <div
-                              key={`${exercise.exerciseSlug ?? exercise.name}-${exerciseIndex}`}
-                              className="flex items-center gap-3 rounded-xl bg-[#1A2D42] px-3 py-3"
-                            >
-                              {catalogEntry?.coverImageUrl ? (
-                                <button
-                                  type="button"
-                                  onClick={() => setSelectedExerciseDetail(catalogEntry)}
-                                  className="h-10 w-10 flex-shrink-0 overflow-hidden rounded-full"
-                                >
-                                  <img src={catalogEntry.coverImageUrl} alt="" className="h-full w-full object-cover" loading="lazy" />
-                                </button>
-                              ) : null}
-                              <div className="flex-1">
-                                <p className="text-sm font-semibold text-white">{exercise.name}</p>
-                                <p className="text-xs text-[#9BAEC1]" style={{ fontFamily: "'Inter', sans-serif" }}>
-                                  {[exercise.muscle, exercise.implement].filter(Boolean).join(' · ')}
-                                </p>
-                              </div>
+                              <div
+                                key={exerciseKey}
+                                className="overflow-hidden rounded-2xl border border-[#203347] bg-[#13263A]"
+                              >
+                                {/* Accordion header */}
+                                <div className="flex items-center gap-2 px-3 py-3">
+                                  {catalogEntry?.coverImageUrl ? (
+                                    <div className="h-11 w-11 shrink-0 overflow-hidden rounded-full">
+                                      <img src={catalogEntry.coverImageUrl} alt="" className="h-full w-full object-cover" loading="lazy" />
+                                    </div>
+                                  ) : (
+                                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[rgba(0,201,167,0.15)] bg-[rgba(0,201,167,0.08)]">
+                                      <Dumbbell size={16} className="text-[#00C9A7]" />
+                                    </div>
+                                  )}
 
-                              <div className="flex items-center gap-2">
-                                <div className="flex items-center gap-1">
-                                  <input
-                                    type="number"
-                                    min={1}
-                                    value={exercise.sets}
-                                    onChange={(event) =>
-                                      updateExercise(dayIndex, exerciseIndex, 'sets', Number(event.target.value))
-                                    }
-                                    className="w-9 rounded-lg bg-[#203347] py-1 text-center text-xs text-white outline-none"
-                                  />
-                                  <span className="text-xs text-[#9BAEC1]">×</span>
-                                  <input
-                                    type="number"
-                                    min={1}
-                                    value={exercise.reps}
-                                    onChange={(event) =>
-                                      updateExercise(dayIndex, exerciseIndex, 'reps', Number(event.target.value))
-                                    }
-                                    className="w-9 rounded-lg bg-[#203347] py-1 text-center text-xs text-white outline-none"
-                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() => toggleExercise(dayIndex, exerciseIndex)}
+                                    className="min-w-0 flex-1 text-left"
+                                  >
+                                    <p className="truncate text-sm font-semibold text-white">{exercise.name}</p>
+                                    <p className="truncate text-xs text-[#9BAEC1]" style={{ fontFamily: "'Inter', sans-serif" }}>
+                                      {[exercise.muscle, exercise.implement].filter(Boolean).join(' · ')}
+                                    </p>
+                                  </button>
+
+                                  <button
+                                    type="button"
+                                    onClick={() => setExerciseMenu({ dayIndex, exerciseIndex })}
+                                    className="flex h-8 w-8 items-center justify-center rounded-lg text-[#9BAEC1] transition-colors active:bg-[#203347]"
+                                    aria-label="Opciones"
+                                  >
+                                    <MoreVertical size={16} />
+                                  </button>
+
+                                  <button
+                                    type="button"
+                                    onClick={() => toggleExercise(dayIndex, exerciseIndex)}
+                                    className="flex h-8 w-8 items-center justify-center text-[#9BAEC1]"
+                                  >
+                                    {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                                  </button>
                                 </div>
 
-                                <button type="button" onClick={() => removeExercise(dayIndex, exerciseIndex)}>
-                                  <Trash2 size={14} className="text-[#E53935]/60" />
-                                </button>
+                                {/* Expanded section */}
+                                {isExpanded ? (
+                                  <div className="border-t border-[#203347] pb-4">
+                                    {/* Table header */}
+                                    <div className="grid grid-cols-3 gap-2 bg-[rgba(255,255,255,0.03)] px-4 py-2">
+                                      {['Serie', 'Kg', 'Reps'].map((col) => (
+                                        <span key={col} className="text-center text-[10px] font-semibold uppercase tracking-wider text-[#9BAEC1]" style={{ fontFamily: "'Inter', sans-serif" }}>
+                                          {col}
+                                        </span>
+                                      ))}
+                                    </div>
+
+                                    {/* Set rows */}
+                                    {Array.from({ length: exercise.sets }, (_, setIndex) => (
+                                      <div key={setIndex} className="grid grid-cols-3 gap-2 items-center border-t border-[rgba(255,255,255,0.03)] px-4 py-2.5">
+                                        <span className="text-center text-sm text-[#9BAEC1]">{setIndex + 1}</span>
+                                        <input
+                                          type="number"
+                                          min={0}
+                                          value={exercise.kg}
+                                          onChange={(e) => updateExercise(dayIndex, exerciseIndex, 'kg', Number(e.target.value))}
+                                          className="w-full rounded-lg bg-[#203347] py-1.5 text-center text-sm font-medium text-white outline-none"
+                                        />
+                                        <input
+                                          type="number"
+                                          min={1}
+                                          value={exercise.reps}
+                                          onChange={(e) => updateExercise(dayIndex, exerciseIndex, 'reps', Number(e.target.value))}
+                                          className="w-full rounded-lg bg-[#203347] py-1.5 text-center text-sm font-medium text-white outline-none"
+                                        />
+                                      </div>
+                                    ))}
+
+                                    {/* Sets count control */}
+                                    <div className="mx-4 mt-3 flex items-center justify-between rounded-xl bg-[#1A2D42] px-4 py-2.5">
+                                      <span className="text-xs font-semibold uppercase tracking-wider text-[#9BAEC1]" style={{ fontFamily: "'Inter', sans-serif" }}>
+                                        Series
+                                      </span>
+                                      <div className="flex items-center gap-4">
+                                        <button
+                                          type="button"
+                                          onClick={() => updateExercise(dayIndex, exerciseIndex, 'sets', exercise.sets - 1)}
+                                          disabled={exercise.sets <= 1}
+                                          className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#203347] text-lg font-bold text-[#9BAEC1] disabled:opacity-40"
+                                        >
+                                          −
+                                        </button>
+                                        <span className="w-4 text-center text-sm font-bold text-white">{exercise.sets}</span>
+                                        <button
+                                          type="button"
+                                          onClick={() => updateExercise(dayIndex, exerciseIndex, 'sets', exercise.sets + 1)}
+                                          className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#203347] text-lg font-bold text-[#00C9A7]"
+                                        >
+                                          +
+                                        </button>
+                                      </div>
+                                    </div>
+                                  </div>
+                                ) : null}
                               </div>
-                            </div>
                             );
                           })}
                         </div>
@@ -1016,6 +1132,127 @@ export default function RoutineEditorPage() {
           </div>
         </div>
       ) : null}
+
+      {exerciseMenu !== null ? (
+        <div className="absolute inset-0 z-[55]">
+          <div className="absolute inset-0 bg-black/60" onClick={() => setExerciseMenu(null)} />
+          <div
+            className="absolute bottom-0 left-0 right-0 rounded-t-3xl"
+            style={{ background: '#1A2D42' }}
+          >
+            <div className="mx-auto mb-3 mt-4 h-1 w-10 rounded-full bg-[#203347]" />
+            <div className="px-5 pb-8">
+              <p className="mb-1 truncate text-base font-bold text-white">
+                {days[exerciseMenu.dayIndex]?.exercises[exerciseMenu.exerciseIndex]?.name}
+              </p>
+              <p className="mb-4 text-xs text-[#6F859A]" style={{ fontFamily: "'Inter', sans-serif" }}>
+                {days[exerciseMenu.dayIndex]?.exercises[exerciseMenu.exerciseIndex]?.muscle}
+              </p>
+
+              <button
+                type="button"
+                onClick={() => {
+                  const ex = days[exerciseMenu.dayIndex]?.exercises[exerciseMenu.exerciseIndex];
+                  if (ex?.exerciseSlug) setSelectedExerciseDetail(catalogBySlug.get(ex.exerciseSlug) ?? null);
+                  setExerciseMenu(null);
+                }}
+                className="flex w-full items-center gap-3 rounded-xl px-2 py-3 text-sm font-semibold text-[#9BAEC1] transition-colors active:bg-[#203347]"
+              >
+                <BookOpen size={18} className="shrink-0" />
+                Ver instrucciones / forma correcta
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  const ex = days[exerciseMenu.dayIndex]?.exercises[exerciseMenu.exerciseIndex];
+                  if (ex?.exerciseSlug) void navigate(`/muscle-progress/${ex.exerciseSlug}`);
+                  setExerciseMenu(null);
+                }}
+                className="flex w-full items-center gap-3 rounded-xl px-2 py-3 text-sm font-semibold text-[#9BAEC1] transition-colors active:bg-[#203347]"
+              >
+                <TrendingUp size={18} className="shrink-0" />
+                Ver historial de este ejercicio
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  const { dayIndex, exerciseIndex } = exerciseMenu;
+                  setReplaceTarget({ dayIndex, exerciseIndex });
+                  setShowExSearch(dayIndex);
+                  setSearchQuery('');
+                  setSelectedMuscle(ALL_MUSCLES_OPTION);
+                  setSelectedImplement(ALL_IMPLEMENTS_OPTION);
+                  setExerciseMenu(null);
+                }}
+                className="flex w-full items-center gap-3 rounded-xl px-2 py-3 text-sm font-semibold text-[#9BAEC1] transition-colors active:bg-[#203347]"
+              >
+                <RefreshCw size={18} className="shrink-0" />
+                Reemplazar ejercicio
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  const ex = days[exerciseMenu.dayIndex]?.exercises[exerciseMenu.exerciseIndex];
+                  const current = ex?.restSeconds ?? appSettings.restTimerSeconds;
+                  setRestPickerDraft(REST_VALID_VALUES.has(String(current)) ? String(current) : '90');
+                  setRestPickerTarget(exerciseMenu);
+                  setExerciseMenu(null);
+                }}
+                className="flex w-full items-center gap-3 rounded-xl px-2 py-3 text-sm font-semibold text-[#9BAEC1] transition-colors active:bg-[#203347]"
+              >
+                <Timer size={18} className="shrink-0" />
+                Tiempo de descanso
+              </button>
+
+              <div className="my-2 border-t border-[#203347]" />
+
+              <button
+                type="button"
+                onClick={() => {
+                  const { dayIndex, exerciseIndex } = exerciseMenu;
+                  removeExercise(dayIndex, exerciseIndex);
+                  setExerciseMenu(null);
+                }}
+                className="flex w-full items-center gap-3 rounded-xl px-2 py-3 text-sm font-semibold text-[#FF8E8E] transition-colors active:bg-[rgba(255,125,125,0.08)]"
+              >
+                <Trash2 size={18} className="shrink-0" />
+                Eliminar ejercicio
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      <NumberWheelPicker
+        open={restPickerTarget !== null}
+        title="Descanso"
+        subtitle="Tiempo entre series"
+        value={{ whole: restPickerDraft }}
+        onChange={(v) => setRestPickerDraft(v.whole)}
+        onClose={() => setRestPickerTarget(null)}
+        onConfirm={() => {
+          if (restPickerTarget === null) return;
+          const { dayIndex, exerciseIndex } = restPickerTarget;
+          const seconds = Number(restPickerDraft);
+          setDays((previous) =>
+            previous.map((day, di) =>
+              di !== dayIndex
+                ? day
+                : {
+                    ...day,
+                    exercises: day.exercises.map((ex, ei) =>
+                      ei !== exerciseIndex ? ex : { ...ex, restSeconds: seconds }
+                    ),
+                  }
+            )
+          );
+          setRestPickerTarget(null);
+        }}
+        wholeOptions={REST_OPTIONS}
+      />
 
       {showMuscleSheet ? (
         <div className="absolute inset-0 z-[55]">

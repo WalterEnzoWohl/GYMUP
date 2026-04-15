@@ -24,6 +24,7 @@ export interface ExerciseData {
   secondaryMuscles?: string[];
   notes?: string;
   sets: SetData[];
+  restSeconds?: number;
 }
 
 export interface ActiveWorkoutExercise {

@@ -86,7 +86,7 @@ type DbRoutineDayExerciseRow = {
   implement: string | null;
   secondary_muscles: string[] | null;
   notes: string | null;
-  sets_json: Array<{ kg: number; reps: number; rpe: number; kind?: 'normal' | 'warmup' }> | null;
+  sets_json: Array<{ kg: number; reps: number; rpe: number; kind?: 'normal' | 'warmup'; rest_seconds?: number }> | null;
 };
 
 type DbSessionRow = {
@@ -299,12 +299,13 @@ export function isStaleAuthSessionError(error: unknown) {
   return error instanceof Error && error.name === STALE_AUTH_SESSION_ERROR;
 }
 
-function buildSetTemplate(sets: SetData[]) {
+function buildSetTemplate(sets: SetData[], restSeconds?: number) {
   return sets.map((set) => ({
     kg: set.kg,
     reps: set.reps,
     rpe: set.rpe,
     kind: set.kind ?? 'normal',
+    ...(restSeconds !== undefined ? { rest_seconds: restSeconds } : {}),
   }));
 }
 
@@ -345,6 +346,7 @@ function composeRoutine(days: DbRoutineDayRow[], exercises: DbRoutineDayExercise
               completed: false,
               kind: set.kind ?? 'normal',
             })),
+            restSeconds: exercise.sets_json?.[0]?.rest_seconds,
           })),
       })),
   };
@@ -756,7 +758,7 @@ export async function saveRoutine(userId: string, routine: Routine) {
           implement: exercise.implement ?? null,
           secondary_muscles: exercise.secondaryMuscles ?? null,
           notes: exercise.notes ?? null,
-          sets_json: buildSetTemplate(exercise.sets),
+          sets_json: buildSetTemplate(exercise.sets, exercise.restSeconds),
         }));
 
         const { error: exerciseError } = await client.from('routine_day_exercises').insert(exercisePayload);
