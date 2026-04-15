@@ -1,15 +1,23 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
-import { ChevronDown, ChevronUp, Clock, Dumbbell, Pencil, Play } from 'lucide-react';
+import { ChevronDown, ChevronUp, Clock, Dumbbell, Pencil, Play, X } from 'lucide-react';
 import { ActiveWorkoutEditLockModal } from '@/shared/components/layout/ActiveWorkoutEditLockModal';
 import { Header } from '@/shared/components/layout/Header';
 import { useAppData } from '@/core/app-data/AppDataContext';
+import { useExerciseCatalog } from '@/features/exercises/hooks/useExerciseCatalog';
+import type { ExerciseCatalogSummary } from '@/features/exercises/types';
 
 export default function RoutineDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { activeWorkout, appContext, routines } = useAppData();
   const routine = routines.find((item) => item.id === Number(id)) ?? routines[0] ?? null;
+  const { catalog } = useExerciseCatalog();
+  const [selectedExerciseDetail, setSelectedExerciseDetail] = useState<ExerciseCatalogSummary | null>(null);
+  const catalogBySlug = useMemo(
+    () => new Map(catalog.filter((e) => Boolean(e.coverImageUrl)).map((e) => [e.slug, e])),
+    [catalog]
+  );
 
   if (!routine) {
     return (
@@ -156,7 +164,9 @@ export default function RoutineDetailPage() {
         </div>
 
         <div className="flex flex-col gap-3">
-          {selectedDay.exercises.map((exercise, index) => (
+          {selectedDay.exercises.map((exercise, index) => {
+            const catalogEntry = exercise.exerciseSlug ? catalogBySlug.get(exercise.exerciseSlug) : undefined;
+            return (
             <div
               key={exercise.id}
               className="overflow-hidden rounded-2xl border border-[#203347] bg-[#13263A]"
@@ -166,12 +176,21 @@ export default function RoutineDetailPage() {
                 className="flex w-full items-center justify-between px-4 py-4 text-left"
               >
                 <div className="flex items-center gap-3">
-                  <div
-                    className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl"
-                    style={{ background: `${routine.color}15`, border: `1px solid ${routine.color}30` }}
-                  >
-                    <Dumbbell size={16} style={{ color: routine.color }} />
-                  </div>
+                  {catalogEntry?.coverImageUrl ? (
+                    <div
+                      className="h-11 w-11 flex-shrink-0 cursor-pointer overflow-hidden rounded-full"
+                      onClick={(e) => { e.stopPropagation(); setSelectedExerciseDetail(catalogEntry); }}
+                    >
+                      <img src={catalogEntry.coverImageUrl} alt="" className="h-full w-full object-cover" loading="lazy" />
+                    </div>
+                  ) : (
+                    <div
+                      className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl"
+                      style={{ background: `${routine.color}15`, border: `1px solid ${routine.color}30` }}
+                    >
+                      <Dumbbell size={16} style={{ color: routine.color }} />
+                    </div>
+                  )}
                   <div>
                     <p className="text-sm font-semibold text-white">{exercise.name}</p>
                     <p className="mt-0.5 text-xs text-[#9BAEC1]" style={{ fontFamily: "'Inter', sans-serif" }}>
@@ -237,7 +256,8 @@ export default function RoutineDetailPage() {
                 </div>
               )}
             </div>
-          ))}
+            );
+          })}
         </div>
 
         <div className="flex gap-3 pb-2">
@@ -260,6 +280,85 @@ export default function RoutineDetailPage() {
           </button>
         </div>
       </div>
+
+      {selectedExerciseDetail ? (
+        <div className="absolute inset-0 z-[60]">
+          <div className="absolute inset-0 bg-black/70" onClick={() => setSelectedExerciseDetail(null)} />
+          <div
+            className="absolute bottom-0 left-0 right-0 flex max-h-[88%] flex-col rounded-t-3xl"
+            style={{ background: '#1A2D42' }}
+          >
+            <div className="mx-auto mb-3 mt-4 h-1 w-10 shrink-0 rounded-full bg-[#203347]" />
+            <div className="overflow-y-auto">
+              {selectedExerciseDetail.animationMediaUrl ? (
+                <video
+                  key={selectedExerciseDetail.animationMediaUrl}
+                  src={selectedExerciseDetail.animationMediaUrl}
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                  className="w-full"
+                  style={{ maxHeight: '260px', objectFit: 'cover' }}
+                />
+              ) : null}
+              <div className="px-5 pb-8 pt-4">
+                <div className="mb-4 flex items-start justify-between gap-3">
+                  <h2 className="text-xl font-bold leading-tight text-white">
+                    {selectedExerciseDetail.title}
+                  </h2>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedExerciseDetail(null)}
+                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#203347] text-[#9BAEC1]"
+                  >
+                    <X size={16} />
+                  </button>
+                </div>
+                <div className="mb-4 flex flex-wrap gap-2">
+                  <span className="rounded-full bg-[rgba(0,201,167,0.12)] px-3 py-1 text-xs font-semibold text-[#00C9A7]">
+                    {selectedExerciseDetail.muscle}
+                  </span>
+                  {selectedExerciseDetail.secondaryMuscles?.map((m) => (
+                    <span key={m} className="rounded-full bg-[rgba(155,174,193,0.1)] px-3 py-1 text-xs font-medium text-[#9BAEC1]">
+                      {m}
+                    </span>
+                  ))}
+                  {selectedExerciseDetail.implement ? (
+                    <span className="rounded-full bg-[rgba(127,152,255,0.12)] px-3 py-1 text-xs font-semibold text-[#7F98FF]">
+                      {selectedExerciseDetail.implement}
+                    </span>
+                  ) : null}
+                </div>
+                {selectedExerciseDetail.overview ? (
+                  <p className="mb-5 text-sm leading-relaxed text-[#9BAEC1]" style={{ fontFamily: "'Inter', sans-serif" }}>
+                    {selectedExerciseDetail.overview}
+                  </p>
+                ) : null}
+                {selectedExerciseDetail.instructions?.length > 0 ? (
+                  <div>
+                    <p className="mb-2.5 text-xs font-bold uppercase tracking-widest text-[#9BAEC1]" style={{ fontFamily: "'Inter', sans-serif" }}>
+                      Instrucciones
+                    </p>
+                    <ol className="flex flex-col gap-2.5">
+                      {selectedExerciseDetail.instructions.map((step, i) => (
+                        <li key={i} className="flex gap-3">
+                          <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[rgba(0,201,167,0.15)] text-[10px] font-bold text-[#00C9A7]">
+                            {i + 1}
+                          </span>
+                          <p className="text-sm leading-relaxed text-white" style={{ fontFamily: "'Inter', sans-serif" }}>
+                            {step}
+                          </p>
+                        </li>
+                      ))}
+                    </ol>
+                  </div>
+                ) : null}
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       {showEditLockModal && activeWorkout && (
         <ActiveWorkoutEditLockModal

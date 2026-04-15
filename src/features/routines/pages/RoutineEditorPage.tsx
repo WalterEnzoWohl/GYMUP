@@ -8,6 +8,7 @@ import { Header } from '@/shared/components/layout/Header';
 import type { Routine } from '@/shared/types/models';
 
 const ALL_MUSCLES_OPTION = 'Todos';
+const ALL_IMPLEMENTS_OPTION = 'Todos';
 
 // Top 100 exercises in popularity order (English source titles from exercises.json)
 // Headers like "Pecho/Tríceps" are omitted — only exercise names are included.
@@ -220,7 +221,7 @@ function buildInitialDays(existing: Routine | null) {
 export default function RoutineEditorPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { activeWorkout, routines, saveRoutine } = useAppData();
+  const { activeWorkout, routines, saveRoutine, sessionHistory } = useAppData();
   const { catalog, error: catalogError, isLoading: isCatalogLoading } = useExerciseCatalog();
   const isNew = id === 'new';
   const existing = !isNew ? routines.find((routine) => routine.id === Number(id)) ?? null : null;
@@ -239,6 +240,9 @@ export default function RoutineEditorPage() {
   const [showExSearch, setShowExSearch] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedMuscle, setSelectedMuscle] = useState(ALL_MUSCLES_OPTION);
+  const [selectedImplement, setSelectedImplement] = useState(ALL_IMPLEMENTS_OPTION);
+  const [showMuscleSheet, setShowMuscleSheet] = useState(false);
+  const [showImplementSheet, setShowImplementSheet] = useState(false);
   const [selectedExerciseDetail, setSelectedExerciseDetail] = useState<RoutineLibraryItem | null>(null);
 
   const exerciseLibrary = useMemo<RoutineLibraryItem[]>(
@@ -274,6 +278,11 @@ export default function RoutineEditorPage() {
     [catalog]
   );
 
+  const catalogBySlug = useMemo(
+    () => new Map(exerciseLibrary.filter((e) => Boolean(e.coverImageUrl)).map((e) => [e.exerciseSlug ?? '', e])),
+    [exerciseLibrary]
+  );
+
   const muscleOptions = useMemo(
     () => [
       ALL_MUSCLES_OPTION,
@@ -284,19 +293,53 @@ export default function RoutineEditorPage() {
     [exerciseLibrary]
   );
 
+  const implementOptions = useMemo(
+    () => [
+      ALL_IMPLEMENTS_OPTION,
+      ...Array.from(new Set(exerciseLibrary.map((e) => e.implement).filter(Boolean) as string[])).sort((a, b) =>
+        a.localeCompare(b, 'es')
+      ),
+    ],
+    [exerciseLibrary]
+  );
+
   const filteredExercises = useMemo(() => {
     const normalizedSearch = searchQuery.trim().toLowerCase();
 
     return exerciseLibrary.filter((exercise) => {
-      const matchMuscle =
-        selectedMuscle === ALL_MUSCLES_OPTION || exercise.muscle === selectedMuscle;
+      const matchMuscle = selectedMuscle === ALL_MUSCLES_OPTION || exercise.muscle === selectedMuscle;
+      const matchImplement = selectedImplement === ALL_IMPLEMENTS_OPTION || exercise.implement === selectedImplement;
       const haystack = [exercise.name, exercise.muscle, exercise.implement ?? '']
         .join(' ')
         .toLowerCase();
 
-      return matchMuscle && (!normalizedSearch || haystack.includes(normalizedSearch));
+      return matchMuscle && matchImplement && (!normalizedSearch || haystack.includes(normalizedSearch));
     });
-  }, [exerciseLibrary, searchQuery, selectedMuscle]);
+  }, [exerciseLibrary, searchQuery, selectedMuscle, selectedImplement]);
+
+  const recentExercises = useMemo(() => {
+    const seen = new Set<string>();
+    const result: RoutineLibraryItem[] = [];
+    const sortedSessions = [...sessionHistory].sort((a, b) => b.isoDate.localeCompare(a.isoDate));
+    for (const session of sortedSessions) {
+      for (const ex of session.exercises) {
+        if (!ex.exerciseSlug || seen.has(ex.exerciseSlug)) continue;
+        const catalogEntry = catalogBySlug.get(ex.exerciseSlug);
+        if (!catalogEntry) continue;
+        seen.add(ex.exerciseSlug);
+        result.push(catalogEntry);
+        if (result.length >= 8) return result;
+      }
+    }
+    return result;
+  }, [sessionHistory, catalogBySlug]);
+
+  const recommendedExercises = useMemo(() => {
+    const currentDaySlugs = showExSearch !== null
+      ? new Set(days[showExSearch]?.exercises.map((e) => e.exerciseSlug).filter(Boolean))
+      : new Set<string>();
+    return exerciseLibrary.filter((e) => e.exerciseSlug && !currentDaySlugs.has(e.exerciseSlug)).slice(0, 6);
+  }, [exerciseLibrary, days, showExSearch]);
 
   const syncDayCount = (nextCount: number) => {
     if (nextCount === days.length) {
@@ -405,6 +448,7 @@ export default function RoutineEditorPage() {
     setShowExSearch(null);
     setSearchQuery('');
     setSelectedMuscle(ALL_MUSCLES_OPTION);
+    setSelectedImplement(ALL_IMPLEMENTS_OPTION);
   };
 
   const removeExercise = (dayIndex: number, exerciseIndex: number) => {
@@ -647,11 +691,22 @@ export default function RoutineEditorPage() {
                         </p>
                       ) : (
                         <div className="mt-3 flex flex-col gap-2">
-                          {day.exercises.map((exercise, exerciseIndex) => (
+                          {day.exercises.map((exercise, exerciseIndex) => {
+                            const catalogEntry = exercise.exerciseSlug ? catalogBySlug.get(exercise.exerciseSlug) : undefined;
+                            return (
                             <div
                               key={`${exercise.exerciseSlug ?? exercise.name}-${exerciseIndex}`}
                               className="flex items-center gap-3 rounded-xl bg-[#1A2D42] px-3 py-3"
                             >
+                              {catalogEntry?.coverImageUrl ? (
+                                <button
+                                  type="button"
+                                  onClick={() => setSelectedExerciseDetail(catalogEntry)}
+                                  className="h-10 w-10 flex-shrink-0 overflow-hidden rounded-full"
+                                >
+                                  <img src={catalogEntry.coverImageUrl} alt="" className="h-full w-full object-cover" loading="lazy" />
+                                </button>
+                              ) : null}
                               <div className="flex-1">
                                 <p className="text-sm font-semibold text-white">{exercise.name}</p>
                                 <p className="text-xs text-[#9BAEC1]" style={{ fontFamily: "'Inter', sans-serif" }}>
@@ -687,7 +742,8 @@ export default function RoutineEditorPage() {
                                 </button>
                               </div>
                             </div>
-                          ))}
+                            );
+                          })}
                         </div>
                       )}
 
@@ -696,6 +752,7 @@ export default function RoutineEditorPage() {
                           setShowExSearch(dayIndex);
                           setSearchQuery('');
                           setSelectedMuscle(ALL_MUSCLES_OPTION);
+                          setSelectedImplement(ALL_IMPLEMENTS_OPTION);
                         }}
                         className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-[rgba(0,201,167,0.3)] py-3 text-sm font-semibold text-[#00C9A7]"
                         type="button"
@@ -766,21 +823,29 @@ export default function RoutineEditorPage() {
                 />
               </div>
 
-              <div className="flex gap-2 overflow-x-auto pb-1">
-                {muscleOptions.map((muscle) => (
-                  <button
-                    key={muscle}
-                    onClick={() => setSelectedMuscle(muscle)}
-                    className={`shrink-0 whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-semibold transition-all ${
-                      selectedMuscle === muscle
-                        ? 'bg-[#00C9A7] text-black'
-                        : 'bg-[#203347] text-[#9BAEC1]'
-                    }`}
-                    type="button"
-                  >
-                    {muscle}
-                  </button>
-                ))}
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => { setShowMuscleSheet(true); setShowImplementSheet(false); }}
+                  className={`flex-1 truncate rounded-xl border py-2.5 text-sm font-semibold transition-all ${
+                    selectedMuscle !== ALL_MUSCLES_OPTION
+                      ? 'border-[rgba(0,201,167,0.4)] bg-[rgba(0,201,167,0.1)] text-[#00C9A7]'
+                      : 'border-[#333] bg-[#203347] text-[#9BAEC1]'
+                  }`}
+                >
+                  {selectedMuscle === ALL_MUSCLES_OPTION ? 'Todos Músculos' : selectedMuscle}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setShowImplementSheet(true); setShowMuscleSheet(false); }}
+                  className={`flex-1 truncate rounded-xl border py-2.5 text-sm font-semibold transition-all ${
+                    selectedImplement !== ALL_IMPLEMENTS_OPTION
+                      ? 'border-[rgba(0,201,167,0.4)] bg-[rgba(0,201,167,0.1)] text-[#00C9A7]'
+                      : 'border-[#333] bg-[#203347] text-[#9BAEC1]'
+                  }`}
+                >
+                  {selectedImplement === ALL_IMPLEMENTS_OPTION ? 'Todo Equipamiento' : selectedImplement}
+                </button>
               </div>
             </div>
 
@@ -794,6 +859,106 @@ export default function RoutineEditorPage() {
               {isCatalogLoading && catalog.length === 0 ? (
                 <div className="mb-3 rounded-2xl border border-[#203347] bg-[#13263A] px-4 py-5 text-center text-sm text-[#9BAEC1]">
                   Cargando catálogo de ejercicios...
+                </div>
+              ) : null}
+
+              {!searchQuery.trim() && recentExercises.length > 0 ? (
+                <div className="mb-4">
+                  <p className="mb-2 text-xs font-bold uppercase tracking-widest text-[#9BAEC1]" style={{ fontFamily: "'Inter', sans-serif" }}>
+                    Recientes
+                  </p>
+                  <div className="flex flex-col gap-2">
+                    {recentExercises.map((exercise) => (
+                      <div
+                        key={`recent-${exercise.exerciseSlug ?? exercise.name}`}
+                        className="flex items-center gap-3 rounded-xl bg-[#203347] px-3 py-2.5"
+                      >
+                        {exercise.coverImageUrl ? (
+                          <img
+                            src={exercise.coverImageUrl}
+                            alt=""
+                            className="h-11 w-11 shrink-0 cursor-pointer rounded-lg object-cover"
+                            loading="lazy"
+                            onClick={() => setSelectedExerciseDetail(exercise)}
+                          />
+                        ) : null}
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-semibold text-white">{exercise.name}</p>
+                          <p className="truncate text-xs text-[#9BAEC1]" style={{ fontFamily: "'Inter', sans-serif" }}>
+                            {[exercise.muscle, exercise.implement].filter(Boolean).join(' · ')}
+                          </p>
+                        </div>
+                        <div className="flex shrink-0 items-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => setSelectedExerciseDetail(exercise)}
+                            className="flex h-8 w-8 items-center justify-center rounded-lg text-[#9BAEC1] transition-colors active:bg-[#2A415A]"
+                            aria-label="Ver detalles"
+                          >
+                            <Info size={16} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => addExercise(showExSearch!, exercise)}
+                            className="flex h-8 w-8 items-center justify-center rounded-lg bg-[rgba(0,201,167,0.15)] text-[#00C9A7] transition-colors active:bg-[rgba(0,201,167,0.25)]"
+                            aria-label="Agregar ejercicio"
+                          >
+                            <Plus size={16} />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+
+              {!searchQuery.trim() && recommendedExercises.length > 0 ? (
+                <div className="mb-4">
+                  <p className="mb-2 text-xs font-bold uppercase tracking-widest text-[#9BAEC1]" style={{ fontFamily: "'Inter', sans-serif" }}>
+                    Recomendados
+                  </p>
+                  <div className="flex flex-col gap-2">
+                    {recommendedExercises.map((exercise) => (
+                      <div
+                        key={`rec-${exercise.exerciseSlug ?? exercise.name}`}
+                        className="flex items-center gap-3 rounded-xl bg-[#203347] px-3 py-2.5"
+                      >
+                        {exercise.coverImageUrl ? (
+                          <img
+                            src={exercise.coverImageUrl}
+                            alt=""
+                            className="h-11 w-11 shrink-0 cursor-pointer rounded-lg object-cover"
+                            loading="lazy"
+                            onClick={() => setSelectedExerciseDetail(exercise)}
+                          />
+                        ) : null}
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-semibold text-white">{exercise.name}</p>
+                          <p className="truncate text-xs text-[#9BAEC1]" style={{ fontFamily: "'Inter', sans-serif" }}>
+                            {[exercise.muscle, exercise.implement].filter(Boolean).join(' · ')}
+                          </p>
+                        </div>
+                        <div className="flex shrink-0 items-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => setSelectedExerciseDetail(exercise)}
+                            className="flex h-8 w-8 items-center justify-center rounded-lg text-[#9BAEC1] transition-colors active:bg-[#2A415A]"
+                            aria-label="Ver detalles"
+                          >
+                            <Info size={16} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => addExercise(showExSearch!, exercise)}
+                            className="flex h-8 w-8 items-center justify-center rounded-lg bg-[rgba(0,201,167,0.15)] text-[#00C9A7] transition-colors active:bg-[rgba(0,201,167,0.25)]"
+                            aria-label="Agregar ejercicio"
+                          >
+                            <Plus size={16} />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               ) : null}
 
@@ -846,6 +1011,66 @@ export default function RoutineEditorPage() {
                     No encontramos ejercicios con ese filtro.
                   </div>
                 ) : null}
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {showMuscleSheet ? (
+        <div className="absolute inset-0 z-[55]">
+          <div className="absolute inset-0 bg-black/60" onClick={() => setShowMuscleSheet(false)} />
+          <div
+            className="absolute bottom-0 left-0 right-0 rounded-t-3xl"
+            style={{ background: '#1A2D42' }}
+          >
+            <div className="mx-auto mb-3 mt-4 h-1 w-10 rounded-full bg-[#203347]" />
+            <div className="px-5 pb-8">
+              <h3 className="mb-3 text-base font-bold text-white">Músculo</h3>
+              <div className="flex flex-col gap-1">
+                {muscleOptions.map((muscle) => (
+                  <button
+                    key={muscle}
+                    type="button"
+                    onClick={() => { setSelectedMuscle(muscle); setShowMuscleSheet(false); }}
+                    className={`flex w-full items-center justify-between rounded-xl px-4 py-3 text-sm font-semibold transition-colors ${
+                      selectedMuscle === muscle ? 'bg-[rgba(0,201,167,0.12)] text-[#00C9A7]' : 'text-[#9BAEC1] active:bg-[#203347]'
+                    }`}
+                  >
+                    {muscle}
+                    {selectedMuscle === muscle ? <div className="h-2 w-2 rounded-full bg-[#00C9A7]" /> : null}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {showImplementSheet ? (
+        <div className="absolute inset-0 z-[55]">
+          <div className="absolute inset-0 bg-black/60" onClick={() => setShowImplementSheet(false)} />
+          <div
+            className="absolute bottom-0 left-0 right-0 rounded-t-3xl"
+            style={{ background: '#1A2D42' }}
+          >
+            <div className="mx-auto mb-3 mt-4 h-1 w-10 rounded-full bg-[#203347]" />
+            <div className="px-5 pb-8">
+              <h3 className="mb-3 text-base font-bold text-white">Equipamiento</h3>
+              <div className="flex flex-col gap-1">
+                {implementOptions.map((implement) => (
+                  <button
+                    key={implement}
+                    type="button"
+                    onClick={() => { setSelectedImplement(implement); setShowImplementSheet(false); }}
+                    className={`flex w-full items-center justify-between rounded-xl px-4 py-3 text-sm font-semibold transition-colors ${
+                      selectedImplement === implement ? 'bg-[rgba(0,201,167,0.12)] text-[#00C9A7]' : 'text-[#9BAEC1] active:bg-[#203347]'
+                    }`}
+                  >
+                    {implement}
+                    {selectedImplement === implement ? <div className="h-2 w-2 rounded-full bg-[#00C9A7]" /> : null}
+                  </button>
+                ))}
               </div>
             </div>
           </div>
