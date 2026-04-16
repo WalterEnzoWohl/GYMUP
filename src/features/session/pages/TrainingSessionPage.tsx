@@ -1249,15 +1249,20 @@ export default function TrainingSessionPage() {
         </div>
       )}
 
-      {exerciseMenuAnchor && currentExercise && (
+      {exerciseMenuAnchor && currentExercise && (() => {
+        const exRect = exerciseMenuAnchor.rect;
+        const menuH = 260;
+        const spaceBelow = window.innerHeight - exRect.bottom;
+        const exTop = spaceBelow >= menuH + 8
+          ? exRect.bottom + 8
+          : Math.max(10, exRect.top - menuH - 8);
+        const exLeft = Math.max(12, Math.min(exRect.right - 288, window.innerWidth - 300));
+        return (
         <div className="absolute inset-0 z-40">
           <button aria-label="Cerrar menú" className="absolute inset-0 bg-black/20" onClick={closeContextMenus} type="button" />
           <div
             className="fixed z-50 w-[18rem] rounded-3xl border border-[rgba(32,51,71,0.92)] bg-[#13263A] p-3 shadow-[0_24px_60px_rgba(0,0,0,0.42)]"
-            style={{
-              top: Math.min(exerciseMenuAnchor.rect.bottom + 10, window.innerHeight - 260),
-              left: Math.max(12, Math.min(exerciseMenuAnchor.rect.right - 288, window.innerWidth - 300)),
-            }}
+            style={{ top: exTop, left: exLeft }}
           >
             <div className="border-b border-white/6 px-2 pb-3">
               <h3 className="text-lg font-bold tracking-tight text-white">{currentExercise.name}</h3>
@@ -1285,9 +1290,18 @@ export default function TrainingSessionPage() {
             </div>
           </div>
         </div>
-      )}
+        );
+      })()}
 
-      {setMenuAnchor && currentExercise && (
+      {setMenuAnchor && currentExercise && (() => {
+        const setRect = setMenuAnchor.rect;
+        const menuH = 245;
+        const spaceBelow = window.innerHeight - setRect.bottom;
+        const setTop = spaceBelow >= menuH + 8
+          ? setRect.bottom + 8
+          : Math.max(10, setRect.top - menuH - 8);
+        const setLeft = Math.max(12, Math.min(setRect.left, window.innerWidth - 300));
+        return (
         <div className="absolute inset-0 z-40">
           <button
             aria-label="Cerrar selector de serie"
@@ -1297,10 +1311,7 @@ export default function TrainingSessionPage() {
           />
           <div
             className="fixed z-50 w-[18rem] rounded-3xl border border-[rgba(32,51,71,0.92)] bg-[#13263A] p-3 shadow-[0_24px_60px_rgba(0,0,0,0.42)]"
-            style={{
-              top: Math.min(setMenuAnchor.rect.bottom + 10, window.innerHeight - 245),
-              left: Math.max(12, Math.min(setMenuAnchor.rect.left, window.innerWidth - 300)),
-            }}
+            style={{ top: setTop, left: setLeft }}
           >
             <div className="border-b border-white/6 px-2 pb-3">
               <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#00C9A7]">
@@ -1355,7 +1366,8 @@ export default function TrainingSessionPage() {
             </div>
           </div>
         </div>
-      )}
+        );
+      })()}
 
       {showExerciseHistory && currentExercise && (
         <div className="absolute inset-0 z-40 flex items-end">

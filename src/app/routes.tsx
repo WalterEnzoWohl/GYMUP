@@ -27,10 +27,11 @@ export const router = createBrowserRouter([
       { path: 'config/support', lazy: lazyPage(() => import('@/features/settings/pages/SupportContactPage')) },
       { path: 'config/terms', lazy: lazyPage(() => import('@/features/settings/pages/TermsPage')) },
       { path: 'routine/:id', lazy: lazyPage(() => import('@/features/routines/pages/RoutineDetailPage')) },
-      { path: 'routine-editor/:id', lazy: lazyPage(() => import('@/features/routines/pages/RoutineEditorPage')) },
-      { path: 'session-history/:id', lazy: lazyPage(() => import('@/features/history/pages/SessionHistoryPage')) },
+{ path: 'session-history/:id', lazy: lazyPage(() => import('@/features/history/pages/SessionHistoryPage')) },
       { path: 'muscle-progress/:id', lazy: lazyPage(() => import('@/features/history/pages/MuscleProgressPage')) },
       { path: 'history', lazy: lazyPage(() => import('@/features/history/pages/HistoryPage')) },
+      { path: 'exercise-catalog', lazy: lazyPage(() => import('@/features/exercises/pages/ExerciseCatalogPage')) },
+      { path: 'exercise-explore', lazy: lazyPage(() => import('@/features/exercises/pages/ExerciseExplorePage')) },
     ],
   },
 ]);

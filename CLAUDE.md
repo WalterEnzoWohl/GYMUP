@@ -268,3 +268,19 @@ Todas las tablas tienen RLS habilitado. Los usuarios solo pueden ver y modificar
 4. Conectar capa nutricional con progreso y entrenamiento
 5. Progresión inteligente de cargas
 6. Consolidar catálogo maestro de ejercicios en DB
+
+## Bug crítico activo (prioridad máxima)
+
+### Flujo de creación/edición de rutina roto
+- Al presionar "Guardar rutina" en RoutineEditorPage, la pantalla no navega ni cierra
+- Los ejercicios no persisten en Supabase (la rutina se guarda vacía o no se guarda)
+- No hay feedback visual durante el guardado
+- Se pueden crear rutinas sin ejercicios (falta validación)
+- Causa probable: handleSave tiene un bug en el armado del payload o en el manejo del async
+
+Este es el flujo que debe funcionar end-to-end:
+1. Usuario crea rutina → agrega días → agrega ejercicios a cada día
+2. Presiona "Guardar rutina"
+3. Loading state en el botón mientras guarda
+4. Si éxito → navegar a `/` (home)
+5. Si error → mostrar mensaje claro sin perder los datos del formulario

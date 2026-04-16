@@ -6,7 +6,7 @@ import { useAppData } from '@/core/app-data/AppDataContext';
 import { hasCompletedOnboarding } from '@/shared/lib/userProfileUtils';
 import { getSupabaseClient } from '@/shared/lib/supabase';
 
-const HIDE_NAV_PATHS = ['/session', '/post-session', '/onboarding'];
+const HIDE_NAV_PATHS = ['/session', '/post-session', '/onboarding', '/exercise-catalog', '/exercise-explore'];
 
 export default function Root() {
   const navigate = useNavigate();

@@ -1,6 +1,6 @@
-import { useCallback, useMemo, useRef, useState } from 'react';
-import { useBeforeUnload, useBlocker, useNavigate, useParams } from 'react-router';
-import { BookOpen, Check, ChevronDown, ChevronUp, Dumbbell, Info, MoreVertical, Plus, RefreshCw, Save, Search, Timer, Trash2, TrendingUp } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useBeforeUnload, useBlocker, useLocation, useNavigate, useParams } from 'react-router';
+import { BookOpen, ChevronDown, ChevronUp, Dumbbell, MoreVertical, Plus, RefreshCw, Save, Timer, Trash2, TrendingUp } from 'lucide-react';
 import { useAppData } from '@/core/app-data/AppDataContext';
 import { useExerciseCatalog } from '@/features/exercises/hooks/useExerciseCatalog';
 import { ExerciseDetailSheet } from '@/features/exercises/components/ExerciseDetailSheet';
@@ -10,202 +10,6 @@ import { Header } from '@/shared/components/layout/Header';
 import { NumberWheelPicker } from '@/features/onboarding/components/WheelPickers';
 import type { WheelPickerOption } from '@/features/onboarding/components/WheelPickers';
 import type { Routine } from '@/shared/types/models';
-
-const ALL_MUSCLES_OPTION = 'Todos';
-const ALL_IMPLEMENTS_OPTION = 'Todos';
-
-// Top 100 exercises in popularity order (English source titles from exercises.json)
-// Headers like "Pecho/Tríceps" are omitted — only exercise names are included.
-const POPULAR_ORDER_EN = [
-  // Pecho/Tríceps
-  'Incline Bench Press (Barbell)',
-  'Incline Bench Press (Dumbbell)',
-  'Overhead Triceps Extension (Cable)',
-  'Bench Press (Barbell)',
-  'Bench Press (Dumbbell)',
-  'Bench Press (Cable)',
-  'Bench Press (Smith Machine)',
-  'Chest Dip (Weighted)',
-  'Triceps Dip (Weighted)',
-  'Chest Dip',
-  'Butterfly (Pec Deck)',
-  'Push Up',
-  'Cable Fly Crossovers',
-  'Chest Fly (Dumbbell)',
-  'Decline Bench Press (Barbell)',
-  'Chest Press (Machine)',
-  'Triceps Rope Pushdown',
-  'Triceps Pushdown',
-  // Espalda/Bíceps
-  'Pull Up',
-  'Pull Up (Weighted)',
-  'Preacher Curl (Barbell)',
-  'Behind the Back Curl (Cable)',
-  'Pullover (Machine)',
-  'Pullover (Dumbbell)',
-  'Bent Over Row (Barbell)',
-  'Bent Over Row (Dumbbell)',
-  'Lat Pulldown (Cable)',
-  'Hammer Curl (Dumbbell)',
-  'T Bar Row',
-  'Dumbbell Row',
-  'Inverted Row',
-  'Seated Row (Machine)',
-  'Bicep Curl (Barbell)',
-  'EZ Bar Biceps Curl',
-  'Bicep Curl (Dumbbell)',
-  'Concentration Curl',
-  // Hombros
-  'Lateral Raise (Dumbbell)',
-  'Lateral Raise (Cable)',
-  'Lateral Raise (Machine)',
-  'Overhead Press (Barbell)',
-  'Overhead Press (Dumbbell)',
-  'Shoulder Press (Dumbbell)',
-  'Overhead Press (Smith Machine)',
-  'Seated Shoulder Press (Machine)',
-  'Shrug (Dumbbell)',
-  'Shrug (Barbell)',
-  'Arnold Press (Dumbbell)',
-  'Face Pull',
-  'Front Raise (Dumbbell)',
-  'Rear Delt Reverse Fly (Dumbbell)',
-  // Piernas
-  'Squat (Barbell)',
-  'Romanian Deadlift (Barbell)',
-  'Romanian Deadlift (Dumbbell)',
-  'Leg Extension (Machine)',
-  'Seated Leg Curl (Machine)',
-  'Deadlift (Barbell)',
-  'Deadlift (Trap bar)',
-  'Straight Leg Deadlift',
-  'Sumo Deadlift',
-  'Bulgarian Split Squat',
-  'Goblet Squat',
-  'Leg Press (Machine)',
-  'Reverse Lunge (Dumbbell)',
-  'Walking Lunge',
-  'Lunge (Dumbbell)',
-  'Calf Press (Machine)',
-  'Seated Calf Raise',
-  'Standing Calf Raise',
-  'Front Squat',
-  'Hack Squat',
-  'Hack Squat (Machine)',
-  'Hip Thrust (Barbell)',
-  'Glute Bridge',
-  'Hip Thrust',
-  'Dumbbell Step Up',
-  // Core/Antebrazos/Cuello
-  'Cable Crunch',
-  'Lying Neck Curls',
-  'Lying Neck Extension',
-  'Wrist Roller',
-  'Plank',
-  'Side Plank',
-  'Hanging Leg Raise',
-  'Back Extension (Hyperextension)',
-  'Superman',
-  'Ab Wheel',
-  'Hanging Knee Raise',
-  'Cable Core Palloff Press',
-  'Bicycle Crunch',
-  'Crunch',
-  'Reverse Crunch',
-  // Full body/Cardio
-  'Farmers Walk',
-  'Burpee',
-  'Jump Rope',
-  'Kettlebell Swing',
-  'Rowing Machine',
-  'Running',
-  'Air Bike',
-  'Boxing',
-  'Battle Ropes',
-  'Box Jump',
-];
-
-function normalizeForRanking(s: string): string {
-  return s.toLowerCase().replace(/[^a-z0-9]/g, ' ').replace(/\s+/g, ' ').trim();
-}
-
-const POPULAR_RANK = new Map<string, number>(
-  POPULAR_ORDER_EN.map((title, index) => [normalizeForRanking(title), index])
-);
-
-const MUSCLE_LABELS_ES: Record<string, string> = {
-  abdominals: 'Abdominales',
-  abductors: 'Abductores',
-  adductors: 'Aductores',
-  biceps: 'Bíceps',
-  calves: 'Pantorrillas',
-  deltoids: 'Hombros',
-  erector_spinae: 'Lumbar',
-  forearms: 'Antebrazos',
-  full_body: 'Full body',
-  glutes: 'Glúteos',
-  hamstrings: 'Isquiotibiales',
-  latissimus_dorsi: 'Espalda',
-  neck: 'Cuello',
-  pectoralis_major: 'Pecho',
-  quadriceps: 'Cuádriceps',
-  trapezius: 'Trapecios',
-  triceps: 'Tríceps',
-  upper_back: 'Espalda alta',
-  cardio: 'Cardio',
-};
-
-const MUSCLE_POPULARITY_ORDER = [
-  'pectoralis_major',
-  'latissimus_dorsi',
-  'quadriceps',
-  'biceps',
-  'triceps',
-  'deltoids',
-  'hamstrings',
-  'glutes',
-  'abdominals',
-  'calves',
-  'upper_back',
-  'erector_spinae',
-  'trapezius',
-  'forearms',
-  'adductors',
-  'abductors',
-  'neck',
-  'full_body',
-  'cardio',
-];
-
-const EQUIPMENT_LABELS_ES: Record<string, string> = {
-  barbell: 'Barra',
-  dumbbell: 'Mancuernas',
-  cable: 'Cable/Polea',
-  machine: 'Máquina',
-  bodyweight: 'Peso corporal',
-  kettlebell: 'Kettlebell',
-  resistance_band: 'Banda',
-  plate: 'Disco',
-  suspension: 'Suspensión',
-  band: 'Banda',
-  ez_bar: 'Barra EZ',
-  trap_bar: 'Trap bar',
-  smith_machine: 'Smith Machine',
-  other: 'Otro',
-};
-
-const EQUIPMENT_POPULARITY_ORDER = [
-  'barbell',
-  'dumbbell',
-  'cable',
-  'machine',
-  'bodyweight',
-  'kettlebell',
-  'resistance_band',
-  'plate',
-  'suspension',
-  'other',
-];
 
 const REST_OPTIONS: WheelPickerOption[] = [
   { value: '30', label: '30s' },
@@ -217,27 +21,6 @@ const REST_OPTIONS: WheelPickerOption[] = [
   { value: '240', label: '4min' },
 ];
 const REST_VALID_VALUES = new Set(REST_OPTIONS.map((o) => o.value));
-
-type RoutineLibraryItem = CatalogExerciseItem;
-
-const fallbackExerciseLibrary: RoutineLibraryItem[] = [
-  { name: 'Press de banca (barra)', muscle: 'Pecho', implement: 'Barra' },
-  { name: 'Press inclinado', muscle: 'Pecho', implement: 'Barra' },
-  { name: 'Aperturas con mancuernas', muscle: 'Pecho', implement: 'Mancuernas' },
-  { name: 'Press militar', muscle: 'Hombros', implement: 'Barra' },
-  { name: 'Elevaciones laterales', muscle: 'Hombros', implement: 'Mancuernas' },
-  { name: 'Dominadas', muscle: 'Espalda', implement: 'Peso corporal' },
-  { name: 'Remo con barra', muscle: 'Espalda', implement: 'Barra' },
-  { name: 'Jalón al pecho', muscle: 'Espalda', implement: 'Máquina' },
-  { name: 'Sentadilla', muscle: 'Piernas', implement: 'Barra' },
-  { name: 'Peso muerto', muscle: 'Piernas', implement: 'Barra' },
-  { name: 'Prensa de piernas', muscle: 'Piernas', implement: 'Máquina' },
-  { name: 'Curl con barra', muscle: 'Bíceps', implement: 'Barra' },
-  { name: 'Curl martillo', muscle: 'Bíceps', implement: 'Mancuernas' },
-  { name: 'Extensiones de tríceps', muscle: 'Tríceps', implement: 'Polea' },
-  { name: 'Rompecráneos', muscle: 'Tríceps', implement: 'Barra' },
-  { name: 'Plancha', muscle: 'Core', implement: 'Peso corporal' },
-];
 
 type RoutineExerciseDraft = {
   exerciseSlug?: string;
@@ -300,8 +83,9 @@ function buildInitialDays(existing: Routine | null) {
 export default function RoutineEditorPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { activeWorkout, routines, saveRoutine, sessionHistory, appSettings } = useAppData();
-  const { catalog, error: catalogError, isLoading: isCatalogLoading } = useExerciseCatalog();
+  const location = useLocation();
+  const { activeWorkout, routines, saveRoutine, appSettings } = useAppData();
+  const { catalog } = useExerciseCatalog();
   const isNew = id === 'new';
   const existing = !isNew ? routines.find((routine) => routine.id === Number(id)) ?? null : null;
   const isEditingBlocked = Boolean(activeWorkout && !isNew && existing);
@@ -315,149 +99,97 @@ export default function RoutineEditorPage() {
     Math.max(existing?.daysPerWeek ?? initialDays.length, 2)
   );
   const [days, setDays] = useState<RoutineDayDraft[]>(initialDays);
-  const [expandedDay, setExpandedDay] = useState(0);
-  const [showExSearch, setShowExSearch] = useState<number | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedMuscle, setSelectedMuscle] = useState(ALL_MUSCLES_OPTION);
-  const [selectedImplement, setSelectedImplement] = useState(ALL_IMPLEMENTS_OPTION);
-  const [showMuscleSheet, setShowMuscleSheet] = useState(false);
-  const [showImplementSheet, setShowImplementSheet] = useState(false);
-  const [selectedExerciseDetail, setSelectedExerciseDetail] = useState<RoutineLibraryItem | null>(null);
-  const [expandedExercises, setExpandedExercises] = useState<Set<string>>(new Set(['0-0']));
+  const [expandedDay, setExpandedDay] = useState(-1);
+  const [selectedExerciseDetail, setSelectedExerciseDetail] = useState<CatalogExerciseItem | null>(null);
+  const [expandedExercises, setExpandedExercises] = useState<Set<string>>(new Set());
   const [exerciseMenu, setExerciseMenu] = useState<{ dayIndex: number; exerciseIndex: number } | null>(null);
-  const [replaceTarget, setReplaceTarget] = useState<{ dayIndex: number; exerciseIndex: number } | null>(null);
   const [restPickerTarget, setRestPickerTarget] = useState<{ dayIndex: number; exerciseIndex: number } | null>(null);
   const [restPickerDraft, setRestPickerDraft] = useState('90');
-  const [selectedSlugs, setSelectedSlugs] = useState<Set<string>>(new Set());
 
   const initialNameRef = useRef(existing?.name ?? '');
   const initialDaysJsonRef = useRef(JSON.stringify(initialDays));
   const initialDaysPerWeekRef = useRef(Math.max(existing?.daysPerWeek ?? initialDays.length, 2));
   const skipBlockerRef = useRef(false);
 
-  const currentDayExerciseCount = showExSearch !== null ? (days[showExSearch]?.exercises.length ?? 0) : 0;
-  const isAtMax = currentDayExerciseCount >= 15;
-
-  const exerciseLibrary = useMemo<RoutineLibraryItem[]>(
-    () =>
-      catalog.length > 0
-        ? catalog
-            .filter((exercise) => Boolean(exercise.coverImageUrl))
-            .map((exercise) => ({
-              exerciseSlug: exercise.slug,
-              name: exercise.title,
-              titleEn: exercise.slug
-                .replace(/-/g, ' ')
-                .replace(/\b\w/g, (c) => c.toUpperCase()),
-              muscle: exercise.muscle,
-              implement: exercise.implement,
-              secondaryMuscles: exercise.secondaryMuscles,
-              coverImageUrl: exercise.coverImageUrl,
-              animationMediaUrl: exercise.animationMediaUrl,
-              animationMediaType: exercise.animationMediaType,
-              instructions: exercise.instructions,
-              overview: exercise.overview,
-            }))
-            .sort((a, b) => {
-              const keyA = normalizeForRanking(a.exerciseSlug?.replace(/-/g, ' ') ?? '');
-              const keyB = normalizeForRanking(b.exerciseSlug?.replace(/-/g, ' ') ?? '');
-              const rankA = POPULAR_RANK.get(keyA) ?? Infinity;
-              const rankB = POPULAR_RANK.get(keyB) ?? Infinity;
-              if (rankA !== rankB) return rankA - rankB;
-              if (rankA === Infinity) return a.name.localeCompare(b.name, 'es');
-              return 0;
-            })
-        : fallbackExerciseLibrary,
-    [catalog]
-  );
-
+  // Map slug → catalog summary for thumbnail images and detail view
   const catalogBySlug = useMemo(
-    () => new Map(exerciseLibrary.filter((e) => Boolean(e.coverImageUrl)).map((e) => [e.exerciseSlug ?? '', e])),
-    [exerciseLibrary]
-  );
-
-  const catalogSummaryBySlug = useMemo(
-    () => new Map(catalog.filter((e) => Boolean(e.coverImageUrl)).map((e) => [e.slug, e])),
+    () => new Map(catalog.map((e) => [e.slug, e])),
     [catalog]
   );
 
-  const muscleOptions = useMemo(() => {
-    const muscleSet = new Set<string>();
-    for (const e of catalog) {
-      if (!e.coverImageUrl) continue;
-      for (const m of e.primaryMuscles) muscleSet.add(m);
+  // Process result when returning from ExerciseCatalogPage
+  useEffect(() => {
+    const result = (
+      location.state as {
+        catalogResult?: {
+          exercises: CatalogExerciseItem[];
+          dayIndex: number;
+          mode: 'add' | 'replace';
+          replaceIndex?: number;
+        };
+      }
+    )?.catalogResult;
+
+    if (!result) return;
+
+    // Clear state so it doesn't reprocess on next render
+    navigate(location.pathname, { replace: true, state: {} });
+
+    const { exercises, dayIndex: targetDay, mode: returnMode, replaceIndex } = result;
+
+    if (returnMode === 'replace' && replaceIndex !== undefined && exercises[0]) {
+      const ex = exercises[0];
+      setDays((previous) =>
+        previous.map((day, di) => {
+          if (di !== targetDay) return day;
+          return {
+            ...day,
+            exercises: day.exercises.map((existing, ei) =>
+              ei !== replaceIndex
+                ? existing
+                : {
+                    exerciseSlug: ex.exerciseSlug,
+                    name: ex.name,
+                    muscle: ex.muscle,
+                    implement: ex.implement,
+                    secondaryMuscles: ex.secondaryMuscles,
+                    sets: existing.sets,
+                    reps: existing.reps,
+                    kg: existing.kg,
+                    restSeconds: existing.restSeconds,
+                  }
+            ),
+          };
+        })
+      );
+      setExpandedDay(targetDay);
+    } else if (returnMode === 'add') {
+      setDays((previous) =>
+        previous.map((day, di) => {
+          if (di !== targetDay) return day;
+          const remaining = 15 - day.exercises.length;
+          const toAdd = exercises.slice(0, remaining);
+          return {
+            ...day,
+            exercises: [
+              ...day.exercises,
+              ...toAdd.map((ex) => ({
+                exerciseSlug: ex.exerciseSlug,
+                name: ex.name,
+                muscle: ex.muscle,
+                implement: ex.implement,
+                secondaryMuscles: ex.secondaryMuscles,
+                sets: 3,
+                reps: 10,
+                kg: 0,
+              })),
+            ],
+          };
+        })
+      );
+      setExpandedDay(targetDay);
     }
-    const sorted = [...muscleSet].sort((a, b) => {
-      const ra = MUSCLE_POPULARITY_ORDER.indexOf(a);
-      const rb = MUSCLE_POPULARITY_ORDER.indexOf(b);
-      const rangeA = ra === -1 ? Infinity : ra;
-      const rangeB = rb === -1 ? Infinity : rb;
-      if (rangeA !== rangeB) return rangeA - rangeB;
-      return (MUSCLE_LABELS_ES[a] ?? a).localeCompare(MUSCLE_LABELS_ES[b] ?? b, 'es');
-    });
-    return [ALL_MUSCLES_OPTION, ...sorted];
-  }, [catalog]);
-
-  const implementOptions = useMemo(() => {
-    const equipSet = new Set<string>();
-    for (const e of catalog) {
-      if (!e.coverImageUrl) continue;
-      for (const eq of e.equipment) equipSet.add(eq);
-    }
-    const sorted = [...equipSet].sort((a, b) => {
-      const ra = EQUIPMENT_POPULARITY_ORDER.indexOf(a);
-      const rb = EQUIPMENT_POPULARITY_ORDER.indexOf(b);
-      const rangeA = ra === -1 ? Infinity : ra;
-      const rangeB = rb === -1 ? Infinity : rb;
-      if (rangeA !== rangeB) return rangeA - rangeB;
-      return (EQUIPMENT_LABELS_ES[a] ?? a).localeCompare(EQUIPMENT_LABELS_ES[b] ?? b, 'es');
-    });
-    return [ALL_IMPLEMENTS_OPTION, ...sorted];
-  }, [catalog]);
-
-  const filteredExercises = useMemo(() => {
-    const normalizedSearch = searchQuery.trim().toLowerCase();
-
-    return exerciseLibrary.filter((exercise) => {
-      if (selectedMuscle !== ALL_MUSCLES_OPTION) {
-        const summary = catalogSummaryBySlug.get(exercise.exerciseSlug ?? '');
-        if (!summary?.primaryMuscles.includes(selectedMuscle)) return false;
-      }
-      if (selectedImplement !== ALL_IMPLEMENTS_OPTION) {
-        const summary = catalogSummaryBySlug.get(exercise.exerciseSlug ?? '');
-        if (!summary?.equipment.includes(selectedImplement)) return false;
-      }
-      if (normalizedSearch) {
-        const haystack = [exercise.name, exercise.muscle, exercise.implement ?? ''].join(' ').toLowerCase();
-        if (!haystack.includes(normalizedSearch)) return false;
-      }
-      return true;
-    });
-  }, [exerciseLibrary, catalogSummaryBySlug, searchQuery, selectedMuscle, selectedImplement]);
-
-  const recentExercises = useMemo(() => {
-    const seen = new Set<string>();
-    const result: RoutineLibraryItem[] = [];
-    const sortedSessions = [...sessionHistory].sort((a, b) => b.isoDate.localeCompare(a.isoDate));
-    for (const session of sortedSessions) {
-      for (const ex of session.exercises) {
-        if (!ex.exerciseSlug || seen.has(ex.exerciseSlug)) continue;
-        const catalogEntry = catalogBySlug.get(ex.exerciseSlug);
-        if (!catalogEntry) continue;
-        seen.add(ex.exerciseSlug);
-        result.push(catalogEntry);
-        if (result.length >= 8) return result;
-      }
-    }
-    return result;
-  }, [sessionHistory, catalogBySlug]);
-
-  const recommendedExercises = useMemo(() => {
-    const currentDaySlugs = showExSearch !== null
-      ? new Set(days[showExSearch]?.exercises.map((e) => e.exerciseSlug).filter(Boolean))
-      : new Set<string>();
-    return exerciseLibrary.filter((e) => e.exerciseSlug && !currentDaySlugs.has(e.exerciseSlug)).slice(0, 6);
-  }, [exerciseLibrary, days, showExSearch]);
+  }, [location.state]);
 
   const hasUnsavedChanges = useMemo(
     () =>
@@ -473,6 +205,7 @@ export default function RoutineEditorPage() {
       ({ currentLocation, nextLocation }: { currentLocation: { pathname: string }; nextLocation: { pathname: string } }) => {
         if (skipBlockerRef.current) return false;
         if (currentLocation.pathname === nextLocation.pathname) return false;
+        if (nextLocation.pathname === '/exercise-catalog') return false;
         return hasUnsavedChanges;
       },
       [hasUnsavedChanges]
@@ -522,7 +255,6 @@ export default function RoutineEditorPage() {
       return normalizeDayNames(previous.slice(0, nextCount));
     });
     setExpandedDay((current) => (current >= nextCount ? nextCount - 1 : current));
-    setShowExSearch((current) => (current !== null && current >= nextCount ? null : current));
   };
 
   const addDay = () => {
@@ -557,112 +289,6 @@ export default function RoutineEditorPage() {
       }
 
       return current > dayIndex ? current - 1 : current;
-    });
-    setShowExSearch((current) => {
-      if (current === null) {
-        return null;
-      }
-
-      if (current === dayIndex) {
-        return null;
-      }
-
-      return current > dayIndex ? current - 1 : current;
-    });
-  };
-
-  const addExercise = (dayIndex: number, exercise: RoutineLibraryItem) => {
-    if (replaceTarget === null && (days[dayIndex]?.exercises.length ?? 0) >= 15) return;
-    setDays((previous) =>
-      previous.map((day, index) => {
-        if (index !== dayIndex) return day;
-        if (replaceTarget !== null && replaceTarget.dayIndex === dayIndex) {
-          return {
-            ...day,
-            exercises: day.exercises.map((ex, ei) =>
-              ei !== replaceTarget.exerciseIndex
-                ? ex
-                : {
-                    exerciseSlug: exercise.exerciseSlug,
-                    name: exercise.name,
-                    muscle: exercise.muscle,
-                    implement: exercise.implement,
-                    secondaryMuscles: exercise.secondaryMuscles,
-                    sets: ex.sets,
-                    reps: ex.reps,
-                    kg: ex.kg,
-                    restSeconds: ex.restSeconds,
-                  }
-            ),
-          };
-        }
-        return {
-          ...day,
-          exercises: [
-            ...day.exercises,
-            {
-              exerciseSlug: exercise.exerciseSlug,
-              name: exercise.name,
-              muscle: exercise.muscle,
-              implement: exercise.implement,
-              secondaryMuscles: exercise.secondaryMuscles,
-              sets: 3,
-              reps: 10,
-              kg: 0,
-            },
-          ],
-        };
-      })
-    );
-    setReplaceTarget(null);
-    setShowExSearch(null);
-    setSearchQuery('');
-    setSelectedMuscle(ALL_MUSCLES_OPTION);
-    setSelectedImplement(ALL_IMPLEMENTS_OPTION);
-    setSelectedSlugs(new Set());
-  };
-
-  const addMultipleExercises = (dayIndex: number, exercises: RoutineLibraryItem[]) => {
-    if (exercises.length === 0) return;
-    setDays((previous) =>
-      previous.map((day, index) => {
-        if (index !== dayIndex) return day;
-        return {
-          ...day,
-          exercises: [
-            ...day.exercises,
-            ...exercises.map((exercise) => ({
-              exerciseSlug: exercise.exerciseSlug,
-              name: exercise.name,
-              muscle: exercise.muscle,
-              implement: exercise.implement,
-              secondaryMuscles: exercise.secondaryMuscles,
-              sets: 3,
-              reps: 10,
-              kg: 0,
-            })),
-          ],
-        };
-      })
-    );
-    setSelectedSlugs(new Set());
-    setShowExSearch(null);
-    setSearchQuery('');
-    setSelectedMuscle(ALL_MUSCLES_OPTION);
-    setSelectedImplement(ALL_IMPLEMENTS_OPTION);
-  };
-
-  const toggleExerciseSelection = (exercise: RoutineLibraryItem) => {
-    const key = exercise.exerciseSlug ?? exercise.name;
-    if (!selectedSlugs.has(key) && isAtMax) return;
-    setSelectedSlugs((previous) => {
-      const next = new Set(previous);
-      if (next.has(key)) {
-        next.delete(key);
-      } else {
-        next.add(key);
-      }
-      return next;
     });
   };
 
@@ -719,6 +345,37 @@ export default function RoutineEditorPage() {
           : day
       )
     );
+  };
+
+  const openCatalog = (dayIndex: number) => {
+    const day = days[dayIndex];
+    if (!day) return;
+    navigate('/exercise-catalog', {
+      state: {
+        dayIndex,
+        dayName: day.name,
+        mode: 'add',
+        existingDaySlugs: day.exercises.map((e) => e.exerciseSlug).filter(Boolean),
+        currentDayExerciseCount: day.exercises.length,
+        returnTo: `/routine-editor/${id}`,
+      },
+    });
+  };
+
+  const openCatalogReplace = (dayIndex: number, exerciseIndex: number) => {
+    const day = days[dayIndex];
+    if (!day) return;
+    navigate('/exercise-catalog', {
+      state: {
+        dayIndex,
+        dayName: day.name,
+        mode: 'replace',
+        replaceIndex: exerciseIndex,
+        existingDaySlugs: day.exercises.map((e) => e.exerciseSlug).filter(Boolean),
+        currentDayExerciseCount: day.exercises.length,
+        returnTo: `/routine-editor/${id}`,
+      },
+    });
   };
 
   const handleSave = async () => {
@@ -930,7 +587,9 @@ export default function RoutineEditorPage() {
                       ) : (
                         <div className="mt-3 flex flex-col gap-2">
                           {day.exercises.map((exercise, exerciseIndex) => {
-                            const catalogEntry = exercise.exerciseSlug ? catalogBySlug.get(exercise.exerciseSlug) : undefined;
+                            const catalogEntry = exercise.exerciseSlug
+                              ? catalogBySlug.get(exercise.exerciseSlug)
+                              : undefined;
                             const exerciseKey = `${dayIndex}-${exerciseIndex}`;
                             const isExpanded = expandedExercises.has(exerciseKey);
                             return (
@@ -942,7 +601,12 @@ export default function RoutineEditorPage() {
                                 <div className="flex items-center gap-2 px-3 py-3">
                                   {catalogEntry?.coverImageUrl ? (
                                     <div className="h-11 w-11 shrink-0 overflow-hidden rounded-full">
-                                      <img src={catalogEntry.coverImageUrl} alt="" className="h-full w-full object-cover" loading="lazy" />
+                                      <img
+                                        src={catalogEntry.coverImageUrl}
+                                        alt=""
+                                        className="h-full w-full object-cover"
+                                        loading="lazy"
+                                      />
                                     </div>
                                   ) : (
                                     <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[rgba(0,201,167,0.15)] bg-[rgba(0,201,167,0.08)]">
@@ -956,7 +620,10 @@ export default function RoutineEditorPage() {
                                     className="min-w-0 flex-1 text-left"
                                   >
                                     <p className="truncate text-sm font-semibold text-white">{exercise.name}</p>
-                                    <p className="truncate text-xs text-[#9BAEC1]" style={{ fontFamily: "'Inter', sans-serif" }}>
+                                    <p
+                                      className="truncate text-xs text-[#9BAEC1]"
+                                      style={{ fontFamily: "'Inter', sans-serif" }}
+                                    >
                                       {[exercise.muscle, exercise.implement].filter(Boolean).join(' · ')}
                                     </p>
                                   </button>
@@ -985,7 +652,11 @@ export default function RoutineEditorPage() {
                                     {/* Table header */}
                                     <div className="grid grid-cols-3 gap-2 bg-[rgba(255,255,255,0.03)] px-4 py-2">
                                       {['Serie', 'Kg', 'Reps'].map((col) => (
-                                        <span key={col} className="text-center text-[10px] font-semibold uppercase tracking-wider text-[#9BAEC1]" style={{ fontFamily: "'Inter', sans-serif" }}>
+                                        <span
+                                          key={col}
+                                          className="text-center text-[10px] font-semibold uppercase tracking-wider text-[#9BAEC1]"
+                                          style={{ fontFamily: "'Inter', sans-serif" }}
+                                        >
                                           {col}
                                         </span>
                                       ))}
@@ -993,20 +664,27 @@ export default function RoutineEditorPage() {
 
                                     {/* Set rows */}
                                     {Array.from({ length: exercise.sets }, (_, setIndex) => (
-                                      <div key={setIndex} className="grid grid-cols-3 gap-2 items-center border-t border-[rgba(255,255,255,0.03)] px-4 py-2.5">
+                                      <div
+                                        key={setIndex}
+                                        className="grid grid-cols-3 gap-2 items-center border-t border-[rgba(255,255,255,0.03)] px-4 py-2.5"
+                                      >
                                         <span className="text-center text-sm text-[#9BAEC1]">{setIndex + 1}</span>
                                         <input
                                           type="number"
                                           min={0}
                                           value={exercise.kg}
-                                          onChange={(e) => updateExercise(dayIndex, exerciseIndex, 'kg', Number(e.target.value))}
+                                          onChange={(e) =>
+                                            updateExercise(dayIndex, exerciseIndex, 'kg', Number(e.target.value))
+                                          }
                                           className="w-full rounded-lg bg-[#203347] py-1.5 text-center text-sm font-medium text-white outline-none"
                                         />
                                         <input
                                           type="number"
                                           min={1}
                                           value={exercise.reps}
-                                          onChange={(e) => updateExercise(dayIndex, exerciseIndex, 'reps', Number(e.target.value))}
+                                          onChange={(e) =>
+                                            updateExercise(dayIndex, exerciseIndex, 'reps', Number(e.target.value))
+                                          }
                                           className="w-full rounded-lg bg-[#203347] py-1.5 text-center text-sm font-medium text-white outline-none"
                                         />
                                       </div>
@@ -1014,22 +692,31 @@ export default function RoutineEditorPage() {
 
                                     {/* Sets count control */}
                                     <div className="mx-4 mt-3 flex items-center justify-between rounded-xl bg-[#1A2D42] px-4 py-2.5">
-                                      <span className="text-xs font-semibold uppercase tracking-wider text-[#9BAEC1]" style={{ fontFamily: "'Inter', sans-serif" }}>
+                                      <span
+                                        className="text-xs font-semibold uppercase tracking-wider text-[#9BAEC1]"
+                                        style={{ fontFamily: "'Inter', sans-serif" }}
+                                      >
                                         Series
                                       </span>
                                       <div className="flex items-center gap-4">
                                         <button
                                           type="button"
-                                          onClick={() => updateExercise(dayIndex, exerciseIndex, 'sets', exercise.sets - 1)}
+                                          onClick={() =>
+                                            updateExercise(dayIndex, exerciseIndex, 'sets', exercise.sets - 1)
+                                          }
                                           disabled={exercise.sets <= 1}
                                           className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#203347] text-lg font-bold text-[#9BAEC1] disabled:opacity-40"
                                         >
                                           −
                                         </button>
-                                        <span className="w-4 text-center text-sm font-bold text-white">{exercise.sets}</span>
+                                        <span className="w-4 text-center text-sm font-bold text-white">
+                                          {exercise.sets}
+                                        </span>
                                         <button
                                           type="button"
-                                          onClick={() => updateExercise(dayIndex, exerciseIndex, 'sets', exercise.sets + 1)}
+                                          onClick={() =>
+                                            updateExercise(dayIndex, exerciseIndex, 'sets', exercise.sets + 1)
+                                          }
                                           className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#203347] text-lg font-bold text-[#00C9A7]"
                                         >
                                           +
@@ -1047,11 +734,7 @@ export default function RoutineEditorPage() {
                       <button
                         onClick={() => {
                           if (day.exercises.length >= 15) return;
-                          setShowExSearch(dayIndex);
-                          setSearchQuery('');
-                          setSelectedMuscle(ALL_MUSCLES_OPTION);
-                          setSelectedImplement(ALL_IMPLEMENTS_OPTION);
-                          setSelectedSlugs(new Set());
+                          openCatalog(dayIndex);
                         }}
                         disabled={day.exercises.length >= 15}
                         className={`mt-3 flex w-full items-center justify-center gap-2 rounded-xl border border-dashed py-3 text-sm font-semibold transition-colors ${
@@ -1062,7 +745,9 @@ export default function RoutineEditorPage() {
                         type="button"
                       >
                         <Plus size={14} />
-                        {day.exercises.length >= 15 ? 'Máximo 15 ejercicios por día' : 'Añadir ejercicio'}
+                        {day.exercises.length >= 15
+                          ? 'Máximo 15 ejercicios por día'
+                          : 'Añadir ejercicio'}
                       </button>
                     </div>
                   ) : null}
@@ -1103,363 +788,16 @@ export default function RoutineEditorPage() {
             type="button"
           >
             <Save size={18} className="text-black" />
-            <span className="text-base font-bold text-black">{isSaving ? 'Guardando...' : 'Guardar rutina'}</span>
+            <span className="text-base font-bold text-black">
+              {isSaving ? 'Guardando...' : 'Guardar rutina'}
+            </span>
           </button>
         </div>
       ) : (
         <div className="flex-1" />
       )}
 
-      {showExSearch !== null && !isEditingBlocked ? (
-        <div className="absolute inset-0 z-50">
-          <div className="absolute inset-0 bg-black/60" onClick={() => { setShowExSearch(null); setSelectedSlugs(new Set()); }} />
-          <div
-            className="absolute bottom-0 left-0 right-0 flex max-h-[80%] flex-col rounded-t-3xl"
-            style={{ background: '#1A2D42' }}
-          >
-            <div className="mx-auto mb-3 mt-4 h-1 w-10 shrink-0 rounded-full bg-[#203347]" />
-
-            <div className="shrink-0 px-5 pb-4">
-              <h3 className="mb-3 text-lg font-bold text-white">
-                {replaceTarget !== null ? 'Reemplazar ejercicio' : 'Catálogo de ejercicios'}
-              </h3>
-              <div className="relative mb-3">
-                <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9BAEC1]" />
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(event) => setSearchQuery(event.target.value)}
-                  placeholder="Buscar por nombre, músculo o implemento"
-                  className="w-full rounded-xl border border-[#333] bg-[#203347] py-3 pl-9 pr-4 text-sm text-white outline-none"
-                />
-              </div>
-
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => { setShowMuscleSheet(true); setShowImplementSheet(false); }}
-                  className={`flex-1 truncate rounded-xl border py-2.5 text-sm font-semibold transition-all ${
-                    selectedMuscle !== ALL_MUSCLES_OPTION
-                      ? 'border-[rgba(0,201,167,0.4)] bg-[rgba(0,201,167,0.1)] text-[#00C9A7]'
-                      : 'border-[#333] bg-[#203347] text-[#9BAEC1]'
-                  }`}
-                >
-                  {selectedMuscle === ALL_MUSCLES_OPTION ? 'Músculo' : (MUSCLE_LABELS_ES[selectedMuscle] ?? selectedMuscle)}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => { setShowImplementSheet(true); setShowMuscleSheet(false); }}
-                  className={`flex-1 truncate rounded-xl border py-2.5 text-sm font-semibold transition-all ${
-                    selectedImplement !== ALL_IMPLEMENTS_OPTION
-                      ? 'border-[rgba(0,201,167,0.4)] bg-[rgba(0,201,167,0.1)] text-[#00C9A7]'
-                      : 'border-[#333] bg-[#203347] text-[#9BAEC1]'
-                  }`}
-                >
-                  {selectedImplement === ALL_IMPLEMENTS_OPTION ? 'Equipamiento' : (EQUIPMENT_LABELS_ES[selectedImplement] ?? selectedImplement)}
-                </button>
-              </div>
-            </div>
-
-            <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-6">
-              {catalogError ? (
-                <div className="mb-3 rounded-2xl border border-[rgba(255,125,125,0.22)] bg-[rgba(255,125,125,0.08)] px-4 py-3 text-sm text-[#FFB4B4]">
-                  {catalogError}. Por ahora te mostramos una base local de respaldo.
-                </div>
-              ) : null}
-
-              {isCatalogLoading && catalog.length === 0 ? (
-                <div className="mb-3 rounded-2xl border border-[#203347] bg-[#13263A] px-4 py-5 text-center text-sm text-[#9BAEC1]">
-                  Cargando catálogo de ejercicios...
-                </div>
-              ) : null}
-
-              {isAtMax && replaceTarget === null ? (
-                <div className="mb-3 rounded-xl border border-[rgba(245,185,66,0.22)] bg-[rgba(245,185,66,0.06)] px-4 py-2.5 text-center text-xs text-[#F5B942]" style={{ fontFamily: "'Inter', sans-serif" }}>
-                  Este día ya tiene 15 ejercicios — máximo permitido.
-                </div>
-              ) : null}
-
-              {!searchQuery.trim() && recentExercises.length > 0 ? (
-                <div className="mb-4">
-                  <p className="mb-2 text-xs font-bold uppercase tracking-widest text-[#9BAEC1]" style={{ fontFamily: "'Inter', sans-serif" }}>
-                    Recientes
-                  </p>
-                  <div className="flex flex-col gap-2">
-                    {recentExercises.map((exercise) => {
-                      const key = exercise.exerciseSlug ?? exercise.name;
-                      const isSelected = replaceTarget === null && selectedSlugs.has(key);
-                      return (
-                        <div
-                          key={`recent-${key}`}
-                          className={`flex items-center gap-3 rounded-xl px-3 py-2.5 transition-colors ${
-                            isSelected
-                              ? 'border border-[rgba(0,201,167,0.4)] bg-[rgba(0,201,167,0.08)]'
-                              : 'bg-[#203347]'
-                          }`}
-                        >
-                          {exercise.coverImageUrl ? (
-                            <div
-                              className="relative h-11 w-11 shrink-0 cursor-pointer overflow-hidden rounded-lg"
-                              onClick={() => replaceTarget !== null ? setSelectedExerciseDetail(exercise) : toggleExerciseSelection(exercise)}
-                            >
-                              <img src={exercise.coverImageUrl} alt="" className="h-full w-full object-cover" loading="lazy" />
-                              {isSelected ? (
-                                <div className="absolute inset-0 flex items-center justify-center bg-[rgba(0,201,167,0.72)]">
-                                  <Check size={18} className="text-white" strokeWidth={3} />
-                                </div>
-                              ) : null}
-                            </div>
-                          ) : null}
-                          <button
-                            type="button"
-                            className="min-w-0 flex-1 text-left"
-                            onClick={() => replaceTarget === null ? toggleExerciseSelection(exercise) : undefined}
-                          >
-                            <p className="truncate text-sm font-semibold text-white">{exercise.name}</p>
-                            <p className="truncate text-xs text-[#9BAEC1]" style={{ fontFamily: "'Inter', sans-serif" }}>
-                              {[exercise.muscle, exercise.implement].filter(Boolean).join(' · ')}
-                            </p>
-                          </button>
-                          <div className="flex shrink-0 items-center gap-1.5">
-                            <button
-                              type="button"
-                              onClick={() => setSelectedExerciseDetail(exercise)}
-                              className="flex h-8 w-8 items-center justify-center rounded-lg text-[#9BAEC1] transition-colors active:bg-[#2A415A]"
-                              aria-label="Ver detalles"
-                            >
-                              <Info size={16} />
-                            </button>
-                            {replaceTarget !== null ? (
-                              <button
-                                type="button"
-                                onClick={() => addExercise(showExSearch!, exercise)}
-                                className="flex h-8 w-8 items-center justify-center rounded-lg bg-[rgba(0,201,167,0.15)] text-[#00C9A7] transition-colors active:bg-[rgba(0,201,167,0.25)]"
-                                aria-label="Agregar ejercicio"
-                              >
-                                <Plus size={16} />
-                              </button>
-                            ) : (
-                              <button
-                                type="button"
-                                onClick={() => toggleExerciseSelection(exercise)}
-                                disabled={isAtMax && !isSelected}
-                                className={`flex h-6 w-6 items-center justify-center rounded-md border-2 transition-colors ${
-                                  isSelected
-                                    ? 'border-[#00C9A7] bg-[#00C9A7]'
-                                    : isAtMax
-                                      ? 'border-[rgba(155,174,193,0.25)] opacity-40'
-                                      : 'border-[rgba(155,174,193,0.4)] bg-transparent active:border-[#00C9A7]'
-                                }`}
-                                aria-label={isSelected ? 'Deseleccionar' : 'Seleccionar'}
-                              >
-                                {isSelected ? <Check size={13} className="text-black" strokeWidth={3} /> : null}
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              ) : null}
-
-              {!searchQuery.trim() && recommendedExercises.length > 0 ? (
-                <div className="mb-4">
-                  <p className="mb-2 text-xs font-bold uppercase tracking-widest text-[#9BAEC1]" style={{ fontFamily: "'Inter', sans-serif" }}>
-                    Recomendados
-                  </p>
-                  <div className="flex flex-col gap-2">
-                    {recommendedExercises.map((exercise) => {
-                      const key = exercise.exerciseSlug ?? exercise.name;
-                      const isSelected = replaceTarget === null && selectedSlugs.has(key);
-                      return (
-                        <div
-                          key={`rec-${key}`}
-                          className={`flex items-center gap-3 rounded-xl px-3 py-2.5 transition-colors ${
-                            isSelected
-                              ? 'border border-[rgba(0,201,167,0.4)] bg-[rgba(0,201,167,0.08)]'
-                              : 'bg-[#203347]'
-                          }`}
-                        >
-                          {exercise.coverImageUrl ? (
-                            <div
-                              className="relative h-11 w-11 shrink-0 cursor-pointer overflow-hidden rounded-lg"
-                              onClick={() => replaceTarget !== null ? setSelectedExerciseDetail(exercise) : toggleExerciseSelection(exercise)}
-                            >
-                              <img src={exercise.coverImageUrl} alt="" className="h-full w-full object-cover" loading="lazy" />
-                              {isSelected ? (
-                                <div className="absolute inset-0 flex items-center justify-center bg-[rgba(0,201,167,0.72)]">
-                                  <Check size={18} className="text-white" strokeWidth={3} />
-                                </div>
-                              ) : null}
-                            </div>
-                          ) : null}
-                          <button
-                            type="button"
-                            className="min-w-0 flex-1 text-left"
-                            onClick={() => replaceTarget === null ? toggleExerciseSelection(exercise) : undefined}
-                          >
-                            <p className="truncate text-sm font-semibold text-white">{exercise.name}</p>
-                            <p className="truncate text-xs text-[#9BAEC1]" style={{ fontFamily: "'Inter', sans-serif" }}>
-                              {[exercise.muscle, exercise.implement].filter(Boolean).join(' · ')}
-                            </p>
-                          </button>
-                          <div className="flex shrink-0 items-center gap-1.5">
-                            <button
-                              type="button"
-                              onClick={() => setSelectedExerciseDetail(exercise)}
-                              className="flex h-8 w-8 items-center justify-center rounded-lg text-[#9BAEC1] transition-colors active:bg-[#2A415A]"
-                              aria-label="Ver detalles"
-                            >
-                              <Info size={16} />
-                            </button>
-                            {replaceTarget !== null ? (
-                              <button
-                                type="button"
-                                onClick={() => addExercise(showExSearch!, exercise)}
-                                className="flex h-8 w-8 items-center justify-center rounded-lg bg-[rgba(0,201,167,0.15)] text-[#00C9A7] transition-colors active:bg-[rgba(0,201,167,0.25)]"
-                                aria-label="Agregar ejercicio"
-                              >
-                                <Plus size={16} />
-                              </button>
-                            ) : (
-                              <button
-                                type="button"
-                                onClick={() => toggleExerciseSelection(exercise)}
-                                disabled={isAtMax && !isSelected}
-                                className={`flex h-6 w-6 items-center justify-center rounded-md border-2 transition-colors ${
-                                  isSelected
-                                    ? 'border-[#00C9A7] bg-[#00C9A7]'
-                                    : isAtMax
-                                      ? 'border-[rgba(155,174,193,0.25)] opacity-40'
-                                      : 'border-[rgba(155,174,193,0.4)] bg-transparent active:border-[#00C9A7]'
-                                }`}
-                                aria-label={isSelected ? 'Deseleccionar' : 'Seleccionar'}
-                              >
-                                {isSelected ? <Check size={13} className="text-black" strokeWidth={3} /> : null}
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              ) : null}
-
-              <div className="flex flex-col gap-2">
-                {filteredExercises.map((exercise) => {
-                  const key = exercise.exerciseSlug ?? exercise.name;
-                  const isSelected = replaceTarget === null && selectedSlugs.has(key);
-                  return (
-                    <div
-                      key={key}
-                      className={`flex items-center gap-3 rounded-xl px-3 py-2.5 transition-colors ${
-                        isSelected
-                          ? 'border border-[rgba(0,201,167,0.4)] bg-[rgba(0,201,167,0.08)]'
-                          : 'bg-[#203347]'
-                      }`}
-                    >
-                      {exercise.coverImageUrl ? (
-                        <div
-                          className="relative h-11 w-11 shrink-0 cursor-pointer overflow-hidden rounded-lg"
-                          onClick={() => replaceTarget !== null ? setSelectedExerciseDetail(exercise) : toggleExerciseSelection(exercise)}
-                        >
-                          <img src={exercise.coverImageUrl} alt="" className="h-full w-full object-cover" loading="lazy" />
-                          {isSelected ? (
-                            <div className="absolute inset-0 flex items-center justify-center bg-[rgba(0,201,167,0.72)]">
-                              <Check size={18} className="text-white" strokeWidth={3} />
-                            </div>
-                          ) : null}
-                        </div>
-                      ) : null}
-
-                      <button
-                        type="button"
-                        className="min-w-0 flex-1 text-left"
-                        onClick={() => replaceTarget === null ? toggleExerciseSelection(exercise) : undefined}
-                      >
-                        <p className="truncate text-sm font-semibold text-white">{exercise.name}</p>
-                        <p className="truncate text-xs text-[#9BAEC1]" style={{ fontFamily: "'Inter', sans-serif" }}>
-                          {[exercise.muscle, exercise.implement].filter(Boolean).join(' · ')}
-                        </p>
-                      </button>
-
-                      <div className="flex shrink-0 items-center gap-1.5">
-                        <button
-                          type="button"
-                          onClick={() => setSelectedExerciseDetail(exercise)}
-                          className="flex h-8 w-8 items-center justify-center rounded-lg text-[#9BAEC1] transition-colors active:bg-[#2A415A]"
-                          aria-label="Ver detalles"
-                        >
-                          <Info size={16} />
-                        </button>
-                        {replaceTarget !== null ? (
-                          <button
-                            type="button"
-                            onClick={() => addExercise(showExSearch, exercise)}
-                            className="flex h-8 w-8 items-center justify-center rounded-lg bg-[rgba(0,201,167,0.15)] text-[#00C9A7] transition-colors active:bg-[rgba(0,201,167,0.25)]"
-                            aria-label="Agregar ejercicio"
-                          >
-                            <Plus size={16} />
-                          </button>
-                        ) : (
-                          <button
-                            type="button"
-                            onClick={() => toggleExerciseSelection(exercise)}
-                            disabled={isAtMax && !isSelected}
-                            className={`flex h-6 w-6 items-center justify-center rounded-md border-2 transition-colors ${
-                              isSelected
-                                ? 'border-[#00C9A7] bg-[#00C9A7]'
-                                : isAtMax
-                                  ? 'border-[rgba(155,174,193,0.25)] opacity-40'
-                                  : 'border-[rgba(155,174,193,0.4)] bg-transparent active:border-[#00C9A7]'
-                            }`}
-                            aria-label={isSelected ? 'Deseleccionar' : 'Seleccionar'}
-                          >
-                            {isSelected ? <Check size={13} className="text-black" strokeWidth={3} /> : null}
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-
-                {!isCatalogLoading && filteredExercises.length === 0 ? (
-                  <div className="rounded-2xl border border-[#203347] bg-[#13263A] px-4 py-5 text-center text-sm text-[#9BAEC1]">
-                    No encontramos ejercicios con ese filtro.
-                  </div>
-                ) : null}
-              </div>
-            </div>
-
-            {replaceTarget === null ? (
-              <div className="shrink-0 border-t border-[#203347] px-5 pb-6 pt-3">
-                <button
-                  type="button"
-                  disabled={selectedSlugs.size === 0}
-                  onClick={() => {
-                    if (showExSearch === null || selectedSlugs.size === 0) return;
-                    const toAdd = exerciseLibrary.filter((e) => selectedSlugs.has(e.exerciseSlug ?? e.name));
-                    addMultipleExercises(showExSearch, toAdd);
-                  }}
-                  className={`flex w-full items-center justify-center gap-2 rounded-2xl py-4 font-bold transition-all ${
-                    selectedSlugs.size === 0
-                      ? 'bg-[#1E3249] text-[#4F6378]'
-                      : 'bg-[#00C9A7] text-black shadow-[0_0_15px_rgba(0,201,167,0.2)]'
-                  }`}
-                >
-                  <Plus size={18} />
-                  {selectedSlugs.size === 0
-                    ? 'Seleccioná ejercicios para agregar'
-                    : `Agregar ${selectedSlugs.size} ejercicio${selectedSlugs.size !== 1 ? 's' : ''}`}
-                </button>
-              </div>
-            ) : null}
-          </div>
-        </div>
-      ) : null}
-
+      {/* Unsaved changes modal */}
       {blocker.state === 'blocked' ? (
         <div className="absolute inset-0 z-[70]">
           <div className="absolute inset-0 bg-black/75" onClick={() => blocker.reset()} />
@@ -1505,6 +843,7 @@ export default function RoutineEditorPage() {
         </div>
       ) : null}
 
+      {/* Exercise options menu */}
       {exerciseMenu !== null ? (
         <div className="absolute inset-0 z-[55]">
           <div className="absolute inset-0 bg-black/60" onClick={() => setExerciseMenu(null)} />
@@ -1525,7 +864,23 @@ export default function RoutineEditorPage() {
                 type="button"
                 onClick={() => {
                   const ex = days[exerciseMenu.dayIndex]?.exercises[exerciseMenu.exerciseIndex];
-                  if (ex?.exerciseSlug) setSelectedExerciseDetail(catalogBySlug.get(ex.exerciseSlug) ?? null);
+                  if (ex?.exerciseSlug) {
+                    const entry = catalogBySlug.get(ex.exerciseSlug);
+                    if (entry) {
+                      setSelectedExerciseDetail({
+                        exerciseSlug: entry.slug,
+                        name: entry.title,
+                        muscle: entry.muscle,
+                        implement: entry.implement,
+                        secondaryMuscles: entry.secondaryMuscles,
+                        coverImageUrl: entry.coverImageUrl,
+                        animationMediaUrl: entry.animationMediaUrl,
+                        animationMediaType: entry.animationMediaType,
+                        instructions: entry.instructions,
+                        overview: entry.overview,
+                      });
+                    }
+                  }
                   setExerciseMenu(null);
                 }}
                 className="flex w-full items-center gap-3 rounded-xl px-2 py-3 text-sm font-semibold text-[#9BAEC1] transition-colors active:bg-[#203347]"
@@ -1551,13 +906,8 @@ export default function RoutineEditorPage() {
                 type="button"
                 onClick={() => {
                   const { dayIndex, exerciseIndex } = exerciseMenu;
-                  setReplaceTarget({ dayIndex, exerciseIndex });
-                  setShowExSearch(dayIndex);
-                  setSearchQuery('');
-                  setSelectedMuscle(ALL_MUSCLES_OPTION);
-                  setSelectedImplement(ALL_IMPLEMENTS_OPTION);
-                  setSelectedSlugs(new Set());
                   setExerciseMenu(null);
+                  openCatalogReplace(dayIndex, exerciseIndex);
                 }}
                 className="flex w-full items-center gap-3 rounded-xl px-2 py-3 text-sm font-semibold text-[#9BAEC1] transition-colors active:bg-[#203347]"
               >
@@ -1599,6 +949,7 @@ export default function RoutineEditorPage() {
         </div>
       ) : null}
 
+      {/* Rest timer picker */}
       <NumberWheelPicker
         open={restPickerTarget !== null}
         title="Descanso"
@@ -1627,73 +978,10 @@ export default function RoutineEditorPage() {
         wholeOptions={REST_OPTIONS}
       />
 
-      {showMuscleSheet ? (
-        <div className="absolute inset-0 z-[55]">
-          <div className="absolute inset-0 bg-black/60" onClick={() => setShowMuscleSheet(false)} />
-          <div
-            className="absolute bottom-0 left-0 right-0 rounded-t-3xl"
-            style={{ background: '#1A2D42' }}
-          >
-            <div className="mx-auto mb-3 mt-4 h-1 w-10 rounded-full bg-[#203347]" />
-            <div className="px-5 pb-8">
-              <h3 className="mb-3 text-base font-bold text-white">Músculo</h3>
-              <div className="flex flex-col gap-1">
-                {muscleOptions.map((muscle) => (
-                  <button
-                    key={muscle}
-                    type="button"
-                    onClick={() => { setSelectedMuscle(muscle); setShowMuscleSheet(false); }}
-                    className={`flex w-full items-center justify-between rounded-xl px-4 py-3 text-sm font-semibold transition-colors ${
-                      selectedMuscle === muscle ? 'bg-[rgba(0,201,167,0.12)] text-[#00C9A7]' : 'text-[#9BAEC1] active:bg-[#203347]'
-                    }`}
-                  >
-                    {muscle === ALL_MUSCLES_OPTION ? 'Todos los músculos' : (MUSCLE_LABELS_ES[muscle] ?? muscle)}
-                    {selectedMuscle === muscle ? <div className="h-2 w-2 rounded-full bg-[#00C9A7]" /> : null}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      ) : null}
-
-      {showImplementSheet ? (
-        <div className="absolute inset-0 z-[55]">
-          <div className="absolute inset-0 bg-black/60" onClick={() => setShowImplementSheet(false)} />
-          <div
-            className="absolute bottom-0 left-0 right-0 rounded-t-3xl"
-            style={{ background: '#1A2D42' }}
-          >
-            <div className="mx-auto mb-3 mt-4 h-1 w-10 rounded-full bg-[#203347]" />
-            <div className="px-5 pb-8">
-              <h3 className="mb-3 text-base font-bold text-white">Equipamiento</h3>
-              <div className="flex flex-col gap-1">
-                {implementOptions.map((implement) => (
-                  <button
-                    key={implement}
-                    type="button"
-                    onClick={() => { setSelectedImplement(implement); setShowImplementSheet(false); }}
-                    className={`flex w-full items-center justify-between rounded-xl px-4 py-3 text-sm font-semibold transition-colors ${
-                      selectedImplement === implement ? 'bg-[rgba(0,201,167,0.12)] text-[#00C9A7]' : 'text-[#9BAEC1] active:bg-[#203347]'
-                    }`}
-                  >
-                    {implement === ALL_IMPLEMENTS_OPTION ? 'Todo el equipamiento' : (EQUIPMENT_LABELS_ES[implement] ?? implement)}
-                    {selectedImplement === implement ? <div className="h-2 w-2 rounded-full bg-[#00C9A7]" /> : null}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      ) : null}
-
+      {/* Exercise detail sheet (from exercise menu → Ver instrucciones) */}
       <ExerciseDetailSheet
         exercise={selectedExerciseDetail}
         onClose={() => setSelectedExerciseDetail(null)}
-        onAdd={showExSearch !== null ? () => {
-          addExercise(showExSearch!, selectedExerciseDetail!);
-          setSelectedExerciseDetail(null);
-        } : undefined}
       />
 
       {isEditingBlocked && activeWorkout ? (
