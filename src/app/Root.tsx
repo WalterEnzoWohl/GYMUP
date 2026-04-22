@@ -5,6 +5,7 @@ import { BottomNav } from '@/shared/components/layout/BottomNav';
 import { useAppData } from '@/core/app-data/AppDataContext';
 import { hasCompletedOnboarding } from '@/shared/lib/userProfileUtils';
 import { getSupabaseClient } from '@/shared/lib/supabase';
+import { ProgramSelectionScreen } from '@/features/routines/components/ProgramSelectionScreen';
 
 const BASE_HIDE_NAV_PATHS = ['/session', '/post-session', '/onboarding', '/exercise-catalog', '/exercise-explore'];
 
@@ -80,37 +81,8 @@ export default function Root() {
         ) : status === 'ready' && !sessionInitRedirectRef.current && Boolean(activeWorkout) && location.pathname === '/' ? (
           <Navigate to="/session" replace />
         ) : showEmptyAccountState ? (
-          <div className="flex flex-col gap-6 px-5 py-6 pb-4">
-            <div>
-              <span className="text-[10px] font-bold uppercase tracking-[0.24em] text-[#00C9A7]">
-                Bienvenido
-              </span>
-              <h1 className="mt-2 text-3xl font-extrabold tracking-tight text-white">Tu cuenta ya esta creada</h1>
-              <p className="mt-2 text-sm text-[#90A4B8]">
-                Empieza creando tu primera estructura. Desde ahi ya podras registrar sesiones reales y usar WOHL como tu sistema personal de progreso.
-              </p>
-            </div>
-
-            <div className="rounded-3xl border border-[rgba(127,152,255,0.16)] bg-[rgba(127,152,255,0.07)] p-5">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#7F98FF]">Siguiente paso</p>
-              <h2 className="mt-2 text-xl font-bold tracking-tight text-white">Crea tu primer sistema</h2>
-              <p className="mt-2 text-sm text-[#C7D2FE]">
-                Puedes arrancar con una estructura Upper/Lower, Push Pull Legs o un sistema totalmente personalizado.
-              </p>
-              <button
-                onClick={() => navigate('/routine/new')}
-                className="mt-4 flex w-full items-center justify-center rounded-2xl bg-[#7F98FF] py-4 font-extrabold text-[#0B1020] transition-colors active:bg-[#6F89F0]"
-              >
-                Crear primer sistema
-              </button>
-            </div>
-
-            <button
-              onClick={() => navigate('/session', { state: { mode: 'free' } })}
-              className="flex w-full items-center justify-center rounded-2xl border border-[rgba(245,185,66,0.24)] bg-[rgba(245,185,66,0.08)] py-4 font-bold text-[#F5B942] transition-colors active:bg-[rgba(245,185,66,0.14)]"
-            >
-              Empezar entrenamiento vacio
-            </button>
+          <div className="flex-1 overflow-y-auto overflow-x-hidden min-h-0">
+            <ProgramSelectionScreen includeCreateCustomButton />
           </div>
         ) : (
           <div

@@ -446,7 +446,7 @@ export default function OnboardingPage() {
     setStepIndex((previous) => previous - 1);
   };
 
-  const completeOnboarding = async (destination: 'routine' | 'home') => {
+  const completeOnboarding = async () => {
     if (saving) {
       return;
     }
@@ -477,7 +477,7 @@ export default function OnboardingPage() {
         onboardingCompletedAt: completedAt,
       });
 
-      navigate(destination === 'routine' ? '/routine/new' : '/', { replace: true });
+      navigate('/', { replace: true });
     } finally {
       setSaving(false);
     }
@@ -489,7 +489,7 @@ export default function OnboardingPage() {
     }
 
     if (currentStep === 'summary') {
-      void completeOnboarding('routine');
+      void completeOnboarding();
       return;
     }
 
@@ -940,7 +940,7 @@ export default function OnboardingPage() {
               <button
                 type="button"
                 disabled={saving}
-                onClick={() => void completeOnboarding('home')}
+                onClick={() => void completeOnboarding()}
                 className="w-full rounded-[22px] border border-[rgba(255,255,255,0.08)] bg-[#101521] px-5 py-4 text-sm font-semibold text-[#C4CDDB] transition-colors hover:bg-[#141A29]"
               >
                 Ir al inicio por ahora

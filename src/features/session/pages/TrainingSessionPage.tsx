@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
 import {
   BookOpen,
   Check,
@@ -82,6 +82,36 @@ const REST_OPTIONS: WheelPickerOption[] = [
 ];
 
 const REST_VALID_VALUES = new Set(REST_OPTIONS.map((option) => option.value));
+
+function buildExerciseTemplateFromCatalogResult(item: CatalogExerciseItem): ExerciseData | null {
+  const name = item.name?.trim();
+  const muscle = item.muscle?.trim();
+
+  if (!name || !muscle) {
+    return null;
+  }
+
+  const stableIdSource = item.exerciseSlug?.trim() || name;
+  const stableId = Array.from(stableIdSource).reduce((total, character) => total + character.charCodeAt(0), 0);
+
+  return {
+    id: stableId,
+    exerciseSlug: item.exerciseSlug?.trim() || undefined,
+    name,
+    muscle,
+    implement: item.implement?.trim() || undefined,
+    secondaryMuscles: item.secondaryMuscles ?? [],
+    notes: '',
+    sets: Array.from({ length: 3 }, (_, index) => ({
+      id: index + 1,
+      kg: 0,
+      reps: 10,
+      rpe: 0,
+      completed: false,
+      kind: 'normal' as const,
+    })),
+  };
+}
 
 export default function TrainingSessionPage() {
   const navigate = useNavigate();
@@ -251,6 +281,7 @@ export default function TrainingSessionPage() {
   const reorderListRef = useRef<HTMLDivElement | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
   const sessionTimeLimitRef = useRef(false);
+  const shouldPersistDraftRef = useRef(true);
 
   const sessionFocus = useMemo(() => {
     const uniqueMuscles: string[] = [];
@@ -366,7 +397,7 @@ export default function TrainingSessionPage() {
   }, [appSettings.restTimerSeconds, restActive]);
 
   useEffect(() => {
-    if (isHistoryEditSession) {
+    if (isHistoryEditSession || !shouldPersistDraftRef.current) {
       return;
     }
 
@@ -421,17 +452,23 @@ export default function TrainingSessionPage() {
       return;
     }
 
-    navigate(location.pathname, { replace: true, state: {} });
-
     const catalogItem = result.exercises[0];
     const replaceIdx = result.replaceIndex;
-    const catalogEntry = exerciseCatalog.find((e) => e.slug === catalogItem.exerciseSlug);
-    if (!catalogEntry) return;
+    const catalogEntry = catalogItem.exerciseSlug
+      ? exerciseCatalog.find((entry) => entry.slug === catalogItem.exerciseSlug)
+      : undefined;
+    const template = catalogEntry
+      ? buildExerciseTemplateFromCatalog(catalogEntry)
+      : buildExerciseTemplateFromCatalogResult(catalogItem);
 
-    const template = buildExerciseTemplateFromCatalog(catalogEntry);
+    if (!template) {
+      return;
+    }
+
     replaceCurrentExercise(template, replaceIdx);
+    navigate(location.pathname, { replace: true, state: {} });
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [location.state]);
+  }, [exerciseCatalog, location.pathname, location.state]);
 
   useEffect(() => {
     if (!inlineFeedback) {
@@ -655,7 +692,9 @@ export default function TrainingSessionPage() {
     return arr;
   })();
 
-  const handleReorderPointerDown = (e: React.PointerEvent, idx: number) => {
+  const handleReorderPointerDown = (e: ReactPointerEvent<HTMLElement>, idx: number) => {
+    e.preventDefault();
+    e.stopPropagation();
     e.currentTarget.setPointerCapture(e.pointerId);
     navigator.vibrate?.(12);
     const state = { fromIndex: idx, toIndex: idx };
@@ -663,8 +702,9 @@ export default function TrainingSessionPage() {
     setReorderDragState(state);
   };
 
-  const handleReorderPointerMove = (e: React.PointerEvent) => {
+  const handleReorderPointerMove = (e: ReactPointerEvent<HTMLElement>) => {
     if (!reorderDragStateRef.current || !reorderListRef.current) return;
+    e.preventDefault();
     const children = Array.from(reorderListRef.current.children) as HTMLElement[];
     let newTo = children.length - 1;
     for (let i = 0; i < children.length; i++) {
@@ -678,7 +718,10 @@ export default function TrainingSessionPage() {
     }
   };
 
-  const handleReorderPointerUp = () => {
+  const handleReorderPointerUp = (e?: ReactPointerEvent<HTMLElement>) => {
+    if (e?.currentTarget.hasPointerCapture(e.pointerId)) {
+      e.currentTarget.releasePointerCapture(e.pointerId);
+    }
     if (!reorderDragStateRef.current) return;
     const { fromIndex, toIndex } = reorderDragStateRef.current;
     reorderDragStateRef.current = null;
@@ -1005,6 +1048,7 @@ export default function TrainingSessionPage() {
         exercises: exerciseList,
       });
 
+      shouldPersistDraftRef.current = false;
       clearActiveWorkout();
       navigate('/post-session', {
         state: {
@@ -1032,6 +1076,7 @@ export default function TrainingSessionPage() {
       return;
     }
 
+    shouldPersistDraftRef.current = false;
     clearActiveWorkout();
     navigate('/');
   };
@@ -1621,7 +1666,7 @@ export default function TrainingSessionPage() {
                   </p>
                   <h3 className="mt-2 text-2xl font-bold tracking-tight text-white">Reordenar ejercicios</h3>
                   <p className="mt-1 text-sm text-[#90A4B8]" style={{ fontFamily: "'Inter', sans-serif" }}>
-                    Mantené apretado una fila y arrastrálo para cambiar el orden.
+                    Mantené apretada la portada o el handle de puntos y arrastrá para cambiar el orden.
                   </p>
                   <div
                     ref={reorderListRef}
@@ -1634,11 +1679,7 @@ export default function TrainingSessionPage() {
                       return (
                         <div
                           key={ex.id}
-                          onPointerDown={(e) => handleReorderPointerDown(e, displayIdx)}
-                          onPointerMove={handleReorderPointerMove}
-                          onPointerUp={handleReorderPointerUp}
-                          onPointerCancel={handleReorderPointerUp}
-                          className={`flex cursor-grab items-center gap-3 rounded-2xl border px-3 py-3 transition-all duration-100 active:cursor-grabbing ${
+                          className={`flex items-center gap-3 rounded-2xl border px-3 py-3 transition-all duration-100 ${
                             isActive
                               ? 'scale-[1.02] border-[rgba(0,201,167,0.45)] bg-[#0e2035] shadow-[0_6px_20px_rgba(0,0,0,0.45)]'
                               : isDraggingAny
@@ -1646,14 +1687,34 @@ export default function TrainingSessionPage() {
                                 : 'border-[#203347] bg-[#13263A]'
                           }`}
                         >
-                          <GripVertical size={16} className="shrink-0 text-[#4A6278]" />
+                          <button
+                            type="button"
+                            onPointerDown={(e) => handleReorderPointerDown(e, displayIdx)}
+                            onPointerMove={handleReorderPointerMove}
+                            onPointerUp={handleReorderPointerUp}
+                            onPointerCancel={handleReorderPointerUp}
+                            className="touch-none rounded-lg p-1 text-[#4A6278] active:scale-[0.96]"
+                            aria-label={`Reordenar ${ex.name}`}
+                          >
+                            <GripVertical size={16} className="shrink-0" />
+                          </button>
                           {catalogEntry?.coverImageUrl ? (
-                            <img
-                              src={catalogEntry.coverImageUrl}
-                              alt=""
-                              draggable={false}
-                              className="h-9 w-9 shrink-0 rounded-lg object-cover"
-                            />
+                            <button
+                              type="button"
+                              onPointerDown={(e) => handleReorderPointerDown(e, displayIdx)}
+                              onPointerMove={handleReorderPointerMove}
+                              onPointerUp={handleReorderPointerUp}
+                              onPointerCancel={handleReorderPointerUp}
+                              className="touch-none shrink-0 overflow-hidden rounded-lg active:scale-[0.98]"
+                              aria-label={`Mover ${ex.name} desde la portada`}
+                            >
+                              <img
+                                src={catalogEntry.coverImageUrl}
+                                alt=""
+                                draggable={false}
+                                className="h-9 w-9 object-cover"
+                              />
+                            </button>
                           ) : (
                             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[rgba(0,81,71,0.2)]">
                               <GripVertical size={14} className="text-[#00C9A7]" />
