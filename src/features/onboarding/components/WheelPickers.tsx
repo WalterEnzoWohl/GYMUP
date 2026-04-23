@@ -1,10 +1,11 @@
-﻿import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 
 const VISIBLE_ROWS = 5;
 const ITEM_HEIGHT = 58;
 const CENTER_OFFSET = ((VISIBLE_ROWS - 1) / 2) * ITEM_HEIGHT;
 const LOOP_CYCLES = 40;
 const RECENTER_BUFFER = 2;
+const SETTLE_MS = 200;
 
 export type WheelPickerOption = {
   value: string;
@@ -24,15 +25,12 @@ type LoopedOption = WheelPickerOption & {
   baseIndex: number;
 };
 
-function mod(value: number, length: number) {
-  return ((value % length) + length) % length;
+function mod(n: number, length: number) {
+  return ((n % length) + length) % length;
 }
 
-function buildLoopedOptions(options: WheelPickerOption[]) {
-  if (options.length === 0) {
-    return [] as LoopedOption[];
-  }
-
+function buildLoopedOptions(options: WheelPickerOption[]): LoopedOption[] {
+  if (options.length === 0) return [];
   return Array.from({ length: LOOP_CYCLES }, (_, cycle) =>
     options.map((option, baseIndex) => ({
       ...option,
@@ -44,112 +42,137 @@ function buildLoopedOptions(options: WheelPickerOption[]) {
 
 function WheelColumn({ active, value, options, onChange, align = 'center' }: WheelColumnProps) {
   const scrollerRef = useRef<HTMLDivElement | null>(null);
-  const snapTimeoutRef = useRef<number | null>(null);
-  const highlightTimeoutRef = useRef<number | null>(null);
-  const [highlightedValue, setHighlightedValue] = useState<string | null>(null);
-  const baseSelectedIndex = useMemo(() => {
-    const index = options.findIndex((option) => option.value === value);
-    return index >= 0 ? index : 0;
-  }, [options, value]);
+  const settleRef = useRef<number | null>(null);
+  const isUserScrollingRef = useRef(false);
+  const internalChangeRef = useRef(false);
+  // Prevents scroll events triggered by our own el.scrollTop assignments from re-entering the handler
+  const ignoreScrollRef = useRef(false);
+  const prevActiveRef = useRef(false);
+  const lastSyncedValueRef = useRef(value);
+  // Tracks the last integer virtual index seen during scroll events — more reliable than
+  // re-reading scrollTop in the settle callback, which may fire mid-CSS-snap-animation
+  const currentViRef = useRef(0);
 
   const loopedOptions = useMemo(() => buildLoopedOptions(options), [options]);
-  const initialVirtualIndex = useMemo(() => {
-    if (options.length === 0) {
-      return 0;
-    }
 
-    return Math.floor(LOOP_CYCLES / 2) * options.length + baseSelectedIndex;
-  }, [baseSelectedIndex, options.length]);
+  const [displayIndex, setDisplayIndex] = useState(() => {
+    const i = options.findIndex((o) => o.value === value);
+    return i >= 0 ? i : 0;
+  });
+  const [isScrolling, setIsScrolling] = useState(false);
 
+  function centerScrollTop(idx: number): number {
+    return (Math.floor(LOOP_CYCLES / 2) * options.length + idx) * ITEM_HEIGHT;
+  }
+
+  function applyScrollTop(el: HTMLDivElement, scrollTop: number) {
+    ignoreScrollRef.current = true;
+    el.scrollTop = scrollTop;
+  }
+
+  // Handles modal-open initialization and external value/options changes (e.g. month → day options shrink).
+  // Skips re-centering when the change came from our own onChange.
   useEffect(() => {
-    const element = scrollerRef.current;
-    if (!element || !active || options.length === 0) {
-      return;
+    const el = scrollerRef.current;
+    if (!el || options.length === 0) return;
+
+    const justOpened = active && !prevActiveRef.current;
+    const isOwnChange = internalChangeRef.current;
+    const valueChanged = value !== lastSyncedValueRef.current;
+
+    prevActiveRef.current = active;
+    lastSyncedValueRef.current = value;
+    internalChangeRef.current = false;
+
+    if (!active) return;
+    if (isOwnChange && !justOpened) return;
+    if (isUserScrollingRef.current) return;
+
+    if (justOpened || valueChanged) {
+      const i = options.findIndex((o) => o.value === value);
+      const idx = i >= 0 ? i : 0;
+      const vi = Math.floor(LOOP_CYCLES / 2) * options.length + idx;
+      currentViRef.current = vi;
+      setDisplayIndex(idx);
+      setIsScrolling(false);
+      applyScrollTop(el, vi * ITEM_HEIGHT);
     }
-
-    element.scrollTop = initialVirtualIndex * ITEM_HEIGHT;
-    setHighlightedValue(null);
-
-    if (highlightTimeoutRef.current) {
-      window.clearTimeout(highlightTimeoutRef.current);
-    }
-
-    highlightTimeoutRef.current = window.setTimeout(() => {
-      setHighlightedValue(options[baseSelectedIndex]?.value ?? null);
-    }, 1000);
-  }, [active, baseSelectedIndex, initialVirtualIndex, options]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [active, value, options]);
 
   useEffect(() => {
     return () => {
-      if (snapTimeoutRef.current) {
-        window.clearTimeout(snapTimeoutRef.current);
-      }
-      if (highlightTimeoutRef.current) {
-        window.clearTimeout(highlightTimeoutRef.current);
-      }
+      if (settleRef.current) window.clearTimeout(settleRef.current);
     };
   }, []);
 
-  const handleScroll = () => {
-    const element = scrollerRef.current;
-    if (!element || options.length === 0) {
+  function handleScroll() {
+    const el = scrollerRef.current;
+    if (!el || options.length === 0) return;
+
+    // Ignore scroll events we triggered ourselves (programmatic scrollTop assignment)
+    if (ignoreScrollRef.current) {
+      ignoreScrollRef.current = false;
       return;
     }
 
-    const virtualIndex = Math.round(element.scrollTop / ITEM_HEIGHT);
-    const normalizedIndex = mod(virtualIndex, options.length);
-    const nextOption = options[normalizedIndex];
+    isUserScrollingRef.current = true;
+    setIsScrolling(true);
 
-    if (nextOption && nextOption.value !== value) {
-      onChange(nextOption.value);
-    }
+    const vi = Math.round(el.scrollTop / ITEM_HEIGHT);
+    currentViRef.current = vi;
+    const ni = mod(vi, options.length);
+    setDisplayIndex(ni);
 
-    if (snapTimeoutRef.current) {
-      window.clearTimeout(snapTimeoutRef.current);
-    }
-    if (highlightTimeoutRef.current) {
-      window.clearTimeout(highlightTimeoutRef.current);
-    }
+    if (settleRef.current) window.clearTimeout(settleRef.current);
+    settleRef.current = window.setTimeout(() => {
+      const el = scrollerRef.current;
+      if (!el) return;
 
-    setHighlightedValue(null);
+      isUserScrollingRef.current = false;
 
-    snapTimeoutRef.current = window.setTimeout(() => {
-      const maxBufferIndex = options.length * RECENTER_BUFFER;
-      const minVirtualIndex = maxBufferIndex;
-      const maxVirtualIndex = loopedOptions.length - maxBufferIndex - 1;
-      const shouldRecenter = virtualIndex <= minVirtualIndex || virtualIndex >= maxVirtualIndex;
-      const targetIndex = shouldRecenter
-        ? Math.floor(LOOP_CYCLES / 2) * options.length + normalizedIndex
-        : virtualIndex;
+      // Use the last tracked vi from scroll events, not scrollTop (avoids mid-snap-animation reads)
+      const vi = currentViRef.current;
+      const ni = mod(vi, options.length);
 
-      element.scrollTop = targetIndex * ITEM_HEIGHT;
-    }, 50);
+      const buffer = options.length * RECENTER_BUFFER;
+      if (vi <= buffer || vi >= loopedOptions.length - buffer - 1) {
+        applyScrollTop(el, centerScrollTop(ni));
+      } else {
+        applyScrollTop(el, vi * ITEM_HEIGHT);
+      }
 
-    highlightTimeoutRef.current = window.setTimeout(() => {
-      setHighlightedValue(nextOption?.value ?? options[normalizedIndex]?.value ?? null);
-    }, 1000);
-  };
+      setDisplayIndex(ni);
+      setIsScrolling(false);
+
+      const nextOption = options[ni];
+      if (nextOption && nextOption.value !== value) {
+        internalChangeRef.current = true;
+        onChange(nextOption.value);
+      }
+    }, SETTLE_MS);
+  }
 
   return (
     <div className="relative min-w-0">
       <div
         ref={scrollerRef}
         onScroll={handleScroll}
-        className="h-[290px] overflow-y-auto overscroll-contain [mask-image:linear-gradient(to_bottom,transparent_0%,rgba(0,0,0,0.94)_18%,rgba(0,0,0,1)_50%,rgba(0,0,0,0.94)_82%,transparent_100%)] [scrollbar-width:none] snap-y snap-mandatory"
+        className="h-[290px] overflow-y-auto overscroll-contain [mask-image:linear-gradient(to_bottom,transparent_0%,rgba(0,0,0,0.94)_18%,rgba(0,0,0,1)_50%,rgba(0,0,0,0.94)_82%,transparent_100%)] [scrollbar-width:none]"
         style={{
           WebkitOverflowScrolling: 'touch',
           paddingTop: CENTER_OFFSET,
           paddingBottom: CENTER_OFFSET,
         }}
       >
-        {loopedOptions.map((option, virtualIndex) => {
-          const selected = option.baseIndex === baseSelectedIndex;
-          const highlighted = selected && highlightedValue === option.value;
-
+        {loopedOptions.map((option) => {
+          const isSelected = option.baseIndex === displayIndex;
           return (
             <div
               key={option.key}
-              className={`snap-center select-none px-2 ${highlighted ? 'text-[#00C9A7]' : selected ? 'text-[#7B8598]' : 'text-[#626C7E]'}`}
+              className={`select-none px-2 ${
+                isSelected && !isScrolling ? 'text-[#00C9A7]' : isSelected ? 'text-[#7B8598]' : 'text-[#626C7E]'
+              }`}
               style={{ height: ITEM_HEIGHT }}
             >
               <div
@@ -159,7 +182,11 @@ function WheelColumn({ active, value, options, onChange, align = 'center' }: Whe
               >
                 <span
                   className={`block truncate text-[1.2rem] font-semibold tracking-tight ${
-                    highlighted ? 'opacity-100 [text-shadow:0_0_14px_rgba(0,201,167,0.28)]' : selected ? 'opacity-90' : 'opacity-70'
+                    isSelected && !isScrolling
+                      ? 'opacity-100 [text-shadow:0_0_14px_rgba(0,201,167,0.28)]'
+                      : isSelected
+                        ? 'opacity-90'
+                        : 'opacity-70'
                   }`}
                 >
                   {option.label}
