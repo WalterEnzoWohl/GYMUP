@@ -45,12 +45,11 @@ function WheelColumn({ active, value, options, onChange, align = 'center' }: Whe
   const settleRef = useRef<number | null>(null);
   const isUserScrollingRef = useRef(false);
   const internalChangeRef = useRef(false);
-  // Prevents scroll events triggered by our own el.scrollTop assignments from re-entering the handler
+  // Prevents our own programmatic scrollTop assignments from re-triggering the handler
   const ignoreScrollRef = useRef(false);
   const prevActiveRef = useRef(false);
   const lastSyncedValueRef = useRef(value);
-  // Tracks the last integer virtual index seen during scroll events — more reliable than
-  // re-reading scrollTop in the settle callback, which may fire mid-CSS-snap-animation
+  // Tracks the last integer vi from scroll events — avoids reading scrollTop mid-CSS-snap-animation
   const currentViRef = useRef(0);
 
   const loopedOptions = useMemo(() => buildLoopedOptions(options), [options]);
@@ -59,7 +58,6 @@ function WheelColumn({ active, value, options, onChange, align = 'center' }: Whe
     const i = options.findIndex((o) => o.value === value);
     return i >= 0 ? i : 0;
   });
-  const [isScrolling, setIsScrolling] = useState(false);
 
   function centerScrollTop(idx: number): number {
     return (Math.floor(LOOP_CYCLES / 2) * options.length + idx) * ITEM_HEIGHT;
@@ -70,8 +68,8 @@ function WheelColumn({ active, value, options, onChange, align = 'center' }: Whe
     el.scrollTop = scrollTop;
   }
 
-  // Handles modal-open initialization and external value/options changes (e.g. month → day options shrink).
-  // Skips re-centering when the change came from our own onChange.
+  // Initializes scroll on modal open and re-centers on external value/options changes
+  // (e.g. month change → day options shrink). Skips when the change came from our own onChange.
   useEffect(() => {
     const el = scrollerRef.current;
     if (!el || options.length === 0) return;
@@ -94,7 +92,6 @@ function WheelColumn({ active, value, options, onChange, align = 'center' }: Whe
       const vi = Math.floor(LOOP_CYCLES / 2) * options.length + idx;
       currentViRef.current = vi;
       setDisplayIndex(idx);
-      setIsScrolling(false);
       applyScrollTop(el, vi * ITEM_HEIGHT);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -110,19 +107,16 @@ function WheelColumn({ active, value, options, onChange, align = 'center' }: Whe
     const el = scrollerRef.current;
     if (!el || options.length === 0) return;
 
-    // Ignore scroll events we triggered ourselves (programmatic scrollTop assignment)
     if (ignoreScrollRef.current) {
       ignoreScrollRef.current = false;
       return;
     }
 
     isUserScrollingRef.current = true;
-    setIsScrolling(true);
 
     const vi = Math.round(el.scrollTop / ITEM_HEIGHT);
     currentViRef.current = vi;
-    const ni = mod(vi, options.length);
-    setDisplayIndex(ni);
+    setDisplayIndex(mod(vi, options.length));
 
     if (settleRef.current) window.clearTimeout(settleRef.current);
     settleRef.current = window.setTimeout(() => {
@@ -131,19 +125,17 @@ function WheelColumn({ active, value, options, onChange, align = 'center' }: Whe
 
       isUserScrollingRef.current = false;
 
-      // Use the last tracked vi from scroll events, not scrollTop (avoids mid-snap-animation reads)
+      // Use tracked vi (not scrollTop) — CSS snap may still be animating when this fires
       const vi = currentViRef.current;
       const ni = mod(vi, options.length);
 
+      // Only intervene for edge-recentering; CSS snap already placed the item correctly otherwise
       const buffer = options.length * RECENTER_BUFFER;
       if (vi <= buffer || vi >= loopedOptions.length - buffer - 1) {
         applyScrollTop(el, centerScrollTop(ni));
-      } else {
-        applyScrollTop(el, vi * ITEM_HEIGHT);
       }
 
       setDisplayIndex(ni);
-      setIsScrolling(false);
 
       const nextOption = options[ni];
       if (nextOption && nextOption.value !== value) {
@@ -158,7 +150,7 @@ function WheelColumn({ active, value, options, onChange, align = 'center' }: Whe
       <div
         ref={scrollerRef}
         onScroll={handleScroll}
-        className="h-[290px] overflow-y-auto overscroll-contain [mask-image:linear-gradient(to_bottom,transparent_0%,rgba(0,0,0,0.94)_18%,rgba(0,0,0,1)_50%,rgba(0,0,0,0.94)_82%,transparent_100%)] [scrollbar-width:none]"
+        className="h-[290px] overflow-y-auto overscroll-contain [mask-image:linear-gradient(to_bottom,transparent_0%,rgba(0,0,0,0.94)_18%,rgba(0,0,0,1)_50%,rgba(0,0,0,0.94)_82%,transparent_100%)] [scrollbar-width:none] snap-y snap-mandatory"
         style={{
           WebkitOverflowScrolling: 'touch',
           paddingTop: CENTER_OFFSET,
@@ -170,9 +162,7 @@ function WheelColumn({ active, value, options, onChange, align = 'center' }: Whe
           return (
             <div
               key={option.key}
-              className={`select-none px-2 ${
-                isSelected && !isScrolling ? 'text-[#00C9A7]' : isSelected ? 'text-[#7B8598]' : 'text-[#626C7E]'
-              }`}
+              className={`snap-center select-none px-2 ${isSelected ? 'text-white' : 'text-[#626C7E]'}`}
               style={{ height: ITEM_HEIGHT }}
             >
               <div
@@ -182,11 +172,7 @@ function WheelColumn({ active, value, options, onChange, align = 'center' }: Whe
               >
                 <span
                   className={`block truncate text-[1.2rem] font-semibold tracking-tight ${
-                    isSelected && !isScrolling
-                      ? 'opacity-100 [text-shadow:0_0_14px_rgba(0,201,167,0.28)]'
-                      : isSelected
-                        ? 'opacity-90'
-                        : 'opacity-70'
+                    isSelected ? 'opacity-100' : 'opacity-35'
                   }`}
                 >
                   {option.label}

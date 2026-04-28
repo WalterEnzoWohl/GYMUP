@@ -2,15 +2,16 @@ import { useParams } from 'react-router';
 import { Trophy, TrendingUp } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip, CartesianGrid } from 'recharts';
 import { Header } from '@/shared/components/layout/Header';
-import { getMuscleProgressInsights } from '@/core/domain/profileInsights';
+import { getMuscleSetProgressInsights } from '@/core/domain/profileInsights';
 import { useAppData } from '@/core/app-data/AppDataContext';
 
 const weekLabels = ['Sem 1', 'Sem 2', 'Sem 3', 'Sem 4', 'Sem 5', 'Sem 6', 'Sem 7', 'Sem 8'];
 
 export default function MuscleProgressPage() {
   const { id } = useParams();
-  const { appContext, sessionHistory } = useAppData();
-  const muscleProgress = getMuscleProgressInsights(sessionHistory, appContext.todayIso);
+  const { appContext, sessionHistory, routines, userProfile } = useAppData();
+  const activeRoutine = routines.find((r) => r.id === userProfile.activeRoutineId) ?? null;
+  const muscleProgress = getMuscleSetProgressInsights(sessionHistory, activeRoutine, appContext.todayIso);
   const muscle = muscleProgress.find((item) => item.id === id) ?? muscleProgress[0];
 
   if (!muscle) {
@@ -22,17 +23,19 @@ export default function MuscleProgressPage() {
     );
   }
 
-  const chartData = muscle.weeklyDirectCounts.map((directCount, index) => ({
+  const chartData = muscle.weeklySetCounts.map((setCount, index) => ({
     week: weekLabels[index],
-    directos: directCount,
+    series: setCount,
   }));
 
-  const maxDirect = Math.max(...muscle.weeklyDirectCounts);
-  const minDirect = Math.min(...muscle.weeklyDirectCounts);
+  const maxSets = Math.max(...muscle.weeklySetCounts);
+  const minSets = Math.min(...muscle.weeklySetCounts);
   const trend =
-    (muscle.weeklyDirectCounts[muscle.weeklyDirectCounts.length - 1] ?? 0) -
-    (muscle.weeklyDirectCounts[0] ?? 0);
-  const missingDirectWork = Math.max(muscle.monthlyTarget - muscle.monthlyDirectCount, 0);
+    (muscle.weeklySetCounts[muscle.weeklySetCounts.length - 1] ?? 0) -
+    (muscle.weeklySetCounts[0] ?? 0);
+  const missingSets = muscle.monthlyTarget > 0
+    ? Math.max(muscle.monthlyTarget - muscle.monthlySetCount, 0)
+    : 0;
 
   return (
     <div className="flex flex-col" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
@@ -46,8 +49,8 @@ export default function MuscleProgressPage() {
               className="flex items-center gap-2 rounded-full px-3 py-1.5"
               style={{ background: `${muscle.color}20`, border: `1px solid ${muscle.color}40` }}
             >
-              <span className="text-base font-bold" style={{ color: muscle.color }}>
-                Niv. {muscle.level}
+              <span className="text-sm font-bold" style={{ color: muscle.color }}>
+                {muscle.monthlySetCount} series
               </span>
             </div>
           </div>
@@ -58,36 +61,41 @@ export default function MuscleProgressPage() {
                 className="text-xs font-semibold uppercase tracking-widest text-[#9BAEC1]"
                 style={{ fontFamily: "'Inter', sans-serif" }}
               >
-                Ejercicios directos del mes
+                Series realizadas este mes
               </span>
               <span className="text-xs font-bold text-[#00C9A7]">
-                {muscle.monthlyDirectCount} / {muscle.monthlyTarget}
+                {muscle.monthlySetCount}
+                {muscle.monthlyTarget > 0 ? ` / ${muscle.monthlyTarget}` : ''}
               </span>
             </div>
             <div className="h-3 overflow-hidden rounded-full bg-[#203347]">
               <div
                 className="relative h-full rounded-full"
                 style={{
-                  width: `${muscle.progressPercent}%`,
+                  width: muscle.monthlyTarget > 0 ? `${muscle.progressPercent}%` : '0%',
                   background: 'linear-gradient(135deg, #00C9A7 0%, #00A894 100%)',
                 }}
               >
-                <div className="absolute right-0 top-0 bottom-0 w-3 rounded-full bg-white/30" />
+                {muscle.progressPercent > 5 && (
+                  <div className="absolute right-0 top-0 bottom-0 w-3 rounded-full bg-white/30" />
+                )}
               </div>
             </div>
             <p className="mt-1 text-xs text-[#9BAEC1]" style={{ fontFamily: "'Inter', sans-serif" }}>
-              {missingDirectWork > 0
-                ? `Faltan ${missingDirectWork} ejercicios directos para completar la referencia mensual.`
-                : `Ya superaste la referencia mensual por ${muscle.monthlyDirectCount - muscle.monthlyTarget} ejercicios.`}
+              {muscle.monthlyTarget === 0
+                ? 'Sin rutina activa para calcular el objetivo.'
+                : missingSets > 0
+                  ? `Faltan ${missingSets} series para completar el objetivo mensual de tu rutina.`
+                  : `Superaste el objetivo mensual de tu rutina por ${muscle.monthlySetCount - muscle.monthlyTarget} series.`}
             </p>
           </div>
         </div>
 
         <div className="grid grid-cols-3 gap-3">
           {[
-            { label: 'Max. semanal', value: maxDirect.toString(), unit: 'directos' },
-            { label: 'Min. semanal', value: minDirect.toString(), unit: 'directos' },
-            { label: 'Tendencia', value: `${trend >= 0 ? '+' : ''}${trend}`, unit: 'directos', color: '#00C9A7' },
+            { label: 'Max. semanal', value: maxSets.toString(), unit: 'series' },
+            { label: 'Min. semanal', value: minSets.toString(), unit: 'series' },
+            { label: 'Tendencia', value: `${trend >= 0 ? '+' : ''}${trend}`, unit: 'series', color: '#00C9A7' },
           ].map(({ label, value, unit, color }) => (
             <div key={label} className="rounded-xl border border-[#203347] bg-[#13263A] p-3">
               <p
@@ -107,7 +115,7 @@ export default function MuscleProgressPage() {
         <div>
           <div className="mb-3 flex items-center gap-2">
             <TrendingUp size={16} className="text-[#00C9A7]" />
-            <h2 className="text-lg font-bold text-white">Estimulo directo semanal (8 semanas)</h2>
+            <h2 className="text-lg font-bold text-white">Series semanales (8 semanas)</h2>
           </div>
           <div className="rounded-2xl border border-[#203347] bg-[#13263A] p-4">
             <ResponsiveContainer width="100%" height={180}>
@@ -133,11 +141,11 @@ export default function MuscleProgressPage() {
                     color: 'white',
                     fontSize: 12,
                   }}
-                  formatter={(value: number) => [`${value} ejercicios`, 'Directos']}
+                  formatter={(value: number) => [`${value} series`, 'Series']}
                 />
                 <Line
                   type="monotone"
-                  dataKey="directos"
+                  dataKey="series"
                   stroke="#00C9A7"
                   strokeWidth={2}
                   dot={{ fill: '#00C9A7', r: 4 }}

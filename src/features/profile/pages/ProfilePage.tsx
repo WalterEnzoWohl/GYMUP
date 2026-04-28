@@ -11,7 +11,7 @@ import { Bell, Camera, ChevronRight, Flame, LogOut, Pencil, Settings, X } from '
 import { useNavigate } from 'react-router';
 import { Header } from '@/shared/components/layout/Header';
 import { UserAvatar } from '@/features/profile/components/UserAvatar';
-import { calculateNutritionTargets, getMuscleProgressInsights, GOAL_OPTIONS } from '@/core/domain/profileInsights';
+import { calculateNutritionTargets, GOAL_OPTIONS } from '@/core/domain/profileInsights';
 import { useAppData } from '@/core/app-data/AppDataContext';
 import { formatWeightNumber, getWeightUnitLabel } from '@/shared/lib/unitUtils';
 import { getSupabaseClient } from '@/shared/lib/supabase';
@@ -103,7 +103,6 @@ export default function ProfilePage() {
 
   const filteredSessions = sessionHistory.filter((session) => session.isoDate === selectedDate);
   const nutritionTargets = calculateNutritionTargets(userProfile);
-  const monthlyMuscleProgress = getMuscleProgressInsights(sessionHistory, appContext.todayIso);
   const weightUnitLabel = getWeightUnitLabel(appSettings.weightUnit);
   const avatarBaseScale = useMemo(() => {
     if (!pendingAvatar) {
@@ -496,21 +495,12 @@ export default function ProfilePage() {
 
       <div className="flex flex-col gap-6 px-5 py-5 pb-4">
         <div className="relative overflow-hidden rounded-2xl">
-          <div className="flex items-start justify-between gap-4 pt-4 pb-5">
-            <div className="flex min-w-0 flex-1 flex-col gap-1 pr-2">
-              <span className="text-[10px] font-bold uppercase tracking-widest text-[#00C9A7]">
-                {userProfile.trainingLevel}
-              </span>
-              <h1 className="text-4xl font-extrabold tracking-tight text-white">{userProfile.fullName}</h1>
-              <p className="text-sm text-[#9BAEC1]" style={{ fontFamily: "'Inter', sans-serif" }}>
-                Miembro desde {userProfile.memberSince}
-              </p>
-            </div>
-            <div className="flex h-36 w-36 flex-shrink-0 items-start justify-center pt-4">
-              <div className="relative h-[104px] w-[104px]">
+          <div className="flex items-center gap-4 pt-4 pb-5">
+            <div className="flex flex-shrink-0 items-center justify-center">
+              <div className="relative h-[130px] w-[130px]">
                 <UserAvatar
                   alt={userProfile.fullName}
-                  className="h-full w-full overflow-hidden rounded-full border-2 border-[rgba(0,201,167,0.35)] bg-[#1A2D42] shadow-[0_0_28px_rgba(0,201,167,0.18)]"
+                  className="h-full w-full overflow-hidden rounded-full bg-[#1A2D42]"
                   imageClassName="theme-preserve h-full w-full object-cover"
                 />
                 <button
@@ -529,6 +519,9 @@ export default function ProfilePage() {
                   onChange={handleAvatarFileChange}
                 />
               </div>
+            </div>
+            <div className="flex min-w-0 flex-1 flex-col gap-1">
+              <h1 className="text-4xl font-extrabold tracking-tight text-white">{userProfile.fullName}</h1>
             </div>
           </div>
         </div>
@@ -577,6 +570,7 @@ export default function ProfilePage() {
           >
             <p className="mb-2 text-[10px] font-bold uppercase tracking-widest text-[#00C9A7]">Objetivo</p>
             <span className="text-lg font-extrabold text-white">{userProfile.goal}</span>
+            <span className="mt-1.5 block text-[10px] font-bold uppercase tracking-widest text-[rgba(0,201,167,0.7)]">{userProfile.trainingLevel}</span>
           </button>
         </div>
 
@@ -610,43 +604,6 @@ export default function ProfilePage() {
                 </div>
               </div>
             ))}
-          </div>
-        </div>
-
-        <div className="flex flex-col gap-4">
-          <h2 className="text-2xl font-bold tracking-tight text-white">Progreso mensual</h2>
-          <div className="rounded-2xl border border-[rgba(255,255,255,0.05)] bg-[#13263A] p-6">
-            <div className="flex flex-col gap-5">
-              {monthlyMuscleProgress.map((muscleGroup) => (
-                <button
-                  key={muscleGroup.id}
-                  onClick={() => navigate(`/muscle-progress/${muscleGroup.id}`)}
-                  className="flex flex-col gap-2 text-left transition-opacity active:opacity-80"
-                >
-                  <div className="flex items-center justify-between">
-                    <span
-                      className="text-xs font-semibold uppercase tracking-widest text-[#9BAEC1]"
-                      style={{ fontFamily: "'Inter', sans-serif" }}
-                    >
-                      {muscleGroup.name}
-                    </span>
-                    <span className="text-base font-bold text-[#00C9A7]">Niv. {muscleGroup.level}</span>
-                  </div>
-                  <div className="h-2 overflow-hidden rounded-full bg-[#203347]">
-                    <div
-                      className="h-full rounded-full"
-                      style={{
-                        width: `${muscleGroup.progressPercent}%`,
-                        background: 'linear-gradient(135deg, #00C9A7 0%, #00A894 100%)',
-                      }}
-                    />
-                  </div>
-                  <span className="text-[10px] font-medium text-[#9BAEC1]" style={{ fontFamily: "'Inter', sans-serif" }}>
-                    {muscleGroup.monthlyDirectCount} ejercicios directos este mes
-                  </span>
-                </button>
-              ))}
-            </div>
           </div>
         </div>
 

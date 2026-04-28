@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router';
 import { Clock, Filter, Pencil, TrendingUp } from 'lucide-react';
 import { ActiveWorkoutEditLockModal } from '@/shared/components/layout/ActiveWorkoutEditLockModal';
 import { Header } from '@/shared/components/layout/Header';
+import { getMuscleSetProgressInsights } from '@/core/domain/profileInsights';
 import { useAppData } from '@/core/app-data/AppDataContext';
 import type { SessionHistory } from '@/shared/types/models';
 import { formatCompactWeight } from '@/shared/lib/unitUtils';
@@ -49,7 +50,9 @@ function matchesMuscle(session: SessionHistory, selectedMuscle: string) {
 
 export default function HistoryPage() {
   const navigate = useNavigate();
-  const { activeWorkout, appSettings, sessionHistory } = useAppData();
+  const { activeWorkout, appSettings, sessionHistory, routines, userProfile, appContext } = useAppData();
+  const activeRoutine = routines.find((r) => r.id === userProfile.activeRoutineId) ?? null;
+  const muscleProgress = getMuscleSetProgressInsights(sessionHistory, activeRoutine, appContext.todayIso);
   const months = Array.from(new Set(sessionHistory.map((session) => session.isoDate.slice(0, 7)))).sort(
     (a, b) => b.localeCompare(a)
   );
@@ -128,6 +131,46 @@ export default function HistoryPage() {
             <div className="flex items-baseline gap-1">
               <span className="text-xl font-bold text-white">{avgRpe}</span>
               <span className="text-xs italic text-[#9BAEC1]">/ 10</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-3">
+          <h2 className="text-lg font-bold tracking-tight text-white">Progreso mensual</h2>
+          <div className="rounded-2xl border border-[rgba(255,255,255,0.05)] bg-[#13263A] p-5">
+            <div className="flex flex-col gap-4">
+              {muscleProgress.map((group) => (
+                <button
+                  key={group.id}
+                  onClick={() => navigate(`/muscle-progress/${group.id}`)}
+                  className="flex flex-col gap-1.5 text-left transition-opacity active:opacity-70"
+                  type="button"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-semibold uppercase tracking-widest text-[#9BAEC1]" style={{ fontFamily: "'Inter', sans-serif" }}>
+                      {group.name}
+                    </span>
+                    <span className="text-xs font-bold text-[#00C9A7]">
+                      {group.monthlySetCount}
+                      {group.monthlyTarget > 0 ? ` / ${group.monthlyTarget} series` : ' series'}
+                    </span>
+                  </div>
+                  <div className="h-2 overflow-hidden rounded-full bg-[#203347]">
+                    <div
+                      className="h-full rounded-full transition-all"
+                      style={{
+                        width: `${group.progressPercent}%`,
+                        background: 'linear-gradient(135deg, #00C9A7 0%, #00A894 100%)',
+                      }}
+                    />
+                  </div>
+                  {group.monthlyTarget === 0 && (
+                    <span className="text-[10px] text-[#9BAEC1]" style={{ fontFamily: "'Inter', sans-serif" }}>
+                      Sin rutina activa para este grupo
+                    </span>
+                  )}
+                </button>
+              ))}
             </div>
           </div>
         </div>
