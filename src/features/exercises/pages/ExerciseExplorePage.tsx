@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router';
 import { Info, Search } from 'lucide-react';
 import { Header } from '@/shared/components/layout/Header';
 import { ExerciseDetailSheet } from '@/features/exercises/components/ExerciseDetailSheet';
+import { FilterSheet } from '@/features/exercises/components/FilterSheet';
 import type { CatalogExerciseItem } from '@/features/exercises/components/ExerciseDetailSheet';
 import { useExerciseCatalog } from '@/features/exercises/hooks/useExerciseCatalog';
 import { useAppData } from '@/core/app-data/AppDataContext';
@@ -211,7 +212,24 @@ export default function ExerciseExplorePage() {
       </div>
 
       {/* Muscle filter sheet */}
-      {showMuscleSheet ? (
+      <FilterSheet open={showMuscleSheet} title="Músculo" onClose={() => setShowMuscleSheet(false)}>
+        <div className="flex flex-col gap-1">
+          {muscleOptions.map((m) => (
+            <button
+              key={m}
+              type="button"
+              onClick={() => { setMuscle(m); setShowMuscleSheet(false); }}
+              className={`flex w-full items-center justify-between rounded-xl px-4 py-3 text-sm font-semibold transition-colors ${
+                muscle === m ? 'bg-[rgba(0,201,167,0.12)] text-[#00C9A7]' : 'text-[#9BAEC1] active:bg-[#203347]'
+              }`}
+            >
+              {m}
+              {muscle === m ? <div className="h-2 w-2 rounded-full bg-[#00C9A7]" /> : null}
+            </button>
+          ))}
+        </div>
+      </FilterSheet>
+      {false && showMuscleSheet ? (
         <div className="absolute inset-0 z-50">
           <div className="absolute inset-0 bg-black/60" onClick={() => setShowMuscleSheet(false)} />
           <div
@@ -242,7 +260,24 @@ export default function ExerciseExplorePage() {
       ) : null}
 
       {/* Implement filter sheet */}
-      {showImplementSheet ? (
+      <FilterSheet open={showImplementSheet} title="Equipamiento" onClose={() => setShowImplementSheet(false)}>
+        <div className="flex flex-col gap-1">
+          {implementOptions.map((impl) => (
+            <button
+              key={impl}
+              type="button"
+              onClick={() => { setImplement(impl); setShowImplementSheet(false); }}
+              className={`flex w-full items-center justify-between rounded-xl px-4 py-3 text-sm font-semibold transition-colors ${
+                implement === impl ? 'bg-[rgba(0,201,167,0.12)] text-[#00C9A7]' : 'text-[#9BAEC1] active:bg-[#203347]'
+              }`}
+            >
+              {impl}
+              {implement === impl ? <div className="h-2 w-2 rounded-full bg-[#00C9A7]" /> : null}
+            </button>
+          ))}
+        </div>
+      </FilterSheet>
+      {false && showImplementSheet ? (
         <div className="absolute inset-0 z-50">
           <div className="absolute inset-0 bg-black/60" onClick={() => setShowImplementSheet(false)} />
           <div

@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router';
 import { Check, Info, Plus, Search, X } from 'lucide-react';
 import { useExerciseCatalog } from '@/features/exercises/hooks/useExerciseCatalog';
 import { ExerciseDetailSheet } from '@/features/exercises/components/ExerciseDetailSheet';
+import { FilterSheet } from '@/features/exercises/components/FilterSheet';
 import type { CatalogExerciseItem } from '@/features/exercises/components/ExerciseDetailSheet';
 import { useAppData } from '@/core/app-data/AppDataContext';
 import { Header } from '@/shared/components/layout/Header';
@@ -335,46 +336,24 @@ export default function ExerciseCatalogPage() {
   );
 
   const muscleOptions = useMemo(() => {
-    const muscleSet = new Set<string>();
-    for (const e of catalog) {
-      if (!e.coverImageUrl) continue;
-      for (const m of e.primaryMuscles) muscleSet.add(m);
-    }
-    const sorted = [...muscleSet].sort((a, b) => {
-      const ra = MUSCLE_POPULARITY_ORDER.indexOf(a);
-      const rb = MUSCLE_POPULARITY_ORDER.indexOf(b);
-      if (ra !== rb) return (ra === -1 ? Infinity : ra) - (rb === -1 ? Infinity : rb);
-      return (MUSCLE_LABELS_ES[a] ?? a).localeCompare(MUSCLE_LABELS_ES[b] ?? b, 'es');
-    });
+    const sorted = Array.from(new Set(exerciseLibrary.map((exercise) => exercise.muscle))).sort((a, b) =>
+      a.localeCompare(b, 'es')
+    );
     return [ALL_MUSCLES_OPTION, ...sorted];
-  }, [catalog]);
+  }, [exerciseLibrary]);
 
   const implementOptions = useMemo(() => {
-    const equipSet = new Set<string>();
-    for (const e of catalog) {
-      if (!e.coverImageUrl) continue;
-      for (const eq of e.equipment) equipSet.add(eq);
-    }
-    const sorted = [...equipSet].sort((a, b) => {
-      const ra = EQUIPMENT_POPULARITY_ORDER.indexOf(a);
-      const rb = EQUIPMENT_POPULARITY_ORDER.indexOf(b);
-      if (ra !== rb) return (ra === -1 ? Infinity : ra) - (rb === -1 ? Infinity : rb);
-      return (EQUIPMENT_LABELS_ES[a] ?? a).localeCompare(EQUIPMENT_LABELS_ES[b] ?? b, 'es');
-    });
+    const sorted = Array.from(
+      new Set(exerciseLibrary.map((exercise) => exercise.implement).filter(Boolean) as string[])
+    ).sort((a, b) => a.localeCompare(b, 'es'));
     return [ALL_IMPLEMENTS_OPTION, ...sorted];
-  }, [catalog]);
+  }, [exerciseLibrary]);
 
   const filteredExercises = useMemo(() => {
     const normalizedSearch = searchQuery.trim().toLowerCase();
     return exerciseLibrary.filter((exercise) => {
-      if (selectedMuscle !== ALL_MUSCLES_OPTION) {
-        const summary = catalogSummaryBySlug.get(exercise.exerciseSlug ?? '');
-        if (!summary?.primaryMuscles.includes(selectedMuscle)) return false;
-      }
-      if (selectedImplement !== ALL_IMPLEMENTS_OPTION) {
-        const summary = catalogSummaryBySlug.get(exercise.exerciseSlug ?? '');
-        if (!summary?.equipment.includes(selectedImplement)) return false;
-      }
+      if (selectedMuscle !== ALL_MUSCLES_OPTION && exercise.muscle !== selectedMuscle) return false;
+      if (selectedImplement !== ALL_IMPLEMENTS_OPTION && exercise.implement !== selectedImplement) return false;
       if (normalizedSearch) {
         const haystack = [exercise.name, exercise.muscle, exercise.implement ?? ''].join(' ').toLowerCase();
         if (!haystack.includes(normalizedSearch)) return false;
@@ -615,7 +594,24 @@ export default function ExerciseCatalogPage() {
       ) : null}
 
       {/* Muscle filter sheet */}
-      {showMuscleSheet ? (
+      <FilterSheet open={showMuscleSheet} title="Músculo" onClose={() => setShowMuscleSheet(false)}>
+        {muscleOptions.map((muscle) => (
+          <button
+            key={muscle}
+            type="button"
+            onClick={() => { setSelectedMuscle(muscle); setShowMuscleSheet(false); }}
+            className={`flex w-full items-center justify-between rounded-xl px-4 py-3 text-sm font-semibold transition-colors ${
+              selectedMuscle === muscle
+                ? 'bg-[rgba(0,201,167,0.12)] text-[#00C9A7]'
+                : 'text-[#9BAEC1] active:bg-[#203347]'
+            }`}
+          >
+            {muscle === ALL_MUSCLES_OPTION ? 'Todos los músculos' : muscle}
+            {selectedMuscle === muscle ? <div className="h-2 w-2 rounded-full bg-[#00C9A7]" /> : null}
+          </button>
+        ))}
+      </FilterSheet>
+      {false && showMuscleSheet ? (
         <div className="fixed inset-0 z-50">
           <div className="absolute inset-0 bg-black/60" onClick={() => setShowMuscleSheet(false)} />
           <div
@@ -657,7 +653,24 @@ export default function ExerciseCatalogPage() {
       ) : null}
 
       {/* Equipment filter sheet */}
-      {showImplementSheet ? (
+      <FilterSheet open={showImplementSheet} title="Equipamiento" onClose={() => setShowImplementSheet(false)}>
+        {implementOptions.map((implement) => (
+          <button
+            key={implement}
+            type="button"
+            onClick={() => { setSelectedImplement(implement); setShowImplementSheet(false); }}
+            className={`flex w-full items-center justify-between rounded-xl px-4 py-3 text-sm font-semibold transition-colors ${
+              selectedImplement === implement
+                ? 'bg-[rgba(0,201,167,0.12)] text-[#00C9A7]'
+                : 'text-[#9BAEC1] active:bg-[#203347]'
+            }`}
+          >
+            {implement === ALL_IMPLEMENTS_OPTION ? 'Todo el equipamiento' : implement}
+            {selectedImplement === implement ? <div className="h-2 w-2 rounded-full bg-[#00C9A7]" /> : null}
+          </button>
+        ))}
+      </FilterSheet>
+      {false && showImplementSheet ? (
         <div className="fixed inset-0 z-50">
           <div className="absolute inset-0 bg-black/60" onClick={() => setShowImplementSheet(false)} />
           <div
