@@ -34,6 +34,7 @@ export interface ActiveWorkoutExercise {
   muscle: string;
   implement?: string;
   notes?: string;
+  restSeconds?: number;
   sets: ActiveWorkoutSet[];
 }
 

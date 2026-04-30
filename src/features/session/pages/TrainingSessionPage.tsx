@@ -257,6 +257,7 @@ export default function TrainingSessionPage() {
   const [showFinishModal, setShowFinishModal] = useState(false);
   const [showExerciseHistory, setShowExerciseHistory] = useState(false);
   const [showRestPicker, setShowRestPicker] = useState(false);
+  const [restTargetExerciseIdx, setRestTargetExerciseIdx] = useState<number | null>(null);
   const [showAddExercise, setShowAddExercise] = useState(false);
   const [showDatabaseExercisePicker, setShowDatabaseExercisePicker] = useState(false);
   const [restPickerDraft, setRestPickerDraft] = useState('90');
@@ -390,13 +391,6 @@ export default function TrainingSessionPage() {
   }, [currentExIdx, exerciseList.length]);
 
   useEffect(() => {
-    setRestConfig(appSettings.restTimerSeconds || DEFAULT_REST);
-    if (!restActive) {
-      setRestTime(appSettings.restTimerSeconds || DEFAULT_REST);
-    }
-  }, [appSettings.restTimerSeconds, restActive]);
-
-  useEffect(() => {
     if (isHistoryEditSession || !shouldPersistDraftRef.current) {
       return;
     }
@@ -499,6 +493,27 @@ export default function TrainingSessionPage() {
   }, []);
 
   const currentExercise = exerciseList[currentExIdx] ?? null;
+  const getExerciseRestSeconds = useCallback(
+    (exercise: Pick<ExerciseState, 'restSeconds'> | null | undefined) =>
+      (exercise?.restSeconds ?? appSettings.restTimerSeconds) || DEFAULT_REST,
+    [appSettings.restTimerSeconds]
+  );
+
+  useEffect(() => {
+    const nextRestConfig = getExerciseRestSeconds(currentExercise);
+    setRestConfig(nextRestConfig);
+    if (!restActive) {
+      setRestTime(nextRestConfig);
+    }
+  }, [currentExercise, getExerciseRestSeconds, restActive]);
+
+  const updateExerciseRestSeconds = (exerciseIdx: number, seconds: number) => {
+    setExerciseList((previous) =>
+      previous.map((exercise, candidateExerciseIdx) =>
+        candidateExerciseIdx === exerciseIdx ? { ...exercise, restSeconds: seconds } : exercise
+      )
+    );
+  };
   const catalogExerciseTemplates = useMemo(
     () => exerciseCatalog.map((exercise) => buildExerciseTemplateFromCatalog(exercise)),
     [exerciseCatalog]
@@ -953,7 +968,9 @@ export default function TrainingSessionPage() {
     );
 
     if (nextCompleted && !isHistoryEditSession) {
-      setRestTime(restConfig);
+      const nextRestSeconds = getExerciseRestSeconds(targetExercise);
+      setRestConfig(nextRestSeconds);
+      setRestTime(nextRestSeconds);
       setRestActive(true);
     }
   };
@@ -1125,15 +1142,21 @@ export default function TrainingSessionPage() {
   };
 
   const adjustRestBy = (seconds: number) => {
-    setRestConfig((value) => Math.max(15, Math.min(600, value + seconds)));
-    setRestTime((value) => {
-      const targetValue = restActive ? value + seconds : restConfig + seconds;
-      return Math.max(0, Math.min(600, targetValue));
-    });
+    const targetExerciseIdx = Math.max(0, Math.min(currentExIdx, Math.max(0, exerciseList.length - 1)));
+    const targetExercise = exerciseList[targetExerciseIdx] ?? currentExercise;
+    const baseValue = restActive ? restTime : getExerciseRestSeconds(targetExercise);
+    const nextValue = Math.max(15, Math.min(600, baseValue + seconds));
+
+    setRestConfig(nextValue);
+    setRestTime(nextValue);
+    updateExerciseRestSeconds(targetExerciseIdx, nextValue);
   };
 
-  const openRestEditor = () => {
-    const currentValue = String(restConfig);
+  const openRestEditor = (exerciseIdx: number = currentExIdx) => {
+    const targetExerciseIdx = Math.max(0, Math.min(exerciseIdx, Math.max(0, exerciseList.length - 1)));
+    const currentValue = String(getExerciseRestSeconds(exerciseList[targetExerciseIdx]));
+    setCurrentExIdx(targetExerciseIdx);
+    setRestTargetExerciseIdx(targetExerciseIdx);
     setRestPickerDraft(REST_VALID_VALUES.has(currentValue) ? currentValue : '90');
     setShowRestPicker(true);
   };
@@ -1188,8 +1211,9 @@ export default function TrainingSessionPage() {
       label: 'Editar Descanso',
       icon: TimerReset,
       onClick: () => {
+        const targetIdx = exerciseMenuAnchor?.exerciseIdx ?? currentExIdx;
         setExerciseMenuAnchor(null);
-        openRestEditor();
+        openRestEditor(targetIdx);
       },
     },
     {
@@ -1425,8 +1449,8 @@ export default function TrainingSessionPage() {
                     onRemoveLastSet={(targetExerciseIdx) =>
                       removeSet(targetExerciseIdx, exerciseList[targetExerciseIdx].sets.length - 1)
                     }
-                    onOpenRestTimer={() => {
-                      openRestEditor();
+                    onOpenRestTimer={(targetExerciseIdx) => {
+                      openRestEditor(targetExerciseIdx);
                     }}
                     onReorderClick={() => setShowReorderModal(true)}
                   />
@@ -1526,17 +1550,25 @@ export default function TrainingSessionPage() {
         subtitle="Tiempo entre series"
         value={{ whole: restPickerDraft }}
         onChange={(value) => setRestPickerDraft(value.whole)}
-        onClose={() => setShowRestPicker(false)}
+        onClose={() => {
+          setShowRestPicker(false);
+          setRestTargetExerciseIdx(null);
+        }}
         onConfirm={() => {
           const seconds = Number(restPickerDraft);
           if (!Number.isFinite(seconds) || seconds <= 0) {
             setShowRestPicker(false);
+            setRestTargetExerciseIdx(null);
             return;
           }
 
+          const targetExerciseIdx = restTargetExerciseIdx ?? currentExIdx;
+          setCurrentExIdx(targetExerciseIdx);
+          updateExerciseRestSeconds(targetExerciseIdx, seconds);
           setRestConfig(seconds);
           setRestTime(seconds);
           setShowRestPicker(false);
+          setRestTargetExerciseIdx(null);
         }}
         wholeOptions={REST_OPTIONS}
       />
@@ -1693,8 +1725,10 @@ export default function TrainingSessionPage() {
                             onPointerMove={handleReorderPointerMove}
                             onPointerUp={handleReorderPointerUp}
                             onPointerCancel={handleReorderPointerUp}
+                            onContextMenu={(e) => e.preventDefault()}
                             className="touch-none rounded-lg p-1 text-[#4A6278] active:scale-[0.96]"
                             aria-label={`Reordenar ${ex.name}`}
+                            style={{ WebkitTouchCallout: 'none', WebkitUserSelect: 'none', userSelect: 'none' }}
                           >
                             <GripVertical size={16} className="shrink-0" />
                           </button>
@@ -1705,14 +1739,19 @@ export default function TrainingSessionPage() {
                               onPointerMove={handleReorderPointerMove}
                               onPointerUp={handleReorderPointerUp}
                               onPointerCancel={handleReorderPointerUp}
+                              onContextMenu={(e) => e.preventDefault()}
                               className="touch-none shrink-0 overflow-hidden rounded-lg active:scale-[0.98]"
                               aria-label={`Mover ${ex.name} desde la portada`}
+                              style={{ WebkitTouchCallout: 'none', WebkitUserSelect: 'none', userSelect: 'none' }}
                             >
                               <img
                                 src={catalogEntry.coverImageUrl}
                                 alt=""
                                 draggable={false}
-                                className="h-9 w-9 object-cover"
+                                onContextMenu={(e) => e.preventDefault()}
+                                onDragStart={(e) => e.preventDefault()}
+                                className="pointer-events-none h-9 w-9 object-cover"
+                                style={{ WebkitTouchCallout: 'none', WebkitUserSelect: 'none', userSelect: 'none' }}
                               />
                             </button>
                           ) : (

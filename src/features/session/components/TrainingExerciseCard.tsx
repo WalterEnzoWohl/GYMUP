@@ -26,7 +26,7 @@ type SessionExerciseCardProps = {
   onExerciseNotesChange: (exerciseIdx: number, notes: string) => void;
   onAddSet: (exerciseIdx: number) => void;
   onRemoveLastSet: (exerciseIdx: number) => void;
-  onOpenRestTimer: () => void;
+  onOpenRestTimer: (exerciseIdx: number) => void;
   onReorderClick: () => void;
 };
 
@@ -457,7 +457,10 @@ export function TrainingExerciseCard({
         </button>
 
         <button
-          onClick={onOpenRestTimer}
+          onClick={() => {
+            onExerciseFocus(exerciseIdx);
+            onOpenRestTimer(exerciseIdx);
+          }}
           className="flex flex-col items-center justify-center gap-1.5 rounded-2xl border border-[rgba(0,201,167,0.22)] bg-[rgba(0,201,167,0.08)] py-3 transition-colors active:bg-[rgba(0,201,167,0.14)]"
           type="button"
           aria-label="Editar descanso"

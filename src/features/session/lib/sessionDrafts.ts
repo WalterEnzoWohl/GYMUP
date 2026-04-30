@@ -39,6 +39,7 @@ export function buildExerciseState(
       muscle: exercise.muscle,
       implement: exercise.implement,
       notes: exercise.notes ?? '',
+      restSeconds: exercise.restSeconds,
       sets: exercise.sets.map((set, index) => {
         const previousKg = previousExercise?.sets[index]?.kg ?? 0;
         const previousReps = previousExercise?.sets[index]?.reps ?? 0;
@@ -74,6 +75,7 @@ export function buildExerciseStateFromHistorySession(
       muscle: exercise.muscle,
       implement: exercise.implement,
       notes: exercise.notes ?? '',
+      restSeconds: undefined,
       sets: exercise.sets.map((set, setIndex) => ({
         id: setIndex + 1,
         kg: set.kg,
@@ -106,6 +108,7 @@ export function buildExerciseStateFromTemplate(
     muscle: exercise.muscle,
     implement: exercise.implement,
     notes: '',
+    restSeconds: exercise.restSeconds,
     sets: exercise.sets.map((set, index) => {
       const previousKg = previousExercise?.sets[index]?.kg ?? 0;
       const previousReps = previousExercise?.sets[index]?.reps ?? 0;
@@ -141,6 +144,7 @@ export function buildManualExerciseState(
     muscle,
     implement: implement || undefined,
     notes: '',
+    restSeconds: undefined,
     sets: [
       {
         id: 1,
