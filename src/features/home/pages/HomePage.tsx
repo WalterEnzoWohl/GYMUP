@@ -7,6 +7,7 @@ import { useAppData } from '@/core/app-data/AppDataContext';
 import { formatCompactWeight } from '@/shared/lib/unitUtils';
 import { getUserFirstName } from '@/shared/lib/userProfileUtils';
 import type { SessionHistory } from '@/shared/types/models';
+import { WeeklyMuscleLoad } from '../components/WeeklyMuscleLoad';
 
 function normalizeMuscleHighlight(label: string) {
   const normalized = label
@@ -376,6 +377,8 @@ export default function HomePage() {
             </span>
           </div>
         </div>
+
+        <WeeklyMuscleLoad />
 
         <div className="flex flex-col gap-4">
           <div className="flex items-baseline justify-between">
