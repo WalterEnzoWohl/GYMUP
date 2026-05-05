@@ -321,6 +321,8 @@ export default function HomePage() {
           </button>
         </div>
 
+        <WeeklyMuscleLoad />
+
         <div className="flex flex-col gap-4">
           <span className="text-xl font-bold tracking-tight text-white">Resumen semanal</span>
           <div className="rounded-2xl border border-[#203347] bg-[#111111] p-4">
@@ -377,8 +379,6 @@ export default function HomePage() {
             </span>
           </div>
         </div>
-
-        <WeeklyMuscleLoad />
 
         <div className="flex flex-col gap-4">
           <div className="flex items-baseline justify-between">

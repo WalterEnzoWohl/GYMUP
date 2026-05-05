@@ -11,6 +11,7 @@ import gluteosUrl from '@/assets/icons/gluteos.svg';
 import gemelosUrl from '@/assets/icons/gemelos.svg';
 import { Header } from '@/shared/components/layout/Header';
 import { useAppData } from '@/core/app-data/AppDataContext';
+import { WeeklyMuscleLoad } from '@/features/home/components/WeeklyMuscleLoad';
 import {
   buildMetricsSummary,
   buildExercisePRs,
@@ -49,34 +50,6 @@ function monthOffsetToIso(todayIso: string, offset: number): string {
   return d.toISOString().slice(0, 10);
 }
 
-// ─── SVG Line Chart ──────────────────────────────────────────────────────────
-
-function LineChartSvg({ data, color, fillFrom, h = 80 }: { data: number[]; color: string; fillFrom: string; h?: number }) {
-  if (data.length < 2) return null;
-  const w = 320;
-  const pad = 4;
-  const min = Math.min(...data);
-  const max = Math.max(...data);
-  const span = max - min || 1;
-  const pts = data.map((v, i) => [
-    pad + (i / (data.length - 1)) * (w - pad * 2),
-    pad + (1 - (v - min) / span) * (h - pad * 2),
-  ]);
-  const path = pts.map(([x, y], i) => `${i === 0 ? 'M' : 'L'}${x.toFixed(1)},${y.toFixed(1)}`).join(' ');
-  const fill = `${path} L${pts[pts.length - 1][0].toFixed(1)},${h} L${pts[0][0].toFixed(1)},${h} Z`;
-  const last = pts[pts.length - 1];
-  return (
-    <svg width="100%" viewBox={`0 0 ${w} ${h}`} style={{ display: 'block' }}>
-      {[0, 0.5, 1].map((g, i) => (
-        <line key={i} x1={0} x2={w} y1={pad + g * (h - pad * 2)} y2={pad + g * (h - pad * 2)} stroke="rgba(144,164,184,0.10)" strokeDasharray="2 3" />
-      ))}
-      <path d={fill} fill={fillFrom} />
-      <path d={path} fill="none" stroke={color} strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" />
-      <circle cx={last[0]} cy={last[1]} r={6} fill={color} fillOpacity={0.22} />
-      <circle cx={last[0]} cy={last[1]} r={3.2} fill={color} stroke="#0B1F33" strokeWidth={1.5} />
-    </svg>
-  );
-}
 
 function SparklineSvg({ data, color = WOHL.accent }: { data: number[]; color?: string }) {
   if (data.length < 2) return <div style={{ width: 60, height: 24 }} />;
@@ -486,17 +459,9 @@ function Card({ children, style }: { children: React.ReactNode; style?: React.CS
 function GeneralTab({ sessionHistory, todayIso }: { sessionHistory: SessionHistory[]; todayIso: string }) {
   return (
     <>
-      <Card>
-        <MonthCalendar sessionHistory={sessionHistory} todayIso={todayIso} />
-      </Card>
-
-      <Card>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-          <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.22em' }}>FRECUENCIA SEMANAL</div>
-          <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.16em', color: WOHL.accent }}>ÚLTIMAS 8 SEMANAS</div>
-        </div>
-        <FrequencyBars sessionHistory={sessionHistory} todayIso={todayIso} />
-      </Card>
+      <div style={{ marginBottom: 14 }}>
+        <WeeklyMuscleLoad />
+      </div>
 
       <Card>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
@@ -515,7 +480,6 @@ function GeneralTab({ sessionHistory, todayIso }: { sessionHistory: SessionHisto
 
 function FuerzaTab({ sessionHistory }: { sessionHistory: SessionHistory[] }) {
   const prs = buildExercisePRs(sessionHistory);
-  const hero = prs[0] ?? null;
 
   if (prs.length === 0) {
     return (
@@ -531,38 +495,6 @@ function FuerzaTab({ sessionHistory }: { sessionHistory: SessionHistory[] }) {
   return (
     <>
       <ProgressPodium sessionHistory={sessionHistory} />
-
-      {hero && (
-        <div style={{
-          background: 'linear-gradient(180deg, rgba(0,201,167,0.14), rgba(13,38,58,0.85))',
-          border: '1px solid rgba(0,201,167,0.28)',
-          borderRadius: 20, padding: 16, marginBottom: 14,
-        }}>
-          <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.26em', color: WOHL.accent, marginBottom: 4 }}>
-            1RM ESTIMADO · {hero.name.toUpperCase()}
-          </div>
-          <div style={{ fontFamily: "'Plus Jakarta Sans'", fontWeight: 900, fontSize: 40, letterSpacing: '-0.03em', lineHeight: 1, marginBottom: 8 }}>
-            {hero.estimated1RM}
-            <span style={{ fontSize: 16, fontStyle: 'italic', color: '#9BAEC1', fontWeight: 700, marginLeft: 4 }}>kg</span>
-          </div>
-          {hero.deltaKg !== null && hero.deltaKg > 0 && (
-            <div style={{
-              display: 'inline-flex', alignItems: 'center', gap: 6,
-              padding: '4px 9px', borderRadius: 8,
-              background: 'rgba(84,214,44,0.14)', border: '1px solid rgba(84,214,44,0.28)',
-              color: '#54D62C', fontSize: 12, fontWeight: 700,
-            }}>
-              +{hero.deltaKg} kg desde el inicio
-            </div>
-          )}
-          <LineChartSvg
-            data={hero.sparkline}
-            color={WOHL.accent}
-            fillFrom="rgba(0,201,167,0.22)"
-            h={72}
-          />
-        </div>
-      )}
 
       <SLabel>RÉCORDS PERSONALES</SLabel>
       <div style={{ background: WOHL.surface, border: `1px solid ${WOHL.line}`, borderRadius: 18, overflow: 'hidden', marginBottom: 16 }}>
@@ -601,52 +533,22 @@ function FuerzaTab({ sessionHistory }: { sessionHistory: SessionHistory[] }) {
 
 // ─── Cuerpo Tab ───────────────────────────────────────────────────────────────
 
-function CuerpoTab({ weightKg, heightCm }: { weightKg: number; heightCm: number }) {
-  const bmi = weightKg / Math.pow(heightCm / 100, 2);
-  const bmiVal = Math.round(bmi * 10) / 10;
-  const bmiLabel = bmi < 18.5 ? 'BAJO PESO' : bmi < 25 ? 'NORMAL' : bmi < 30 ? 'SOBREPESO' : 'OBESIDAD';
-  const bmiColor = bmi < 18.5 ? '#5BA8FF' : bmi < 25 ? '#54D62C' : bmi < 30 ? '#F5B942' : '#FF7A8C';
+function CuerpoTab({ sessionHistory, todayIso }: { sessionHistory: SessionHistory[]; todayIso: string }) {
 
   return (
     <>
       <Card>
-        <SLabel>COMPOSICIÓN CORPORAL</SLabel>
-        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
-          <div style={{ position: 'relative', width: 140, height: 140 }}>
-            <svg width={140} height={140} viewBox="0 0 140 140">
-              <circle cx={70} cy={70} r={56} fill="none" stroke="rgba(144,164,184,0.15)" strokeWidth={16} />
-              <circle cx={70} cy={70} r={56} fill="none" stroke={bmiColor} strokeWidth={16}
-                strokeDasharray={`${Math.min(bmi / 40, 1) * 351.9} 351.9`}
-                strokeLinecap="round"
-                transform="rotate(-90 70 70)"
-              />
-            </svg>
-            <div style={{
-              position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column',
-              alignItems: 'center', justifyContent: 'center',
-            }}>
-              <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.16em', color: WOHL.textMuted, marginBottom: 2 }}>IMC</div>
-              <div style={{ fontFamily: "'Plus Jakarta Sans'", fontWeight: 900, fontSize: 28, letterSpacing: '-0.03em', color: WOHL.text, lineHeight: 1 }}>{bmiVal}</div>
-              <div style={{ fontSize: 10, fontWeight: 800, color: bmiColor, marginTop: 4 }}>{bmiLabel}</div>
-            </div>
-          </div>
-        </div>
-        <div style={{ textAlign: 'center', color: WOHL.textMuted, fontSize: 12 }}>
-          Peso: <b style={{ color: WOHL.text }}>{weightKg} kg</b> · Altura: <b style={{ color: WOHL.text }}>{heightCm} cm</b>
-        </div>
+        <MonthCalendar sessionHistory={sessionHistory} todayIso={todayIso} />
       </Card>
 
-      <div style={{
-        background: 'linear-gradient(135deg, rgba(0,201,167,0.08), rgba(91,168,255,0.04))',
-        border: `1px solid rgba(0,201,167,0.18)`, borderRadius: 18, padding: 16, marginBottom: 14, textAlign: 'center',
-      }}>
-        <div style={{ fontFamily: "'Plus Jakarta Sans'", fontWeight: 800, fontSize: 13, color: WOHL.accent, marginBottom: 6 }}>
-          Próximamente
+      <Card>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+          <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.22em' }}>FRECUENCIA SEMANAL</div>
+          <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.16em', color: WOHL.accent }}>ÚLTIMAS 8 SEMANAS</div>
         </div>
-        <div style={{ fontSize: 12, color: WOHL.textMuted, lineHeight: 1.5 }}>
-          Seguimiento de peso corporal, composición y medidas corporales.
-        </div>
-      </div>
+        <FrequencyBars sessionHistory={sessionHistory} todayIso={todayIso} />
+      </Card>
+
     </>
   );
 }
@@ -656,7 +558,7 @@ function CuerpoTab({ weightKg, heightCm }: { weightKg: number; heightCm: number 
 export default function MetricsPage() {
   const [tab, setTab] = useState<Tab>('general');
   const navigate = useNavigate();
-  const { sessionHistory, appContext, userProfile } = useAppData();
+  const { sessionHistory, appContext } = useAppData();
 
   const headerSettingsAction = (
     <button
@@ -696,7 +598,7 @@ export default function MetricsPage() {
         {/* Tabs */}
         <div style={{ display: 'flex', gap: 0, marginBottom: 12, borderBottom: `1px solid ${WOHL.line}` }}>
           {(['general', 'fuerza', 'cuerpo'] as Tab[]).map((t) => {
-            const labels: Record<Tab, string> = { general: 'General', fuerza: 'Fuerza', cuerpo: 'Cuerpo' };
+            const labels: Record<Tab, string> = { general: 'General', fuerza: 'Fuerza', cuerpo: 'Calendario' };
             return (
               <button key={t} onClick={() => setTab(t)} style={{
                 flex: 1, padding: '10px 0', background: 'transparent', border: 0, cursor: 'pointer',
@@ -715,7 +617,7 @@ export default function MetricsPage() {
         <div style={{ paddingBottom: 40 }}>
           {tab === 'general' && <GeneralTab sessionHistory={sessionHistory} todayIso={appContext.todayIso} />}
           {tab === 'fuerza' && <FuerzaTab sessionHistory={sessionHistory} />}
-          {tab === 'cuerpo' && <CuerpoTab weightKg={userProfile.weightKg} heightCm={userProfile.heightCm} />}
+          {tab === 'cuerpo' && <CuerpoTab sessionHistory={sessionHistory} todayIso={appContext.todayIso} />}
         </div>
       </div>
     </div>
