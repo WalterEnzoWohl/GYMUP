@@ -181,6 +181,25 @@ type CatalogNavState = {
   existingDaySlugs: string[];
   currentDayExerciseCount: number;
   returnTo: string;
+  routineDraft?: {
+    name: string;
+    days: Array<{
+      name: string;
+      exercises: Array<{
+        exerciseSlug?: string;
+        name: string;
+        muscle: string;
+        implement?: string;
+        secondaryMuscles?: string[];
+        sets: number;
+        reps: number;
+        kg: number;
+        restSeconds?: number;
+      }>;
+    }>;
+    activeDay: number;
+    expandedExerciseKeys: string[];
+  };
 };
 
 // ─── Sub-component ────────────────────────────────────────────────────────────
@@ -400,13 +419,19 @@ export default function ExerciseCatalogPage() {
     if (selectedSlugs.size === 0) return;
     const exercises = exerciseLibrary.filter((e) => selectedSlugs.has(e.exerciseSlug ?? e.name));
     navigate(returnTo, {
-      state: { catalogResult: { exercises, dayIndex, mode: 'add' } },
+      state: {
+        catalogResult: { exercises, dayIndex, mode: 'add' },
+        routineDraft: navState.routineDraft,
+      },
     });
   };
 
   const handleReplaceSelect = (exercise: CatalogExerciseItem) => {
     navigate(returnTo, {
-      state: { catalogResult: { exercises: [exercise], dayIndex, mode: 'replace', replaceIndex } },
+      state: {
+        catalogResult: { exercises: [exercise], dayIndex, mode: 'replace', replaceIndex },
+        routineDraft: navState.routineDraft,
+      },
     });
   };
 

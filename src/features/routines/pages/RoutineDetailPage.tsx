@@ -48,16 +48,37 @@ type EditDayDraft = {
   exercises: EditExerciseDraft[];
 };
 
+type RoutineEditorDraftState = {
+  name: string;
+  days: EditDayDraft[];
+  activeDay: number;
+  expandedExerciseKeys: string[];
+};
+
 type DragState = {
   dayIndex: number;
   fromIndex: number;
   toIndex: number;
 };
 
+type RoutineDetailLocationState = {
+  catalogResult?: {
+    exercises: CatalogExerciseItem[];
+    dayIndex: number;
+    mode: 'add' | 'replace';
+    replaceIndex?: number;
+  };
+  routineDraft?: RoutineEditorDraftState;
+};
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function createEmptyDay(index: number): EditDayDraft {
   return { name: `Día ${index + 1}`, exercises: [] };
+}
+
+function createInitialNewDraftDays(): EditDayDraft[] {
+  return [createEmptyDay(0), createEmptyDay(1)];
 }
 
 function buildDraftDays(routine: Routine): EditDayDraft[] {
@@ -73,6 +94,16 @@ function buildDraftDays(routine: Routine): EditDayDraft[] {
       reps: ex.sets[0]?.reps || 10,
       kg: ex.sets[0]?.kg ?? 0,
       restSeconds: ex.restSeconds,
+    })),
+  }));
+}
+
+function cloneDraftDays(days: EditDayDraft[]): EditDayDraft[] {
+  return days.map((day) => ({
+    ...day,
+    exercises: day.exercises.map((exercise) => ({
+      ...exercise,
+      secondaryMuscles: exercise.secondaryMuscles ? [...exercise.secondaryMuscles] : undefined,
     })),
   }));
 }
@@ -97,8 +128,11 @@ export default function RoutineDetailPage() {
   const { activeWorkout, appContext, routines, saveRoutine, appSettings } = useAppData();
   const { catalog } = useExerciseCatalog();
 
+  const routeState = (location.state ?? {}) as RoutineDetailLocationState;
   const isNew = location.pathname === '/routine/new' || id === 'new';
   const routine = !isNew ? (routines.find((r) => r.id === Number(id)) ?? null) : null;
+  const restoredDraft = routeState.routineDraft;
+  const initialNewDays = useMemo(() => createInitialNewDraftDays(), []);
 
   const catalogBySlug = useMemo(
     () => new Map(catalog.filter((e) => Boolean(e.coverImageUrl)).map((e) => [e.slug, e])),
@@ -113,14 +147,20 @@ export default function RoutineDetailPage() {
     () => Math.max(0, (routine?.days ?? []).findIndex((d) => d.name === appContext.currentDayName)),
     [routine, appContext.currentDayName]
   );
-  const [activeDay, setActiveDay] = useState(initialDayIndex);
-  const [expandedExercises, setExpandedExercises] = useState<Set<string>>(new Set(['0-0']));
+  const [activeDay, setActiveDay] = useState(() =>
+    restoredDraft ? Math.max(0, restoredDraft.activeDay) : initialDayIndex
+  );
+  const [expandedExercises, setExpandedExercises] = useState<Set<string>>(
+    () => new Set(restoredDraft?.expandedExerciseKeys.length ? restoredDraft.expandedExerciseKeys : ['0-0'])
+  );
 
   // ── Edit state ──────────────────────────────────────────────────────────────
   const [isEditing, setIsEditing] = useState(isNew);
-  const [draftName, setDraftName] = useState(isNew ? '' : (routine?.name ?? ''));
+  const [draftName, setDraftName] = useState(() =>
+    restoredDraft ? restoredDraft.name : isNew ? '' : (routine?.name ?? '')
+  );
   const [draftDays, setDraftDays] = useState<EditDayDraft[]>(() =>
-    isNew ? [createEmptyDay(0), createEmptyDay(1)] : routine ? buildDraftDays(routine) : []
+    restoredDraft ? cloneDraftDays(restoredDraft.days) : isNew ? initialNewDays : routine ? buildDraftDays(routine) : []
   );
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -173,7 +213,10 @@ export default function RoutineDetailPage() {
   const exitEditorPath = isNew ? '/workouts' : routine ? `/routine/${routine.id}` : '/workouts';
 
   // Snapshot to detect changes (for cancel confirmation)
-  const draftSnapshotRef = useRef({ name: draftName, days: JSON.stringify(draftDays) });
+  const draftSnapshotRef = useRef({
+    name: isNew ? '' : (routine?.name ?? ''),
+    days: JSON.stringify(isNew ? initialNewDays : routine ? buildDraftDays(routine) : []),
+  });
 
   const hasUnsavedChanges =
     isEditing &&
@@ -209,9 +252,23 @@ export default function RoutineDetailPage() {
 
   useEffect(() => {
     if (isNew) {
-      const initialDays = [createEmptyDay(0), createEmptyDay(1)];
+      if (restoredDraft) {
+        setDraftName(restoredDraft.name);
+        setDraftDays(cloneDraftDays(restoredDraft.days));
+        setActiveDay(Math.max(0, Math.min(restoredDraft.activeDay, Math.max(restoredDraft.days.length - 1, 0))));
+        setExpandedExercises(new Set(restoredDraft.expandedExerciseKeys.length ? restoredDraft.expandedExerciseKeys : ['0-0']));
+        setIsEditing(true);
+        setSaveError(null);
+        setNameError('');
+        setExerciseMenu(null);
+        return;
+      }
+
+      const initialDays = createInitialNewDraftDays();
       setDraftName('');
       setDraftDays(initialDays);
+      setActiveDay(0);
+      setExpandedExercises(new Set(['0-0']));
       draftSnapshotRef.current = { name: '', days: JSON.stringify(initialDays) };
       setIsEditing(true);
       setSaveError(null);
@@ -221,9 +278,23 @@ export default function RoutineDetailPage() {
     }
 
     if (routine && isEditRoute) {
+      if (restoredDraft) {
+        setDraftName(restoredDraft.name);
+        setDraftDays(cloneDraftDays(restoredDraft.days));
+        setActiveDay(Math.max(0, Math.min(restoredDraft.activeDay, Math.max(restoredDraft.days.length - 1, 0))));
+        setExpandedExercises(new Set(restoredDraft.expandedExerciseKeys.length ? restoredDraft.expandedExerciseKeys : ['0-0']));
+        setIsEditing(true);
+        setSaveError(null);
+        setNameError('');
+        setExerciseMenu(null);
+        return;
+      }
+
       const days = buildDraftDays(routine);
       setDraftName(routine.name);
       setDraftDays(days);
+      setActiveDay(initialDayIndex);
+      setExpandedExercises(new Set(['0-0']));
       draftSnapshotRef.current = { name: routine.name, days: JSON.stringify(days) };
       setIsEditing(true);
       setSaveError(null);
@@ -238,7 +309,7 @@ export default function RoutineDetailPage() {
       setNameError('');
       setExerciseMenu(null);
     }
-  }, [isNew, isEditRoute, routine, location.pathname]);
+  }, [initialDayIndex, isNew, isEditRoute, routine, location.pathname]);
 
   useEffect(() => {
     if (!exerciseMenu) return;
@@ -254,16 +325,7 @@ export default function RoutineDetailPage() {
   }, [exerciseMenu]);
 
   useEffect(() => {
-    const result = (
-      location.state as {
-        catalogResult?: {
-          exercises: CatalogExerciseItem[];
-          dayIndex: number;
-          mode: 'add' | 'replace';
-          replaceIndex?: number;
-        };
-      }
-    )?.catalogResult;
+    const result = routeState.catalogResult;
 
     if (!result) return;
     navigate(location.pathname, { replace: true, state: {} });
@@ -322,7 +384,7 @@ export default function RoutineDetailPage() {
       );
       setActiveDay(targetDay);
     }
-  }, [location.state]);
+  }, [location.pathname, navigate, routeState.catalogResult]);
 
   // ── Edit actions ─────────────────────────────────────────────────────────────
 
@@ -417,6 +479,12 @@ export default function RoutineDetailPage() {
   const openCatalog = (dayIndex: number) => {
     const day = draftDays[dayIndex];
     if (!day) return;
+    const routineDraft: RoutineEditorDraftState = {
+      name: draftName,
+      days: cloneDraftDays(draftDays),
+      activeDay,
+      expandedExerciseKeys: Array.from(expandedExercises),
+    };
     navigate('/exercise-catalog', {
       state: {
         dayIndex,
@@ -425,6 +493,7 @@ export default function RoutineDetailPage() {
         existingDaySlugs: day.exercises.map((e) => e.exerciseSlug).filter(Boolean),
         currentDayExerciseCount: day.exercises.length,
         returnTo: isNew ? '/routine/new' : `/routine/${id}/edit`,
+        routineDraft,
       },
     });
   };
@@ -432,6 +501,12 @@ export default function RoutineDetailPage() {
   const openCatalogReplace = (dayIndex: number, exerciseIndex: number) => {
     const day = draftDays[dayIndex];
     if (!day) return;
+    const routineDraft: RoutineEditorDraftState = {
+      name: draftName,
+      days: cloneDraftDays(draftDays),
+      activeDay,
+      expandedExerciseKeys: Array.from(expandedExercises),
+    };
     navigate('/exercise-catalog', {
       state: {
         dayIndex,
@@ -441,6 +516,7 @@ export default function RoutineDetailPage() {
         existingDaySlugs: day.exercises.map((e) => e.exerciseSlug).filter(Boolean),
         currentDayExerciseCount: day.exercises.length,
         returnTo: isNew ? '/routine/new' : `/routine/${id}/edit`,
+        routineDraft,
       },
     });
   };
@@ -999,18 +1075,30 @@ export default function RoutineDetailPage() {
                                 ? 'scale-110 cursor-grabbing ring-2 ring-[rgba(0,201,167,0.6)]'
                                 : 'cursor-pointer'
                             }`}
+                            onContextMenu={(e) => e.preventDefault()}
                             onPointerDown={(e) => handleThumbnailPointerDown(e, activeDaySafe, displayIndex)}
                             onPointerMove={handleThumbnailPointerMove}
                             onPointerUp={(e) => handleThumbnailPointerUp(e, exercise.exerciseSlug)}
                             onPointerCancel={handleThumbnailPointerCancel}
+                            style={{
+                              WebkitTouchCallout: 'none',
+                              WebkitUserSelect: 'none',
+                              userSelect: 'none',
+                            }}
                           >
                             <img
                               src={catalogEntry.coverImageUrl}
                               alt=""
                               draggable={false}
+                              onContextMenu={(e) => e.preventDefault()}
                               onDragStart={(e) => e.preventDefault()}
-                              className="h-full w-full object-cover"
+                              className="pointer-events-none h-full w-full object-cover"
                               loading="lazy"
+                              style={{
+                                WebkitTouchCallout: 'none',
+                                WebkitUserSelect: 'none',
+                                userSelect: 'none',
+                              }}
                             />
                           </div>
                         ) : (
@@ -1019,6 +1107,7 @@ export default function RoutineDetailPage() {
                               isActiveDragItem ? 'scale-110 opacity-80' : 'cursor-pointer'
                             }`}
                             style={{ background: `${accentColor}15`, border: `1px solid ${accentColor}30` }}
+                            onContextMenu={(e) => e.preventDefault()}
                             onPointerDown={(e) => handleThumbnailPointerDown(e, activeDaySafe, displayIndex)}
                             onPointerMove={handleThumbnailPointerMove}
                             onPointerUp={(e) => handleThumbnailPointerUp(e, exercise.exerciseSlug)}
