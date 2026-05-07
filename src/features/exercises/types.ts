@@ -46,6 +46,7 @@ export interface ExerciseCatalogSummary {
   externalId: string;
   slug: string;
   title: string;
+  titleEn: string;
   description: string;
   overview: string;
   instructions: string[];
@@ -68,5 +69,6 @@ export interface ExerciseCatalogSummary {
   coverImageUrl?: string;
   animationMediaUrl?: string;
   animationMediaType?: ExerciseCatalogMediaType;
+  aliases: string[];
   searchText: string;
 }

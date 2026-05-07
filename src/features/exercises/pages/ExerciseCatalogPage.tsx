@@ -7,6 +7,7 @@ import { FilterSheet } from '@/features/exercises/components/FilterSheet';
 import type { CatalogExerciseItem } from '@/features/exercises/components/ExerciseDetailSheet';
 import { useAppData } from '@/core/app-data/AppDataContext';
 import { Header } from '@/shared/components/layout/Header';
+import { normalizeSearchValue } from '@/features/exercises/lib/exerciseCatalog';
 
 const ALL_MUSCLES_OPTION = '__all__';
 const ALL_IMPLEMENTS_OPTION = '__all__';
@@ -324,6 +325,7 @@ export default function ExerciseCatalogPage() {
       .map((e) => ({
         exerciseSlug: e.slug,
         name: e.title,
+        titleEn: e.titleEn,
         muscle: e.muscle,
         implement: e.implement,
         secondaryMuscles: e.secondaryMuscles,
@@ -332,6 +334,7 @@ export default function ExerciseCatalogPage() {
         animationMediaType: e.animationMediaType,
         instructions: e.instructions,
         overview: e.overview,
+        searchText: e.searchText,
       }))
       .sort((a, b) => {
         const keyA = normalizeForRanking(a.exerciseSlug?.replace(/-/g, ' ') ?? '');
@@ -369,17 +372,16 @@ export default function ExerciseCatalogPage() {
   }, [exerciseLibrary]);
 
   const filteredExercises = useMemo(() => {
-    const normalizedSearch = searchQuery.trim().toLowerCase();
+    const normalizedSearch = normalizeSearchValue(searchQuery);
     return exerciseLibrary.filter((exercise) => {
       if (selectedMuscle !== ALL_MUSCLES_OPTION && exercise.muscle !== selectedMuscle) return false;
       if (selectedImplement !== ALL_IMPLEMENTS_OPTION && exercise.implement !== selectedImplement) return false;
       if (normalizedSearch) {
-        const haystack = [exercise.name, exercise.muscle, exercise.implement ?? ''].join(' ').toLowerCase();
-        if (!haystack.includes(normalizedSearch)) return false;
+        if (!(exercise.searchText ?? '').includes(normalizedSearch)) return false;
       }
       return true;
     });
-  }, [exerciseLibrary, catalogSummaryBySlug, searchQuery, selectedMuscle, selectedImplement]);
+  }, [exerciseLibrary, searchQuery, selectedMuscle, selectedImplement]);
 
   const recentExercises = useMemo(() => {
     const seen = new Set<string>();

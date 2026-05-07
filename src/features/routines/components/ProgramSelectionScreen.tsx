@@ -1,9 +1,12 @@
-import { useState, type ReactNode } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import { useNavigate } from 'react-router';
 import { ChevronDown, ChevronUp, Download, Dumbbell, Loader2, Plus } from 'lucide-react';
 import { Header } from '@/shared/components/layout/Header';
 import { useAppData } from '@/core/app-data/AppDataContext';
 import { useExerciseCatalog } from '@/features/exercises/hooks/useExerciseCatalog';
+import { ExerciseDetailSheet } from '@/features/exercises/components/ExerciseDetailSheet';
+import type { CatalogExerciseItem } from '@/features/exercises/components/ExerciseDetailSheet';
+import type { ExerciseCatalogSummary } from '@/features/exercises/types';
 import { useProgramTemplates } from '@/features/routines/hooks/useProgramTemplates';
 import {
   getDifficultyColor,
@@ -15,20 +18,24 @@ import {
 const ROUTINE_COLORS = ['#00C9A7', '#3B82F6', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#10B981'];
 
 const SPLIT_LABELS: Record<string, string> = {
-  upper_lower: 'Upper / Lower',
-  ppl: 'Push / Pull / Legs',
-  full_body: 'Full Body',
-  upper_lower_ppl: 'Upper Lower + PPL',
+  upper_lower: 'Torso / Pierna',
+  ppl: 'Empuje / Tiron / Piernas',
+  full_body: 'Cuerpo completo',
+  upper_lower_ppl: 'Torso / Pierna + PPL',
 };
 
 function ProgramCard({
   program,
   onUse,
   isSaving,
+  catalogBySlug,
+  onOpenDetail,
 }: {
   program: ProgramTemplate;
   onUse: (program: ProgramTemplate) => void;
   isSaving: boolean;
+  catalogBySlug: Map<string, ExerciseCatalogSummary>;
+  onOpenDetail: (slug: string) => void;
 }) {
   const [expanded, setExpanded] = useState(false);
   const difficultyColor = getDifficultyColor(program.difficulty);
@@ -82,23 +89,44 @@ function ProgramCard({
                 .map((session) => (
                   <div key={session.id} className="rounded-xl bg-[#0F1F2E] p-3">
                     <p className="mb-2 text-xs font-bold text-white">{session.i18n.es.title}</p>
-                    <div className="flex flex-col gap-1">
+                    <div className="flex flex-col gap-2">
                       {session.exercises
                         .slice()
                         .sort((a, b) => a.order - b.order)
-                        .map((ex) => (
-                          <div key={ex.order} className="flex items-center justify-between gap-2">
-                            <span
-                              className="truncate text-[11px] text-[#9BAEC1]"
-                              style={{ fontFamily: "'Inter', sans-serif" }}
-                            >
-                              {ex.exercise_slug.replace(/-/g, ' ')}
-                            </span>
-                            <span className="shrink-0 text-[10px] font-semibold text-[#777575]">
-                              {ex.sets} × {ex.reps_min === ex.reps_max ? ex.reps_max : `${ex.reps_min}–${ex.reps_max}`}
-                            </span>
-                          </div>
-                        ))}
+                        .map((ex) => {
+                          const entry = catalogBySlug.get(ex.exercise_slug);
+                          const displayName = entry?.title ?? ex.exercise_slug.replace(/-/g, ' ');
+                          return (
+                            <div key={ex.order} className="flex items-center gap-2">
+                              {entry?.coverImageUrl ? (
+                                <div
+                                  className="h-9 w-9 flex-shrink-0 cursor-pointer overflow-hidden rounded-full"
+                                  onClick={() => onOpenDetail(ex.exercise_slug)}
+                                >
+                                  <img
+                                    src={entry.coverImageUrl}
+                                    alt=""
+                                    className="h-full w-full object-cover"
+                                    loading="lazy"
+                                  />
+                                </div>
+                              ) : (
+                                <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-[#152F48]">
+                                  <Dumbbell size={13} className="text-[#9BAEC1]" />
+                                </div>
+                              )}
+                              <span
+                                className="min-w-0 flex-1 truncate text-[11px] text-[#9BAEC1]"
+                                style={{ fontFamily: "'Inter', sans-serif" }}
+                              >
+                                {displayName}
+                              </span>
+                              <span className="shrink-0 text-[10px] font-semibold text-[#777575]">
+                                {ex.sets} × {ex.reps_min === ex.reps_max ? ex.reps_max : `${ex.reps_min}–${ex.reps_max}`}
+                              </span>
+                            </div>
+                          );
+                        })}
                     </div>
                   </div>
                 ))}
@@ -151,6 +179,27 @@ export function ProgramSelectionScreen({
   const { catalog, isLoading: catalogLoading } = useExerciseCatalog();
   const { templates, isLoading: templatesLoading, error } = useProgramTemplates();
   const [savingId, setSavingId] = useState<string | null>(null);
+  const [selectedExerciseDetail, setSelectedExerciseDetail] = useState<CatalogExerciseItem | null>(null);
+
+  const catalogBySlug = useMemo(() => new Map(catalog.map((e) => [e.slug, e])), [catalog]);
+
+  const openExerciseDetail = (slug: string) => {
+    const entry = catalogBySlug.get(slug);
+    if (!entry) return;
+    setSelectedExerciseDetail({
+      exerciseSlug: entry.slug,
+      name: entry.title,
+      titleEn: entry.titleEn,
+      muscle: entry.muscle,
+      implement: entry.implement,
+      secondaryMuscles: entry.secondaryMuscles,
+      coverImageUrl: entry.coverImageUrl,
+      animationMediaUrl: entry.animationMediaUrl,
+      animationMediaType: entry.animationMediaType,
+      instructions: entry.instructions,
+      overview: entry.overview,
+    });
+  };
 
   const isLoading = catalogLoading || templatesLoading;
 
@@ -228,11 +277,18 @@ export function ProgramSelectionScreen({
                 program={program}
                 onUse={(selectedProgram) => void handleUse(selectedProgram)}
                 isSaving={savingId === program.id}
+                catalogBySlug={catalogBySlug}
+                onOpenDetail={openExerciseDetail}
               />
             ))}
           </div>
         )}
       </div>
+
+      <ExerciseDetailSheet
+        exercise={selectedExerciseDetail}
+        onClose={() => setSelectedExerciseDetail(null)}
+      />
     </div>
   );
 }

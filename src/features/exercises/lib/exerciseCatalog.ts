@@ -65,6 +65,131 @@ const MUSCLE_LABELS: Record<string, string> = {
   upper_back: 'Espalda alta',
 };
 
+const EQUIPMENT_TRANSLATIONS: Record<string, string> = {
+  'Barbell': 'barra',
+  'Bodyweight': 'peso corporal',
+  'Cable': 'polea',
+  'Dumbbell': 'mancuernas',
+  'EZ Bar': 'barra EZ',
+  'Kettlebell': 'kettlebell',
+  'Machine': 'maquina',
+  'Plate': 'disco',
+  'Resistance Band': 'banda',
+  'Smith Machine': 'smith',
+  'Suspension': 'suspension',
+  'Trap Bar': 'trap bar',
+  'V Grip': 'agarre V',
+  'Wide Grip': 'agarre amplio',
+  'Close Grip': 'agarre cerrado',
+};
+
+const TITLE_OVERRIDES: Record<string, string> = {
+  'around-the-world': 'Aperturas circulares',
+  'band-pullaparts': 'Separacion con banda',
+  'battle-ropes': 'Cuerdas de batalla',
+  'butterfly-pec-deck': 'Contractora (pec deck)',
+  'hack-squat-machine': 'Sentadilla hack (maquina)',
+};
+
+const TITLE_REPLACEMENTS: Array<[RegExp, string]> = [
+  [/Incline Bench Press/gi, 'Press inclinado'],
+  [/Decline Bench Press/gi, 'Press declinado'],
+  [/Bench Press/gi, 'Press de banca'],
+  [/Chest Press/gi, 'Press de pecho'],
+  [/Arnold Press/gi, 'Press Arnold'],
+  [/Overhead Press/gi, 'Press militar'],
+  [/Shoulder Press/gi, 'Press de hombros'],
+  [/Military Press/gi, 'Press militar'],
+  [/Lat Pulldown/gi, 'Jalon al pecho'],
+  [/Pulldown/gi, 'Jalon'],
+  [/Pull Up/gi, 'Dominadas'],
+  [/Chin Up/gi, 'Dominadas supinas'],
+  [/Seated Cable Row/gi, 'Remo sentado en polea'],
+  [/Seated Row/gi, 'Remo sentado'],
+  [/Bent Over Row/gi, 'Remo inclinado'],
+  [/T Bar Row/gi, 'Remo T'],
+  [/Dumbbell Row/gi, 'Remo con mancuerna'],
+  [/Rear Delt Reverse Fly/gi, 'Vuelo posterior'],
+  [/Reverse Fly/gi, 'Vuelo posterior'],
+  [/Lateral Raise/gi, 'Elevacion lateral'],
+  [/Front Raise/gi, 'Elevacion frontal'],
+  [/Bicep Curl/gi, 'Curl de biceps'],
+  [/Hammer Curl/gi, 'Curl martillo'],
+  [/Preacher Curl/gi, 'Curl predicador'],
+  [/Concentration Curl/gi, 'Curl concentrado'],
+  [/Drag Curl/gi, 'Curl drag'],
+  [/Triceps Rope Pushdown/gi, 'Jalon de triceps con cuerda'],
+  [/Triceps Pushdown/gi, 'Jalon de triceps'],
+  [/Triceps Pressdown/gi, 'Jalon de triceps'],
+  [/Triceps Extension/gi, 'Extension de triceps'],
+  [/Triceps Kickback/gi, 'Patada de triceps'],
+  [/Chest Dip/gi, 'Fondos de pecho'],
+  [/Triceps Dip/gi, 'Fondos de triceps'],
+  [/Chest Fly/gi, 'Apertura de pecho'],
+  [/Cable Fly Crossovers/gi, 'Cruce de poleas'],
+  [/Butterfly/gi, 'Contractora'],
+  [/Pec Deck/gi, 'pec deck'],
+  [/Romanian Deadlift/gi, 'Peso muerto rumano'],
+  [/Straight Leg Deadlift/gi, 'Peso muerto piernas rigidas'],
+  [/Deadlift/gi, 'Peso muerto'],
+  [/Leg Extension/gi, 'Extension de piernas'],
+  [/Leg Curl/gi, 'Curl femoral'],
+  [/Leg Press/gi, 'Prensa de piernas'],
+  [/Hack Squat/gi, 'Sentadilla hack'],
+  [/Front Squat/gi, 'Sentadilla frontal'],
+  [/Bulgarian Split Squat/gi, 'Sentadilla bulgara'],
+  [/Goblet Squat/gi, 'Sentadilla goblet'],
+  [/Walking Lunge/gi, 'Zancadas caminando'],
+  [/Reverse Lunge/gi, 'Zancada reversa'],
+  [/Step Up/gi, 'Step up'],
+  [/Hip Abduction/gi, 'Abduccion de cadera'],
+  [/Hip Adduction/gi, 'Aduccion de cadera'],
+  [/Hip Thrust/gi, 'Hip thrust'],
+  [/Glute Bridge/gi, 'Puente de gluteos'],
+  [/Calf Raise/gi, 'Elevacion de gemelos'],
+  [/Calf Press/gi, 'Prensa de gemelos'],
+  [/Cable Crunch/gi, 'Crunch en polea'],
+  [/Crunch Machine/gi, 'Crunch en maquina'],
+  [/Ab Wheel/gi, 'Rueda abdominal'],
+  [/Hanging Leg Raise/gi, 'Elevacion de piernas colgado'],
+  [/Hanging Knee Raise/gi, 'Elevacion de rodillas colgado'],
+  [/Back Extension/gi, 'Extension lumbar'],
+  [/Face Pull/gi, 'Face pull'],
+  [/Push Up/gi, 'Flexiones'],
+];
+
+const ALIAS_RULES: Array<{ match: RegExp; aliases: string[] }> = [
+  { match: /\bbench press\b/i, aliases: ['press banca', 'press de banca'] },
+  { match: /\bincline bench press\b/i, aliases: ['press inclinado', 'press de banca inclinado'] },
+  { match: /\bdecline bench press\b/i, aliases: ['press declinado', 'press de banca declinado'] },
+  { match: /\b(chest fly|fly|butterfly|pec deck)\b/i, aliases: ['apertura', 'aperturas', 'pec deck', 'contractora'] },
+  { match: /\b(lat pulldown|pulldown)\b/i, aliases: ['jalon', 'jalon al pecho'] },
+  { match: /\brow\b/i, aliases: ['remo'] },
+  { match: /\bpull up\b/i, aliases: ['dominadas'] },
+  { match: /\bchin up\b/i, aliases: ['dominadas supinas'] },
+  { match: /\bbicep curl\b/i, aliases: ['curl de biceps'] },
+  { match: /\bhammer curl\b/i, aliases: ['curl martillo'] },
+  { match: /\bpreacher curl\b/i, aliases: ['curl predicador'] },
+  { match: /\btriceps (rope )?(pushdown|pressdown)\b/i, aliases: ['jalon de triceps', 'triceps polea'] },
+  { match: /\btriceps extension\b/i, aliases: ['extension de triceps'] },
+  { match: /\b(chest dip|triceps dip|dip)\b/i, aliases: ['fondos'] },
+  { match: /\boverhead press|shoulder press|arnold press\b/i, aliases: ['press de hombros', 'press militar'] },
+  { match: /\blateral raise\b/i, aliases: ['elevacion lateral'] },
+  { match: /\bfront raise\b/i, aliases: ['elevacion frontal'] },
+  { match: /\brear delt reverse fly|reverse fly\b/i, aliases: ['vuelo posterior', 'pajaro'] },
+  { match: /\bromanian deadlift\b/i, aliases: ['peso muerto rumano'] },
+  { match: /\bdeadlift\b/i, aliases: ['peso muerto'] },
+  { match: /\bleg extension\b/i, aliases: ['extension de piernas'] },
+  { match: /\bleg curl\b/i, aliases: ['curl femoral'] },
+  { match: /\bleg press\b/i, aliases: ['prensa', 'prensa de piernas'] },
+  { match: /\bhack squat\b/i, aliases: ['sentadilla hack'] },
+  { match: /\bhip abduction\b/i, aliases: ['abduccion', 'abduccion de cadera'] },
+  { match: /\bhip adduction\b/i, aliases: ['aduccion', 'aduccion de cadera'] },
+  { match: /\bhip thrust\b/i, aliases: ['empuje de cadera'] },
+  { match: /\bcalf (raise|press)\b/i, aliases: ['gemelos', 'elevacion de gemelos'] },
+  { match: /\bcrunch\b/i, aliases: ['abdominales'] },
+];
+
 let catalogPromise: Promise<ExerciseCatalogSummary[]> | null = null;
 
 function repairPotentialMojibake(value: string) {
@@ -112,6 +237,16 @@ function humanizeCode(value?: string | null) {
     .replace(/\b\w/g, (character) => character.toUpperCase());
 }
 
+export function normalizeSearchValue(value: string) {
+  return value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 function toPublicAssetPath(path?: string) {
   if (!path) {
     return undefined;
@@ -149,11 +284,79 @@ function resolveNumericId(externalId: string, slug: string) {
   return Array.from(slug).reduce((total, character) => total + character.charCodeAt(0), 0);
 }
 
+function translateEquipmentLabel(label: string) {
+  return EQUIPMENT_TRANSLATIONS[label] ?? label.toLowerCase();
+}
+
+function translateEnglishTitle(englishTitle: string, slug: string) {
+  const titleOverride = TITLE_OVERRIDES[slug];
+  if (titleOverride) {
+    return titleOverride;
+  }
+
+  let title = englishTitle;
+  for (const [pattern, replacement] of TITLE_REPLACEMENTS) {
+    title = title.replace(pattern, replacement);
+  }
+
+  title = title.replace(/\(([^)]+)\)/g, (_, token: string) => `(${translateEquipmentLabel(token.trim())})`);
+  title = title.replace(/\bClose Grip\b/gi, 'agarre cerrado');
+  title = title.replace(/\bWide Grip\b/gi, 'agarre amplio');
+  title = title.replace(/\bAssisted\b/gi, 'asistido');
+  title = title.replace(/\bWeighted\b/gi, 'lastrado');
+  title = title.replace(/\bSingle Arm\b/gi, 'a una mano');
+  title = title.replace(/\bOne Arm\b/gi, 'a una mano');
+  title = title.replace(/\bStanding\b/gi, 'de pie');
+  title = title.replace(/\bSeated\b/gi, 'sentado');
+  title = title.replace(/\bLying\b/gi, 'acostado');
+
+  return title.replace(/\s+/g, ' ').trim();
+}
+
+function buildTitleAliases(title: string) {
+  return [title, title.replace(/\s*\([^)]*\)/g, '').trim()].filter(Boolean);
+}
+
+function buildExerciseNameMetadata(entry: ExerciseCatalogEntry, localizedTitle: string) {
+  const englishTitle =
+    entry.i18n.en?.title?.trim() ||
+    entry.source?.original_title?.trim() ||
+    humanizeCode(entry.slug);
+  const translatedEnglishTitle = translateEnglishTitle(englishTitle, entry.slug);
+  const displayTitle =
+    translatedEnglishTitle !== englishTitle
+      ? translatedEnglishTitle
+      : localizedTitle.trim() || translatedEnglishTitle;
+
+  const aliases = new Set<string>([
+    ...buildTitleAliases(displayTitle),
+    ...buildTitleAliases(localizedTitle),
+    ...buildTitleAliases(englishTitle),
+    humanizeCode(entry.slug),
+    entry.slug.replace(/-/g, ' '),
+  ]);
+
+  for (const rule of ALIAS_RULES) {
+    if (rule.match.test(englishTitle) || rule.match.test(displayTitle) || rule.match.test(entry.slug)) {
+      for (const alias of rule.aliases) {
+        aliases.add(alias);
+      }
+    }
+  }
+
+  return {
+    title: displayTitle,
+    titleEn: englishTitle,
+    aliases: Array.from(aliases).filter(Boolean),
+  };
+}
+
 export function buildExerciseCatalogSummary(
   entry: ExerciseCatalogEntry,
   locale: ExerciseCatalogLocale = 'es'
 ): ExerciseCatalogSummary {
   const localized = getLocalizedContent(entry, locale);
+  const nameMetadata = buildExerciseNameMetadata(entry, localized.title);
   const primaryGroupLabel = GROUP_LABELS[entry.primary_group] ?? humanizeCode(entry.primary_group);
   const secondaryMuscles = entry.secondary_muscles.map(
     (muscle) => MUSCLE_LABELS[muscle] ?? GROUP_LABELS[muscle] ?? humanizeCode(muscle)
@@ -165,24 +368,27 @@ export function buildExerciseCatalogSummary(
     'Implemento';
 
   const searchText = [
-    localized.title,
+    nameMetadata.title,
+    nameMetadata.titleEn,
     localized.description,
     primaryGroupLabel,
     implement,
     entry.slug,
+    ...nameMetadata.aliases,
     ...(entry.primary_muscles ?? []),
     ...(entry.secondary_muscles ?? []),
     ...(entry.equipment ?? []),
   ]
     .filter(Boolean)
     .join(' ')
-    .toLowerCase();
+    .trim();
 
   return {
     id: resolveNumericId(entry.id, entry.slug),
     externalId: entry.id,
     slug: entry.slug,
-    title: localized.title,
+    title: nameMetadata.title,
+    titleEn: nameMetadata.titleEn,
     description: localized.description,
     overview: localized.overview,
     instructions: localized.instructions ?? [],
@@ -205,7 +411,8 @@ export function buildExerciseCatalogSummary(
     coverImageUrl: toPublicAssetPath(entry.media?.cover_image),
     animationMediaUrl: toPublicAssetPath(entry.media?.animation_media),
     animationMediaType: entry.media?.animation_media_type,
-    searchText,
+    aliases: nameMetadata.aliases,
+    searchText: normalizeSearchValue(searchText),
   };
 }
 

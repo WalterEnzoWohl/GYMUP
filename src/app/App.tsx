@@ -42,9 +42,6 @@ export default function App() {
     const {
       data: { subscription },
     } = client.auth.onAuthStateChange((_event, nextSession) => {
-      if (_event === 'SIGNED_IN') {
-        void router.navigate('/');
-      }
       setSession(nextSession);
       setAuthReady(true);
     });

@@ -7,6 +7,7 @@ import { FilterSheet } from '@/features/exercises/components/FilterSheet';
 import type { CatalogExerciseItem } from '@/features/exercises/components/ExerciseDetailSheet';
 import { useExerciseCatalog } from '@/features/exercises/hooks/useExerciseCatalog';
 import { useAppData } from '@/core/app-data/AppDataContext';
+import { normalizeSearchValue } from '@/features/exercises/lib/exerciseCatalog';
 
 const ALL_MUSCLES = 'Todos';
 const ALL_IMPLEMENTS = 'Todos';
@@ -30,6 +31,7 @@ export default function ExerciseExplorePage() {
         .map((e) => ({
           exerciseSlug: e.slug,
           name: e.title,
+          titleEn: e.titleEn,
           muscle: e.muscle,
           implement: e.implement,
           secondaryMuscles: e.secondaryMuscles,
@@ -38,6 +40,7 @@ export default function ExerciseExplorePage() {
           animationMediaType: e.animationMediaType,
           instructions: e.instructions,
           overview: e.overview,
+          searchText: e.searchText,
         })),
     [catalog]
   );
@@ -58,12 +61,11 @@ export default function ExerciseExplorePage() {
   );
 
   const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase();
+    const q = normalizeSearchValue(search);
     return library.filter((e) => {
       const matchMuscle = muscle === ALL_MUSCLES || e.muscle === muscle;
       const matchImplement = implement === ALL_IMPLEMENTS || e.implement === implement;
-      const haystack = [e.name, e.muscle, e.implement ?? ''].join(' ').toLowerCase();
-      return matchMuscle && matchImplement && (!q || haystack.includes(q));
+      return matchMuscle && matchImplement && (!q || (e.searchText ?? '').includes(q));
     });
   }, [library, search, muscle, implement]);
 

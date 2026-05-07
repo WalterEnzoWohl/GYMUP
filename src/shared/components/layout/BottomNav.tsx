@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router';
 import { Home, Dumbbell, BarChart2, User } from 'lucide-react';
 
@@ -8,13 +9,44 @@ const navItems = [
   { path: '/profile', label: 'PERFIL', icon: User },
 ];
 
+// Determines which nav section owns a given pathname
+function getSectionBase(pathname: string): string | null {
+  if (pathname === '/') return '/';
+  if (
+    pathname.startsWith('/workouts') ||
+    pathname.startsWith('/routine') ||
+    pathname.startsWith('/program-templates')
+  ) return '/workouts';
+  if (
+    pathname.startsWith('/metrics') ||
+    pathname.startsWith('/history') ||
+    pathname.startsWith('/session-history') ||
+    pathname.startsWith('/muscle-progress')
+  ) return '/metrics';
+  if (pathname.startsWith('/profile')) return '/profile';
+  return null;
+}
+
+// Module-level so it survives BottomNav unmount/remount (e.g. while nav is hidden)
+const rememberedPaths: Record<string, string> = {};
+
 export function BottomNav() {
   const navigate = useNavigate();
   const location = useLocation();
 
+  useEffect(() => {
+    const base = getSectionBase(location.pathname);
+    if (base) rememberedPaths[base] = location.pathname;
+  }, [location.pathname]);
+
   const isActive = (path: string) => {
     if (path === '/') return location.pathname === '/';
     return location.pathname.startsWith(path);
+  };
+
+  const handleNav = (basePath: string) => {
+    const target = rememberedPaths[basePath] ?? basePath;
+    if (target !== location.pathname) navigate(target);
   };
 
   return (
@@ -27,7 +59,7 @@ export function BottomNav() {
         return (
           <button
             key={path}
-            onClick={() => navigate(path)}
+            onClick={() => handleNav(path)}
             className={`flex flex-col items-center gap-1 px-5 py-2 rounded-xl transition-all ${
               active
                 ? 'bg-[rgba(0,201,167,0.1)] shadow-[0_0_15px_rgba(0,201,167,0.2)]'

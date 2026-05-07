@@ -6,6 +6,7 @@ export interface CatalogExerciseItem {
   exerciseSlug?: string;
   name: string;
   titleEn?: string;
+  searchText?: string;
   muscle: string;
   implement?: string;
   secondaryMuscles?: string[];

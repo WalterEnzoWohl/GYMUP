@@ -643,6 +643,7 @@ export default function TrainingSessionPage() {
       return {
         name: catalogSummary?.title ?? fallbackTemplate?.name ?? exercise.name,
         titleEn:
+          catalogSummary?.titleEn ??
           exercise.exerciseSlug?.replace(/-/g, ' ').replace(/\b\w/g, (character) => character.toUpperCase()) ??
           exercise.name,
         animationMediaUrl: catalogSummary?.animationMediaUrl,

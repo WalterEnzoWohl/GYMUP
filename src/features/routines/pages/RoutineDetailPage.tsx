@@ -73,6 +73,47 @@ type RoutineDetailLocationState = {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
+function getNewRoutineDraftStorageKey(userId: string) {
+  return `wohl.newRoutineDraft.${userId}`;
+}
+
+function readNewRoutineDraft(userId: string): RoutineEditorDraftState | null {
+  if (typeof window === 'undefined') return null;
+
+  const stored = window.localStorage.getItem(getNewRoutineDraftStorageKey(userId));
+  if (!stored) return null;
+
+  try {
+    const parsed = JSON.parse(stored) as RoutineEditorDraftState;
+    if (
+      !parsed ||
+      typeof parsed.name !== 'string' ||
+      !Array.isArray(parsed.days) ||
+      typeof parsed.activeDay !== 'number' ||
+      !Array.isArray(parsed.expandedExerciseKeys)
+    ) {
+      window.localStorage.removeItem(getNewRoutineDraftStorageKey(userId));
+      return null;
+    }
+    return parsed;
+  } catch {
+    window.localStorage.removeItem(getNewRoutineDraftStorageKey(userId));
+    return null;
+  }
+}
+
+function writeNewRoutineDraft(userId: string, draft: RoutineEditorDraftState | null) {
+  if (typeof window === 'undefined') return;
+
+  const storageKey = getNewRoutineDraftStorageKey(userId);
+  if (!draft) {
+    window.localStorage.removeItem(storageKey);
+    return;
+  }
+
+  window.localStorage.setItem(storageKey, JSON.stringify(draft));
+}
+
 function createEmptyDay(index: number): EditDayDraft {
   return { name: `Día ${index + 1}`, exercises: [] };
 }
@@ -125,13 +166,17 @@ export default function RoutineDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
-  const { activeWorkout, appContext, routines, saveRoutine, appSettings } = useAppData();
+  const { activeWorkout, appContext, routines, saveRoutine, appSettings, currentUserId } = useAppData();
   const { catalog } = useExerciseCatalog();
 
   const routeState = (location.state ?? {}) as RoutineDetailLocationState;
   const isNew = location.pathname === '/routine/new' || id === 'new';
   const routine = !isNew ? (routines.find((r) => r.id === Number(id)) ?? null) : null;
-  const restoredDraft = routeState.routineDraft;
+  const persistedDraft = useMemo(
+    () => (isNew ? readNewRoutineDraft(currentUserId) : null),
+    [currentUserId, isNew]
+  );
+  const restoredDraft = routeState.routineDraft ?? persistedDraft;
   const initialNewDays = useMemo(() => createInitialNewDraftDays(), []);
 
   const catalogBySlug = useMemo(
@@ -172,6 +217,8 @@ export default function RoutineDetailPage() {
   } | null>(null);
   const [restPickerTarget, setRestPickerTarget] = useState<{ dayIndex: number; exerciseIndex: number } | null>(null);
   const [restPickerDraft, setRestPickerDraft] = useState('90');
+  const [pendingDayRemoval, setPendingDayRemoval] = useState<{ dayIndex: number; dayName: string } | null>(null);
+  const [showCancelRoutineModal, setShowCancelRoutineModal] = useState(false);
   const skipBlockerRef = useRef(false);
 
   // ── Day reorder modal ────────────────────────────────────────────────────────
@@ -218,30 +265,46 @@ export default function RoutineDetailPage() {
     days: JSON.stringify(isNew ? initialNewDays : routine ? buildDraftDays(routine) : []),
   });
 
+  const persistNewRoutineDraft = useCallback(
+    (draft: RoutineEditorDraftState | null) => {
+      if (!isNew) return;
+      writeNewRoutineDraft(currentUserId, draft);
+    },
+    [currentUserId, isNew]
+  );
+
   const hasUnsavedChanges =
     isEditing &&
     (draftName !== draftSnapshotRef.current.name ||
       JSON.stringify(draftDays) !== draftSnapshotRef.current.days);
 
+  const hasNewRoutineDraftContent = useMemo(() => {
+    if (!isNew) return false;
+    if (draftName.trim()) return true;
+    return JSON.stringify(draftDays) !== JSON.stringify(initialNewDays);
+  }, [draftDays, draftName, initialNewDays, isNew]);
+
   const blocker = useBlocker(
     useCallback(
       ({ currentLocation, nextLocation }: { currentLocation: { pathname: string }; nextLocation: { pathname: string } }) => {
         if (skipBlockerRef.current) return false;
+        if (isNew) return false;
         if (!hasUnsavedChanges) return false;
         if (currentLocation.pathname === nextLocation.pathname) return false;
         if (nextLocation.pathname === '/exercise-catalog') return false;
         return true;
       },
-      [hasUnsavedChanges]
+      [hasUnsavedChanges, isNew]
     )
   );
 
   useBeforeUnload(
     useCallback(
       (event: BeforeUnloadEvent) => {
+        if (isNew) return;
         if (hasUnsavedChanges) event.preventDefault();
       },
-      [hasUnsavedChanges]
+      [hasUnsavedChanges, isNew]
     )
   );
 
@@ -257,6 +320,10 @@ export default function RoutineDetailPage() {
         setDraftDays(cloneDraftDays(restoredDraft.days));
         setActiveDay(Math.max(0, Math.min(restoredDraft.activeDay, Math.max(restoredDraft.days.length - 1, 0))));
         setExpandedExercises(new Set(restoredDraft.expandedExerciseKeys.length ? restoredDraft.expandedExerciseKeys : ['0-0']));
+        draftSnapshotRef.current = {
+          name: restoredDraft.name,
+          days: JSON.stringify(restoredDraft.days),
+        };
         setIsEditing(true);
         setSaveError(null);
         setNameError('');
@@ -323,6 +390,16 @@ export default function RoutineDetailPage() {
       window.removeEventListener('scroll', closeMenu, true);
     };
   }, [exerciseMenu]);
+
+  useEffect(() => {
+    if (!isNew) return;
+    persistNewRoutineDraft({
+      name: draftName,
+      days: cloneDraftDays(draftDays),
+      activeDay,
+      expandedExerciseKeys: Array.from(expandedExercises),
+    });
+  }, [activeDay, draftDays, draftName, expandedExercises, isNew, persistNewRoutineDraft]);
 
   useEffect(() => {
     const result = routeState.catalogResult;
@@ -400,6 +477,17 @@ export default function RoutineDetailPage() {
   };
 
   const cancelEdit = () => {
+    if (isNew && hasNewRoutineDraftContent) {
+      setShowCancelRoutineModal(true);
+      return;
+    }
+    navigate(exitEditorPath);
+  };
+
+  const discardNewRoutine = () => {
+    persistNewRoutineDraft(null);
+    setShowCancelRoutineModal(false);
+    skipBlockerRef.current = true;
     navigate(exitEditorPath);
   };
 
@@ -459,6 +547,7 @@ export default function RoutineDetailPage() {
     try {
       const saved = await saveRoutine(routineToSave);
       const targetRoutineId = saved?.id ?? routine?.id;
+      persistNewRoutineDraft(null);
       skipBlockerRef.current = true;
       if (targetRoutineId) {
         navigate(`/routine/${targetRoutineId}`, { replace: true });
@@ -553,13 +642,20 @@ export default function RoutineDetailPage() {
   const removeDay = (dayIndex: number) => {
     if (draftDays.length <= 2) return;
     const day = draftDays[dayIndex];
-    if (
-      day.exercises.length > 0 &&
-      !window.confirm(`Se eliminará ${day.name} con todos sus ejercicios. ¿Continuar?`)
-    )
+    if (day.exercises.length > 0) {
+      setPendingDayRemoval({ dayIndex, dayName: day.name });
       return;
+    }
     setDraftDays((prev) => prev.filter((_, i) => i !== dayIndex));
     setActiveDay((prev) => (prev >= dayIndex ? Math.max(0, prev - 1) : prev));
+  };
+
+  const confirmRemoveDay = () => {
+    if (!pendingDayRemoval) return;
+    const { dayIndex } = pendingDayRemoval;
+    setDraftDays((prev) => prev.filter((_, i) => i !== dayIndex));
+    setActiveDay((prev) => (prev >= dayIndex ? Math.max(0, prev - 1) : prev));
+    setPendingDayRemoval(null);
   };
 
   const openDayReorderModal = () => {
@@ -728,6 +824,7 @@ export default function RoutineDetailPage() {
     setSelectedExerciseDetail({
       exerciseSlug: entry.slug,
       name: entry.title,
+      titleEn: entry.titleEn,
       muscle: entry.muscle,
       implement: entry.implement,
       secondaryMuscles: entry.secondaryMuscles,
@@ -1676,6 +1773,86 @@ export default function RoutineDetailPage() {
       />
 
       {/* ── Edit lock modal ───────────────────────────────────────────────────── */}
+      {pendingDayRemoval ? (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center px-5">
+          <button
+            type="button"
+            aria-label="Cerrar confirmación de eliminación de día"
+            className="absolute inset-0 bg-black/70"
+            onClick={() => setPendingDayRemoval(null)}
+          />
+          <div className="relative z-10 w-full max-w-sm rounded-3xl bg-[#1A2D42] p-6 shadow-[0_24px_60px_rgba(0,0,0,0.42)]">
+            <div className="mx-auto mb-4 h-1.5 w-12 rounded-full bg-[#2A3C50]" />
+            <h3 className="text-center text-3xl font-extrabold tracking-tight text-white">Eliminar día?</h3>
+            <p className="mt-3 text-center text-sm text-[#90A4B8]" style={{ fontFamily: "'Inter', sans-serif" }}>
+              Se eliminará <span className="font-semibold text-white">{pendingDayRemoval.dayName}</span> con todos sus ejercicios.
+            </p>
+            <div className="mt-6 flex flex-col gap-3">
+              <button
+                type="button"
+                onClick={confirmRemoveDay}
+                className="flex w-full items-center justify-center gap-2 rounded-2xl border border-[rgba(255,93,93,0.24)] bg-[#FF4D4D] py-4 font-bold text-white shadow-[0_12px_30px_rgba(255,77,77,0.24)]"
+              >
+                <Trash2 size={16} />
+                Eliminar día
+              </button>
+              <button
+                type="button"
+                onClick={() => setPendingDayRemoval(null)}
+                className="flex w-full items-center justify-center rounded-2xl bg-[#2A2F3D] py-4 font-bold text-white"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {showCancelRoutineModal ? (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center px-5">
+          <button
+            type="button"
+            aria-label="Cerrar modal de rutina nueva"
+            className="absolute inset-0 bg-black/70"
+            onClick={() => setShowCancelRoutineModal(false)}
+          />
+          <div className="relative z-10 w-full max-w-sm rounded-3xl bg-[#1A2D42] p-6 shadow-[0_24px_60px_rgba(0,0,0,0.42)]">
+            <div className="mx-auto mb-4 h-1.5 w-12 rounded-full bg-[#2A3C50]" />
+            <h3 className="text-center text-3xl font-extrabold tracking-tight text-white">Salir de la rutina?</h3>
+            <p className="mt-3 text-center text-sm text-[#90A4B8]" style={{ fontFamily: "'Inter', sans-serif" }}>
+              Podés guardar esta rutina, descartarla o seguir creándola.
+            </p>
+            <div className="mt-6 flex flex-col gap-3">
+              <button
+                type="button"
+                onClick={async () => {
+                  setShowCancelRoutineModal(false);
+                  await handleSave();
+                }}
+                className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#00C9A7] py-4 font-bold text-black shadow-[0_0_15px_rgba(0,201,167,0.2)]"
+              >
+                <Save size={16} />
+                Guardar
+              </button>
+              <button
+                type="button"
+                onClick={discardNewRoutine}
+                className="flex w-full items-center justify-center rounded-2xl border border-[rgba(255,125,125,0.22)] bg-[rgba(255,125,125,0.08)] py-4 font-bold text-[#FF8E8E]"
+              >
+                Descartar rutina
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowCancelRoutineModal(false)}
+                className="flex w-full items-center justify-center rounded-2xl bg-[#2A2F3D] py-4 font-bold text-white"
+              >
+                Continuar creando rutina
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
       {/* Unsaved changes modal */}
       {blocker.state === 'blocked' ? (
         <div className="fixed inset-0 z-[70] flex items-center justify-center px-5">
@@ -1704,7 +1881,10 @@ export default function RoutineDetailPage() {
               </button>
               <button
                 type="button"
-                onClick={() => blocker.proceed()}
+                onClick={() => {
+                  persistNewRoutineDraft(null);
+                  blocker.proceed();
+                }}
                 className="flex w-full items-center justify-center rounded-2xl border border-[rgba(255,125,125,0.22)] bg-[rgba(255,125,125,0.08)] py-4 font-bold text-[#FF8E8E]"
               >
                 Descartar cambios

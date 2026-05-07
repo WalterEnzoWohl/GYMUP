@@ -60,13 +60,99 @@ export function getDifficultyColor(difficulty: ProgramDifficulty) {
 
 let templatesPromise: Promise<ProgramTemplate[]> | null = null;
 
+function repairPotentialMojibake(value: string) {
+  if (!/[ÃƒÃ‚Ã¢]/.test(value)) {
+    return value;
+  }
+
+  const bytes = Array.from(value).map((character) => character.charCodeAt(0));
+  if (bytes.some((byte) => byte > 255)) {
+    return value;
+  }
+
+  const repaired = new TextDecoder().decode(Uint8Array.from(bytes));
+  const originalNoise = (value.match(/[ÃƒÃ‚Ã¢]/g) ?? []).length;
+  const repairedNoise = (repaired.match(/[ÃƒÃ‚Ã¢]/g) ?? []).length;
+
+  return repairedNoise < originalNoise ? repaired : value;
+}
+
+function sanitizeTemplateObject<T>(value: T): T {
+  if (typeof value === 'string') {
+    return repairPotentialMojibake(value) as T;
+  }
+
+  if (Array.isArray(value)) {
+    return value.map((item) => sanitizeTemplateObject(item)) as T;
+  }
+
+  if (value && typeof value === 'object') {
+    return Object.fromEntries(
+      Object.entries(value).map(([key, nestedValue]) => [key, sanitizeTemplateObject(nestedValue)])
+    ) as T;
+  }
+
+  return value;
+}
+
+const SPLIT_TITLE_ES: Record<string, string> = {
+  upper_lower: 'Torso pierna',
+  ppl: 'Empuje tiron piernas',
+  full_body: 'Cuerpo completo',
+  upper_lower_ppl: 'Torso pierna Empuje Tiron Pierna',
+};
+
+const SPLIT_ORDER: Record<string, number> = {
+  full_body: 0,
+  upper_lower: 1,
+  ppl: 2,
+  upper_lower_ppl: 3,
+};
+
+function localizeProgramTemplate(program: ProgramTemplate): ProgramTemplate {
+  const baseSpanishTitle = SPLIT_TITLE_ES[program.split_type] ?? program.i18n.es.title;
+  const baseEnglishTitle = program.i18n.en.title;
+  const hasSuperPrefix = /super/i.test(program.i18n.es.title) || /super/i.test(baseEnglishTitle);
+  const titleSuffix = /\b\d+d\b/i.test(program.i18n.es.title) ? ` ${program.days_per_week}D` : '';
+  const localizedSpanishTitle =
+    program.split_type === 'upper_lower' && hasSuperPrefix
+      ? `Super ${baseSpanishTitle}`
+      : `${baseSpanishTitle}${titleSuffix}`;
+
+  return {
+    ...program,
+    i18n: {
+      ...program.i18n,
+      es: {
+        ...program.i18n.es,
+        title: localizedSpanishTitle.trim(),
+      },
+    },
+  };
+}
+
 export async function loadProgramTemplates(): Promise<ProgramTemplate[]> {
   if (!templatesPromise) {
     templatesPromise = fetch('/routines.json')
       .then(async (response) => {
         if (!response.ok) throw new Error('No pudimos cargar los programas.');
-        const data = (await response.json()) as { programs: ProgramTemplate[] };
-        return data.programs.filter((program) => program.is_active);
+        const data = sanitizeTemplateObject((await response.json()) as { programs: ProgramTemplate[] });
+        return data.programs
+          .filter((program) => program.is_active)
+          .map((program) => localizeProgramTemplate(program))
+          .sort((a, b) => {
+            if (a.days_per_week !== b.days_per_week) {
+              return a.days_per_week - b.days_per_week;
+            }
+
+            const splitOrderA = SPLIT_ORDER[a.split_type] ?? Number.MAX_SAFE_INTEGER;
+            const splitOrderB = SPLIT_ORDER[b.split_type] ?? Number.MAX_SAFE_INTEGER;
+            if (splitOrderA !== splitOrderB) {
+              return splitOrderA - splitOrderB;
+            }
+
+            return a.i18n.es.title.localeCompare(b.i18n.es.title, 'es');
+          });
       })
       .catch((error) => {
         templatesPromise = null;
